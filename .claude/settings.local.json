@@ -8,7 +8,12 @@
       "Bash(git add:*)",
       "Bash(swift test)",
       "Bash(swiftlint:*)",
-      "Bash(swiftformat:*)"
+      "Bash(swiftformat:*)",
+      "Bash(git checkout:*)",
+      "Bash(git pull:*)",
+      "Bash(git fetch:*)",
+      "WebFetch(domain:www.swift.org)",
+      "Bash(swift test:*)"
     ],
     "deny": []
   }
