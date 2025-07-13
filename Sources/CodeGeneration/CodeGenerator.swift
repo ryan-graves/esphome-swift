@@ -30,8 +30,8 @@ public class CodeGenerator {
         // Generate sensor code
         if let sensors = configuration.sensor {
             for sensor in sensors {
-                if let factory = componentRegistry.factory(for: sensor.platform) {
-                    let code = try factory.generateCode(config: sensor, context: context)
+                if let factory = componentRegistry.factory(for: sensor.platform, componentType: .sensor) {
+                    let code = try factory.generateCodeAny(config: sensor, context: context)
                     allComponentCode.append(code)
                 } else {
                     logger.warning("Unknown sensor platform: \(sensor.platform)")
@@ -42,8 +42,8 @@ public class CodeGenerator {
         // Generate switch code
         if let switches = configuration.`switch` {
             for switchConfig in switches {
-                if let factory = componentRegistry.factory(for: switchConfig.platform) {
-                    let code = try factory.generateCode(config: switchConfig, context: context)
+                if let factory = componentRegistry.factory(for: switchConfig.platform, componentType: .switch_) {
+                    let code = try factory.generateCodeAny(config: switchConfig, context: context)
                     allComponentCode.append(code)
                 } else {
                     logger.warning("Unknown switch platform: \(switchConfig.platform)")
@@ -54,8 +54,8 @@ public class CodeGenerator {
         // Generate light code
         if let lights = configuration.light {
             for light in lights {
-                if let factory = componentRegistry.factory(for: light.platform) {
-                    let code = try factory.generateCode(config: light, context: context)
+                if let factory = componentRegistry.factory(for: light.platform, componentType: .light) {
+                    let code = try factory.generateCodeAny(config: light, context: context)
                     allComponentCode.append(code)
                 } else {
                     logger.warning("Unknown light platform: \(light.platform)")
@@ -66,8 +66,8 @@ public class CodeGenerator {
         // Generate binary sensor code
         if let binarySensors = configuration.binary_sensor {
             for sensor in binarySensors {
-                if let factory = componentRegistry.factory(for: sensor.platform) {
-                    let code = try factory.generateCode(config: sensor, context: context)
+                if let factory = componentRegistry.factory(for: sensor.platform, componentType: .binarySensor) {
+                    let code = try factory.generateCodeAny(config: sensor, context: context)
                     allComponentCode.append(code)
                 } else {
                     logger.warning("Unknown binary sensor platform: \(sensor.platform)")

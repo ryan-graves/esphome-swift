@@ -234,15 +234,13 @@ struct ListComponentsCommand: ParsableCommand {
         
         print("Available Component Platforms:\\n")
         
-        for platform in platforms {
-            if let factory = registry.factory(for: platform) {
-                print("📦 \\(platform) (\\(factory.componentType.rawValue))")
-                
-                if detailed {
-                    print("   Required: \\(factory.requiredProperties.joined(separator: ", "))")
-                    print("   Optional: \\(factory.optionalProperties.joined(separator: ", "))")
-                    print()
-                }
+        for factoryInfo in registry.allFactories {
+            print("📦 \\(factoryInfo.platform) (\\(factoryInfo.componentType.rawValue))")
+            
+            if detailed {
+                print("   Required: \\(factoryInfo.factory.requiredProperties.joined(separator: ", "))")
+                print("   Optional: \\(factoryInfo.factory.optionalProperties.joined(separator: ", "))")
+                print()
             }
         }
         

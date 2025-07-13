@@ -25,7 +25,6 @@ public struct GPIOSensorFactory: ComponentFactory {
             )
         }
         
-        // Use shared pin validator with ADC requirements
         try pinValidator.validatePin(pin, requirements: .adc)
     }
     

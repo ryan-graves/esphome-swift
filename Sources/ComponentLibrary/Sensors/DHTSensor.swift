@@ -33,7 +33,6 @@ public struct DHTSensorFactory: ComponentFactory {
             )
         }
         
-        // Use shared pin validator with input requirements
         try pinValidator.validatePin(pin, requirements: .input)
     }
     

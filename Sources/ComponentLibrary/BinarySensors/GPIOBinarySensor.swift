@@ -5,7 +5,7 @@ import ESPHomeSwiftCore
 public struct GPIOBinarySensorFactory: ComponentFactory {
     public typealias ConfigType = BinarySensorConfig
     
-    public let platform = "gpio_binary" // Unique platform name to avoid conflicts
+    public let platform = "gpio"
     public let componentType = ComponentType.binarySensor
     public let requiredProperties = ["pin"]
     public let optionalProperties = ["name", "device_class", "inverted", "filters"]
@@ -25,7 +25,6 @@ public struct GPIOBinarySensorFactory: ComponentFactory {
             )
         }
         
-        // Use shared pin validator with input requirements
         try pinValidator.validatePin(pin, requirements: .input)
     }
     

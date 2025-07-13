@@ -25,7 +25,6 @@ public struct GPIOSwitchFactory: ComponentFactory {
             )
         }
         
-        // Use shared pin validator with output requirements
         try pinValidator.validatePin(pin, requirements: .output)
     }
     

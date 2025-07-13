@@ -19,7 +19,6 @@ final class ComponentLibraryTests: XCTestCase {
         XCTAssertTrue(platforms.contains("gpio"))
         XCTAssertTrue(platforms.contains("binary"))
         XCTAssertTrue(platforms.contains("rgb"))
-        XCTAssertTrue(platforms.contains("gpio_binary"))
     }
     
     func testDHTSensorFactory() throws {
@@ -68,7 +67,7 @@ final class ComponentLibraryTests: XCTestCase {
     func testGPIOBinarySensorFactory() throws {
         let factory = GPIOBinarySensorFactory()
         
-        XCTAssertEqual(factory.platform, "gpio_binary")
+        XCTAssertEqual(factory.platform, "gpio")
         XCTAssertEqual(factory.componentType, .binarySensor)
         XCTAssertTrue(factory.requiredProperties.contains("pin"))
     }

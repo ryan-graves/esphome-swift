@@ -11,7 +11,7 @@ import ESPHomeSwiftCore
 public final class ComponentRegistry {
     public static let shared = ComponentRegistry()
     
-    private var componentFactories: [String: AnyComponentFactory] = [:]
+    private var componentFactories: [String: any ComponentFactory] = [:]
     
     private init() {
         registerBuiltInComponents()
@@ -19,17 +19,42 @@ public final class ComponentRegistry {
     
     /// Register a component factory
     public func register<T: ComponentFactory>(_ factory: T) {
-        componentFactories[factory.platform] = AnyComponentFactory(factory)
+        let key = "\(factory.componentType.rawValue).\(factory.platform)"
+        componentFactories[key] = factory
     }
     
-    /// Get component factory for platform
-    public func factory(for platform: String) -> AnyComponentFactory? {
-        return componentFactories[platform]
+    /// Get component factory for platform and component type
+    public func factory(for platform: String, componentType: ComponentType) -> (any ComponentFactory)? {
+        let key = "\(componentType.rawValue).\(platform)"
+        return componentFactories[key]
     }
     
     /// List all available platforms
     public var availablePlatforms: [String] {
-        return Array(componentFactories.keys).sorted()
+        let platforms = componentFactories.keys.compactMap { key in
+            key.split(separator: ".").last.map(String.init)
+        }
+        return Array(Set(platforms)).sorted()
+    }
+    
+    /// Get available platforms for a specific component type
+    public func platforms(for componentType: ComponentType) -> [String] {
+        let prefix = "\(componentType.rawValue)."
+        return componentFactories.keys
+            .filter { $0.hasPrefix(prefix) }
+            .compactMap { $0.split(separator: ".").last.map(String.init) }
+            .sorted()
+    }
+    
+    /// Get all registered factories for enumeration
+    public var allFactories: [(platform: String, componentType: ComponentType, factory: any ComponentFactory)] {
+        return componentFactories.map { key, factory in
+            let parts = key.split(separator: ".")
+            let componentTypeString = String(parts[0])
+            let platform = String(parts[1])
+            let componentType = ComponentType(rawValue: componentTypeString) ?? .sensor
+            return (platform: platform, componentType: componentType, factory: factory)
+        }.sorted { $0.platform < $1.platform }
     }
     
     /// Register built-in components
@@ -72,54 +97,34 @@ public protocol ComponentFactory {
     
     /// Generate code with compile-time type safety
     func generateCode(config: ConfigType, context: CodeGenerationContext) throws -> ComponentCode
+    
+    /// Type-erased validate method for dynamic dispatch
+    func validateAny(config: ComponentConfig) throws
+    
+    /// Type-erased generateCode method for dynamic dispatch  
+    func generateCodeAny(config: ComponentConfig, context: CodeGenerationContext) throws -> ComponentCode
 }
 
-/// Type-erased wrapper for ComponentFactory storage in collections
-public struct AnyComponentFactory {
-    public let platform: String
-    public let componentType: ComponentType
-    public let requiredProperties: [String]
-    public let optionalProperties: [String]
-    
-    private let _validate: (ComponentConfig) throws -> Void
-    private let _generateCode: (ComponentConfig, CodeGenerationContext) throws -> ComponentCode
-    
-    /// Initialize with a type-safe factory
-    public init<T: ComponentFactory>(_ factory: T) {
-        // Store properties
-        self.platform = factory.platform
-        self.componentType = factory.componentType
-        self.requiredProperties = factory.requiredProperties
-        self.optionalProperties = factory.optionalProperties
-        
-        // Create type-safe closures
-        self._validate = { config in
-            guard let typedConfig = config as? T.ConfigType else {
-                throw ComponentValidationError.incompatibleConfiguration(
-                    component: factory.platform,
-                    reason: "Expected \(T.ConfigType.self) but got \(type(of: config))"
-                )
-            }
-            try factory.validate(config: typedConfig)
+/// Default implementations for type-erased methods
+extension ComponentFactory {
+    public func validateAny(config: ComponentConfig) throws {
+        guard let typedConfig = config as? ConfigType else {
+            throw ComponentValidationError.incompatibleConfiguration(
+                component: platform,
+                reason: "Expected \(ConfigType.self) but got \(type(of: config))"
+            )
         }
-        
-        self._generateCode = { config, context in
-            guard let typedConfig = config as? T.ConfigType else {
-                throw ComponentValidationError.incompatibleConfiguration(
-                    component: factory.platform,
-                    reason: "Expected \(T.ConfigType.self) but got \(type(of: config))"
-                )
-            }
-            return try factory.generateCode(config: typedConfig, context: context)
-        }
+        try validate(config: typedConfig)
     }
     
-    public func validate(config: ComponentConfig) throws {
-        try _validate(config)
-    }
-    
-    public func generateCode(config: ComponentConfig, context: CodeGenerationContext) throws -> ComponentCode {
-        return try _generateCode(config, context)
+    public func generateCodeAny(config: ComponentConfig, context: CodeGenerationContext) throws -> ComponentCode {
+        guard let typedConfig = config as? ConfigType else {
+            throw ComponentValidationError.incompatibleConfiguration(
+                component: platform,
+                reason: "Expected \(ConfigType.self) but got \(type(of: config))"
+            )
+        }
+        return try generateCode(config: typedConfig, context: context)
     }
 }
 
