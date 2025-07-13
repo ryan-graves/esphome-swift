@@ -47,13 +47,13 @@ public final class ComponentRegistry {
     }
     
     /// Get all registered factories for enumeration
-    public var allFactories: [(platform: String, componentType: ComponentType, factory: any ComponentFactory)] {
+    public var allFactories: [FactoryInfo] {
         return componentFactories.map { key, factory in
             let parts = key.split(separator: ".")
             let componentTypeString = String(parts[0])
             let platform = String(parts[1])
             let componentType = ComponentType(rawValue: componentTypeString) ?? .sensor
-            return (platform: platform, componentType: componentType, factory: factory)
+            return FactoryInfo(platform: platform, componentType: componentType, factory: factory)
         }.sorted { $0.platform < $1.platform }
     }
     
@@ -72,6 +72,19 @@ public final class ComponentRegistry {
         
         // Binary sensor components
         register(GPIOBinarySensorFactory())
+    }
+}
+
+/// Factory information for enumeration
+public struct FactoryInfo {
+    public let platform: String
+    public let componentType: ComponentType
+    public let factory: any ComponentFactory
+    
+    public init(platform: String, componentType: ComponentType, factory: any ComponentFactory) {
+        self.platform = platform
+        self.componentType = componentType
+        self.factory = factory
     }
 }
 
