@@ -2,45 +2,37 @@ import Foundation
 import ESPHomeSwiftCore
 
 /// GPIO-based analog sensor factory
-public class GPIOSensorFactory: ComponentFactory {
+public struct GPIOSensorFactory: ComponentFactory {
+    public typealias ConfigType = SensorConfig
+    
     public let platform = "adc"
     public let componentType = ComponentType.sensor
     public let requiredProperties = ["pin"]
     public let optionalProperties = ["name", "update_interval", "accuracy", "filters"]
     
-    public func validate(config: ComponentConfig) throws {
-        guard let sensorConfig = config as? SensorConfig else {
-            throw ComponentValidationError.incompatibleConfiguration(
-                component: platform,
-                reason: "Expected SensorConfig"
-            )
-        }
-        
+    private let pinValidator: PinValidator
+    
+    public init(pinValidator: PinValidator = PinValidator()) {
+        self.pinValidator = pinValidator
+    }
+    
+    public func validate(config: SensorConfig) throws {
         // Validate required pin
-        guard sensorConfig.pin != nil else {
+        guard let pin = config.pin else {
             throw ComponentValidationError.missingRequiredProperty(
                 component: platform,
                 property: "pin"
             )
         }
         
-        // Validate pin is ADC-capable
-        if let pin = sensorConfig.pin {
-            try validateADCPin(pin)
-        }
+        // Use shared pin validator with ADC requirements
+        try pinValidator.validatePin(pin, requirements: .adc)
     }
     
-    public func generateCode(config: ComponentConfig, context: CodeGenerationContext) throws -> ComponentCode {
-        guard let sensorConfig = config as? SensorConfig else {
-            throw ComponentValidationError.incompatibleConfiguration(
-                component: platform,
-                reason: "Expected SensorConfig"
-            )
-        }
-        
-        let pinNumber = extractPinNumber(sensorConfig.pin!)
-        let componentId = sensorConfig.id ?? "adc_sensor_\(pinNumber)"
-        let updateInterval = parseUpdateInterval(sensorConfig.updateInterval ?? "60s")
+    public func generateCode(config: SensorConfig, context: CodeGenerationContext) throws -> ComponentCode {
+        let pinNumber = try pinValidator.extractPinNumber(from: config.pin!)
+        let componentId = config.id ?? "adc_sensor_\(pinNumber)"
+        let updateInterval = parseUpdateInterval(config.updateInterval ?? "60s")
         
         let headerIncludes = [
             "#include \"driver/adc.h\""
@@ -64,7 +56,7 @@ public class GPIOSensorFactory: ComponentFactory {
                 
                 // TODO: Apply filters if configured
                 // TODO: Send value via API
-                Serial.printf("ADC Pin \(pinNumber): %.3fV (raw: %d)\\n", \(componentId)_voltage, \(componentId)_raw);
+                printf("ADC Pin \(pinNumber): %.3fV (raw: %d)\\n", \(componentId)_voltage, \(componentId)_raw);
                 
                 \(componentId)_last_update = millis();
             }
@@ -77,30 +69,6 @@ public class GPIOSensorFactory: ComponentFactory {
             setupCode: setupCode,
             loopCode: loopCode
         )
-    }
-    
-    private func validateADCPin(_ pin: PinConfig) throws {
-        let pinNum = extractPinNumber(pin)
-        let adcPins = [0, 1, 2, 3, 4, 5, 6, 7] // ADC1 pins for ESP32-C6
-        
-        if !adcPins.contains(pinNum) {
-            throw ComponentValidationError.invalidPropertyValue(
-                component: platform,
-                property: "pin",
-                value: String(pinNum),
-                reason: "Pin must be ADC-capable (0-7 for ESP32-C6)"
-            )
-        }
-    }
-    
-    private func extractPinNumber(_ pin: PinConfig) -> Int {
-        switch pin.number {
-        case .integer(let num):
-            return num
-        case .gpio(let gpio):
-            let number = gpio.replacingOccurrences(of: "GPIO", with: "")
-            return Int(number) ?? 0
-        }
     }
     
     private func adcChannelForPin(_ pin: Int) -> Int {
