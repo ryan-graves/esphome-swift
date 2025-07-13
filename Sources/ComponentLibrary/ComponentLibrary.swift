@@ -119,8 +119,8 @@ public protocol ComponentFactory {
 }
 
 /// Default implementations for type-erased methods
-extension ComponentFactory {
-    public func validateAny(config: ComponentConfig) throws {
+public extension ComponentFactory {
+    func validateAny(config: ComponentConfig) throws {
         guard let typedConfig = config as? ConfigType else {
             throw ComponentValidationError.incompatibleConfiguration(
                 component: platform,
@@ -130,7 +130,7 @@ extension ComponentFactory {
         try validate(config: typedConfig)
     }
     
-    public func generateCodeAny(config: ComponentConfig, context: CodeGenerationContext) throws -> ComponentCode {
+    func generateCodeAny(config: ComponentConfig, context: CodeGenerationContext) throws -> ComponentCode {
         guard let typedConfig = config as? ConfigType else {
             throw ComponentValidationError.incompatibleConfiguration(
                 component: platform,
