@@ -2,7 +2,7 @@ import Foundation
 
 // MARK: - Secure Code Generation Templates
 
-/// Protocol for type-safe code template generation
+/// Protocol for code template generation
 public protocol CodeTemplate {
     var templateContent: String { get }
     func render(with parameters: [String: TemplateValue]) throws -> String
@@ -17,8 +17,8 @@ public enum TemplateValue {
     case identifier(String)
     case pinNumber(Int)
     
-    /// Get safely escaped value for C++ code generation
-    var safeCppValue: String {
+    /// Get escaped value for C++ code generation
+    var cppValue: String {
         switch self {
         case .string(let value):
             return escapeForCpp(value)
@@ -78,7 +78,7 @@ public enum TemplateError: Error, LocalizedError {
 }
 
 /// Simple and secure template renderer
-public struct SafeCodeTemplate: CodeTemplate {
+public struct ESP32CodeTemplate: CodeTemplate {
     public let templateContent: String
     private let requiredParameters: Set<String>
     
@@ -98,10 +98,10 @@ public struct SafeCodeTemplate: CodeTemplate {
         
         var result = templateContent
         
-        // Replace parameters with safe values
+        // Replace parameters with escaped values
         for (key, value) in parameters {
             let placeholder = "{{\\(\(key))}}"
-            result = result.replacingOccurrences(of: placeholder, with: value.safeCppValue)
+            result = result.replacingOccurrences(of: placeholder, with: value.cppValue)
         }
         
         // Check for any unreplaced parameters
@@ -121,7 +121,7 @@ public struct SafeCodeTemplate: CodeTemplate {
 public enum ESP32Templates {
     
     /// GPIO input setup template
-    public static let gpioInputSetup = SafeCodeTemplate(
+    public static let gpioInputSetup = ESP32CodeTemplate(
         content: """
         gpio_config_t io_conf = {};
         io_conf.intr_type = GPIO_INTR_DISABLE;
@@ -135,7 +135,7 @@ public enum ESP32Templates {
     )
     
     /// GPIO output setup template
-    public static let gpioOutputSetup = SafeCodeTemplate(
+    public static let gpioOutputSetup = ESP32CodeTemplate(
         content: """
         gpio_config_t io_conf = {};
         io_conf.intr_type = GPIO_INTR_DISABLE;
@@ -150,7 +150,7 @@ public enum ESP32Templates {
     )
     
     /// Digital read template
-    public static let digitalRead = SafeCodeTemplate(
+    public static let digitalRead = ESP32CodeTemplate(
         content: """
         int {{\\(variableName)}} = gpio_get_level({{\\(pin)}});
         """,
@@ -158,7 +158,7 @@ public enum ESP32Templates {
     )
     
     /// Digital write template
-    public static let digitalWrite = SafeCodeTemplate(
+    public static let digitalWrite = ESP32CodeTemplate(
         content: """
         gpio_set_level({{\\(pin)}}, {{\\(value)}});
         """,
@@ -166,7 +166,7 @@ public enum ESP32Templates {
     )
     
     /// DHT sensor reading template
-    public static let dhtRead = SafeCodeTemplate(
+    public static let dhtRead = ESP32CodeTemplate(
         content: """
         float {{\\(tempVar)}}, {{\\(humVar)}};
         if (dht_read_float_data({{\\(dhtType)}}, {{\\(pin)}}, &{{\\(humVar)}}, &{{\\(tempVar)}}) == ESP_OK) {
@@ -179,7 +179,7 @@ public enum ESP32Templates {
     )
     
     /// PWM setup template
-    public static let pwmSetup = SafeCodeTemplate(
+    public static let pwmSetup = ESP32CodeTemplate(
         content: """
         ledc_timer_config_t ledc_timer = {
             .speed_mode = LEDC_LOW_SPEED_MODE,
@@ -205,7 +205,7 @@ public enum ESP32Templates {
     )
     
     /// PWM duty cycle update template
-    public static let pwmUpdate = SafeCodeTemplate(
+    public static let pwmUpdate = ESP32CodeTemplate(
         content: """
         ESP_ERROR_CHECK(ledc_set_duty(LEDC_LOW_SPEED_MODE, {{\\(channel)}}, {{\\(duty)}}));
         ESP_ERROR_CHECK(ledc_update_duty(LEDC_LOW_SPEED_MODE, {{\\(channel)}}));
@@ -242,7 +242,7 @@ public final class CodeTemplateBuilder {
     }
     
     /// Build the final template
-    public func build() -> SafeCodeTemplate {
-        return SafeCodeTemplate(content: content, requiredParameters: Array(parameters))
+    public func build() -> ESP32CodeTemplate {
+        return ESP32CodeTemplate(content: content, requiredParameters: Array(parameters))
     }
 }

@@ -1,14 +1,8 @@
-# ESPHome Swift Component Factory Architecture Design
+# ESPHome Swift Component Factory Architecture
 
-## Current Issues
+## Architecture Overview
 
-1. **Runtime Type Safety**: All factories use unsafe downcasting with `as?`
-2. **Code Duplication**: Pin validation logic repeated across factories
-3. **Lack of Compile-Time Guarantees**: No enforcement of config/factory compatibility
-4. **Hard-Coded Validation**: Board-specific constraints scattered throughout code
-5. **Security Concerns**: String interpolation in code generation can lead to injection
-
-## Proposed Architecture
+ESPHome Swift uses a type-safe component factory system with compile-time guarantees and centralized validation utilities.
 
 ### Type-Safe Component Factory Protocol
 
@@ -38,58 +32,9 @@ public protocol ComponentFactory {
 }
 ```
 
-### Type Erasure for Registry Storage
+### Registry with Type Erasure
 
-```swift
-/// Type-erased wrapper for ComponentFactory storage in collections
-public struct AnyComponentFactory {
-    public let platform: String
-    public let componentType: ComponentType
-    public let requiredProperties: [String]
-    public let optionalProperties: [String]
-    
-    private let _validate: (ComponentConfig) throws -> Void
-    private let _generateCode: (ComponentConfig, CodeGenerationContext) throws -> ComponentCode
-    
-    /// Initialize with a type-safe factory
-    public init<T: ComponentFactory>(_ factory: T) {
-        // Store properties
-        self.platform = factory.platform
-        self.componentType = factory.componentType
-        self.requiredProperties = factory.requiredProperties
-        self.optionalProperties = factory.optionalProperties
-        
-        // Create type-safe closures
-        self._validate = { config in
-            guard let typedConfig = config as? T.ConfigType else {
-                throw ComponentValidationError.incompatibleConfiguration(
-                    component: factory.platform,
-                    reason: "Expected \(T.ConfigType.self) but got \(type(of: config))"
-                )
-            }
-            try factory.validate(config: typedConfig)
-        }
-        
-        self._generateCode = { config, context in
-            guard let typedConfig = config as? T.ConfigType else {
-                throw ComponentValidationError.incompatibleConfiguration(
-                    component: factory.platform,
-                    reason: "Expected \(T.ConfigType.self) but got \(type(of: config))"
-                )
-            }
-            return try factory.generateCode(config: typedConfig, context: context)
-        }
-    }
-    
-    public func validate(config: ComponentConfig) throws {
-        try _validate(config)
-    }
-    
-    public func generateCode(config: ComponentConfig, context: CodeGenerationContext) throws -> ComponentCode {
-        return try _generateCode(config, context)
-    }
-}
-```
+The component registry uses `any ComponentFactory` for storage while maintaining type safety through protocol extension methods that handle the type conversion automatically.
 
 ### Board-Specific Pin Validation
 
@@ -129,7 +74,7 @@ public struct PinValidator {
 ### Secure Code Generation Templates
 
 ```swift
-/// Safe template value types
+/// Template value types with automatic escaping
 @frozen
 public enum TemplateValue {
     case string(String)
@@ -138,8 +83,8 @@ public enum TemplateValue {
     case identifier(String)
     case pinNumber(Int)
     
-    /// Get safely escaped value for C++ code generation
-    var safeCppValue: String {
+    /// Get escaped value for C++ code generation
+    var cppValue: String {
         switch self {
         case .string(let value):
             return escapeForCpp(value)
@@ -149,66 +94,28 @@ public enum TemplateValue {
         }
     }
 }
-
-/// Secure template renderer
-public struct SafeCodeTemplate {
-    public let templateContent: String
-    private let requiredParameters: Set<String>
-    
-    public func render(with parameters: [String: TemplateValue]) throws -> String {
-        // Safe parameter substitution with validation
-    }
-}
 ```
 
-## Benefits
+## Key Design Decisions
 
-### Compile-Time Safety
-- Associated types ensure config/factory compatibility
-- No runtime downcasting in factory implementations
-- Type errors caught at build time
+### Type Safety with Performance
+- Associated types provide compile-time guarantees for config/factory compatibility
+- `@frozen` structs minimize runtime overhead in embedded contexts
+- Value types reduce heap allocations
 
-### Code Reuse
-- Shared pin validation across all factories
-- Centralized board constraint definitions
-- Reusable secure templates
+### Centralized Validation
+- PinValidator handles board-specific constraints for all components
+- Shared validation logic prevents duplication across factories
+- Clear error messages guide users to valid alternatives
 
-### Security
-- Safe code generation with escaped values
-- Prevention of injection attacks
-- Input validation at template level
+### Secure Code Generation
+- Template system automatically escapes values to prevent injection attacks
+- Type-safe parameter substitution with validation
+- Reusable templates for common ESP32 patterns
 
-### Maintainability
-- Clear separation of concerns
-- Consistent patterns across all factories
-- Easy to add new boards or components
+### Registry Architecture
+- Composite keys allow platform name reuse across component types (sensor.gpio, switch.gpio)
+- Type erasure enables heterogeneous storage while preserving compile-time safety
+- Protocol extensions provide seamless dynamic dispatch
 
-### Performance
-- Efficient pin validation with set-based lookups
-- Minimal runtime overhead
-- Optimized for embedded Swift targets
-
-## Implementation Notes
-
-### Frozen Structs
-Use `@frozen` for performance-critical structs in embedded contexts:
-
-```swift
-@frozen
-public struct ESP32C6Constraints: BoardConstraints { ... }
-
-@frozen
-public enum TemplateValue { ... }
-```
-
-### Memory Efficiency
-- Use value types where possible
-- Minimize heap allocations
-- Prefer static data for board constraints
-
-### Error Handling
-- Provide clear, actionable error messages
-- Include context about board-specific limitations
-- Guide users toward valid alternatives
-
-This architecture provides a solid foundation for type-safe, secure, and maintainable component factories while following Swift Embedded best practices.
+This architecture balances type safety, performance, and maintainability for embedded Swift development.

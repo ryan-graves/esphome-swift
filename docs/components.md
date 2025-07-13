@@ -259,7 +259,6 @@ public struct MySensorFactory: ComponentFactory {
     ) throws -> ComponentCode {
         let pinNumber = try pinValidator.extractPinNumber(from: config.pin!)
         
-        // Generate type-safe C++ code
         return ComponentCode(
             headerIncludes: ["#include \"my_sensor.h\""],
             globalDeclarations: ["MySensor sensor(\(pinNumber));"],
