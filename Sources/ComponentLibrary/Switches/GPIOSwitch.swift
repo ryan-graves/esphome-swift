@@ -2,46 +2,37 @@ import Foundation
 import ESPHomeSwiftCore
 
 /// GPIO-based switch factory
-public class GPIOSwitchFactory: ComponentFactory {
+public struct GPIOSwitchFactory: ComponentFactory {
+    public typealias ConfigType = SwitchConfig
+    
     public let platform = "gpio"
     public let componentType = ComponentType.switch_
     public let requiredProperties = ["pin"]
     public let optionalProperties = ["name", "inverted", "restore_mode"]
     
-    public func validate(config: ComponentConfig) throws {
-        guard let switchConfig = config as? SwitchConfig else {
-            throw ComponentValidationError.incompatibleConfiguration(
-                component: platform,
-                reason: "Expected SwitchConfig"
-            )
-        }
-        
+    private let pinValidator: PinValidator
+    
+    public init(pinValidator: PinValidator = PinValidator()) {
+        self.pinValidator = pinValidator
+    }
+    
+    public func validate(config: SwitchConfig) throws {
         // Validate required pin
-        guard switchConfig.pin != nil else {
+        guard let pin = config.pin else {
             throw ComponentValidationError.missingRequiredProperty(
                 component: platform,
                 property: "pin"
             )
         }
         
-        // Validate pin is output-capable
-        if let pin = switchConfig.pin {
-            try validateOutputPin(pin)
-        }
+        try pinValidator.validatePin(pin, requirements: .output)
     }
     
-    public func generateCode(config: ComponentConfig, context: CodeGenerationContext) throws -> ComponentCode {
-        guard let switchConfig = config as? SwitchConfig else {
-            throw ComponentValidationError.incompatibleConfiguration(
-                component: platform,
-                reason: "Expected SwitchConfig"
-            )
-        }
-        
-        let pinNumber = extractPinNumber(switchConfig.pin!)
-        let componentId = switchConfig.id ?? "gpio_switch_\(pinNumber)"
-        let inverted = switchConfig.inverted ?? false
-        let restoreMode = switchConfig.restoreMode ?? .restoreDefaultOff
+    public func generateCode(config: SwitchConfig, context: CodeGenerationContext) throws -> ComponentCode {
+        let pinNumber = try pinValidator.extractPinNumber(from: config.pin!)
+        let componentId = config.id ?? "gpio_switch_\(pinNumber)"
+        let inverted = config.inverted ?? false
+        let restoreMode = config.restoreMode ?? .restoreDefaultOff
         
         let headerIncludes = [
             "#include \"driver/gpio.h\""
@@ -67,14 +58,14 @@ public class GPIOSwitchFactory: ComponentFactory {
             void \(componentId)_turn_on() {
                 \(componentId)_state = true;
                 gpio_set_level(GPIO_NUM_\(pinNumber), \(inverted ? "0" : "1"));
-                Serial.println("\(switchConfig.name ?? componentId): ON");
+                printf("\(config.name ?? componentId): ON\\n");
                 // TODO: Send state via API
             }
             
             void \(componentId)_turn_off() {
                 \(componentId)_state = false;
                 gpio_set_level(GPIO_NUM_\(pinNumber), \(inverted ? "1" : "0"));
-                Serial.println("\(switchConfig.name ?? componentId): OFF");
+                printf("\(config.name ?? componentId): OFF\\n");
                 // TODO: Send state via API
             }
             
@@ -98,41 +89,6 @@ public class GPIOSwitchFactory: ComponentFactory {
             setupCode: setupCode,
             classDefinitions: classDefinitions
         )
-    }
-    
-    private func validateOutputPin(_ pin: PinConfig) throws {
-        let pinNum = extractPinNumber(pin)
-        
-        // Basic validation - in real implementation would check board-specific constraints
-        if pinNum < 0 || pinNum > 48 {
-            throw ComponentValidationError.invalidPropertyValue(
-                component: platform,
-                property: "pin",
-                value: String(pinNum),
-                reason: "GPIO pin must be between 0 and 48"
-            )
-        }
-        
-        // Check for input-only pins (example for ESP32-C6)
-        let inputOnlyPins = [18, 19] // These are typically input-only on some ESP32 variants
-        if inputOnlyPins.contains(pinNum) {
-            throw ComponentValidationError.invalidPropertyValue(
-                component: platform,
-                property: "pin",
-                value: String(pinNum),
-                reason: "Pin \(pinNum) is input-only and cannot be used for output"
-            )
-        }
-    }
-    
-    private func extractPinNumber(_ pin: PinConfig) -> Int {
-        switch pin.number {
-        case .integer(let num):
-            return num
-        case .gpio(let gpio):
-            let number = gpio.replacingOccurrences(of: "GPIO", with: "")
-            return Int(number) ?? 0
-        }
     }
     
     private func initialState(_ restoreMode: RestoreMode) -> String {

@@ -13,9 +13,10 @@ final class ComponentLibraryTests: XCTestCase {
         let registry = ComponentRegistry.shared
         let platforms = registry.availablePlatforms
         
+        // Available component platforms
         XCTAssertTrue(platforms.contains("dht"))
-        XCTAssertTrue(platforms.contains("gpio"))
         XCTAssertTrue(platforms.contains("adc"))
+        XCTAssertTrue(platforms.contains("gpio"))
         XCTAssertTrue(platforms.contains("binary"))
         XCTAssertTrue(platforms.contains("rgb"))
     }
@@ -27,6 +28,14 @@ final class ComponentLibraryTests: XCTestCase {
         XCTAssertEqual(factory.componentType, .sensor)
         XCTAssertTrue(factory.requiredProperties.contains("pin"))
         XCTAssertTrue(factory.requiredProperties.contains("model"))
+    }
+    
+    func testGPIOSensorFactory() throws {
+        let factory = GPIOSensorFactory()
+        
+        XCTAssertEqual(factory.platform, "adc")
+        XCTAssertEqual(factory.componentType, .sensor)
+        XCTAssertTrue(factory.requiredProperties.contains("pin"))
     }
     
     func testGPIOSwitchFactory() throws {
@@ -42,6 +51,24 @@ final class ComponentLibraryTests: XCTestCase {
         
         XCTAssertEqual(factory.platform, "binary")
         XCTAssertEqual(factory.componentType, .light)
+        XCTAssertTrue(factory.requiredProperties.contains("pin"))
+    }
+    
+    func testRGBLightFactory() throws {
+        let factory = RGBLightFactory()
+        
+        XCTAssertEqual(factory.platform, "rgb")
+        XCTAssertEqual(factory.componentType, .light)
+        XCTAssertTrue(factory.requiredProperties.contains("red_pin"))
+        XCTAssertTrue(factory.requiredProperties.contains("green_pin"))
+        XCTAssertTrue(factory.requiredProperties.contains("blue_pin"))
+    }
+    
+    func testGPIOBinarySensorFactory() throws {
+        let factory = GPIOBinarySensorFactory()
+        
+        XCTAssertEqual(factory.platform, "gpio")
+        XCTAssertEqual(factory.componentType, .binarySensor)
         XCTAssertTrue(factory.requiredProperties.contains("pin"))
     }
 }

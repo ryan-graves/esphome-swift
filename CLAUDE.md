@@ -217,26 +217,34 @@ func testDHTSensorValidation() throws {
 
 ### Branching Workflow for AI
 
-When making changes:
+ESPHome Swift uses a Git Flow inspired branching strategy following CONTRIBUTING.md:
 
 1. **Always start from develop**:
    ```bash
    git checkout develop
-   git pull origin develop
+   git pull upstream develop  # or origin develop
    git checkout -b feature/descriptive-name
    ```
 
-2. **Create PR targeting develop** (never main)
+2. **Branch naming conventions**:
+   - `feature/add-i2c-sensor-support`
+   - `fix/dht-timeout-issue`
+   - `docs/update-component-examples`
+   - Use kebab-case (lowercase with hyphens)
 
-3. **Follow conventional commits**:
+3. **Create PR targeting develop** (NEVER main)
+
+4. **Follow conventional commits**:
    - `feat:` for new components/features
    - `fix:` for bug fixes
    - `docs:` for documentation
+   - `refactor:` for code refactoring
    - `test:` for tests
+   - `chore:` for maintenance tasks
 
-4. **Ensure CI passes**:
-   - SwiftLint validation
-   - SwiftFormat checking
+5. **Ensure CI passes**:
+   - SwiftLint validation (macOS only)
+   - SwiftFormat checking (cross-platform)
    - All tests pass
    - Cross-platform builds succeed
 
@@ -277,6 +285,25 @@ swift run esphome-swift validate Examples/basic-sensor.yaml
 - **Swift Package Manager**: https://swift.org/package-manager/
 - **Embedded Swift**: https://github.com/apple/swift-embedded-examples
 
+### Development Philosophy for AI Agents
+
+**Take Time to Do Things Right**: This is a new project with no users yet. Prioritize code quality, architectural cleanliness, and following best practices over speed. This is the foundation that will support the project long-term.
+
+**Key Principles**:
+1. **No Shortcuts**: Don't rush refactoring or take shortcuts that compromise code quality
+2. **Best Practices First**: Always follow Swift Embedded and general Swift best practices
+3. **Type Safety**: Prefer compile-time safety over runtime convenience
+4. **Clean Architecture**: Maintain clear separation of concerns and avoid tight coupling
+5. **Future-Proof**: Design with extensibility and maintainability in mind
+6. **Test-Driven**: Ensure all changes are covered by tests and don't break existing functionality
+
+**When Refactoring**:
+- Complete each architectural change thoroughly before moving to the next
+- Ensure all components work together after each major change
+- Don't leave half-converted code or compatibility layers permanently
+- Fix all compilation errors and test failures before proceeding
+- Document architectural decisions and patterns for future developers
+
 ### Getting Help
 
 When encountering issues:
@@ -284,6 +311,7 @@ When encountering issues:
 2. Review test files for usage examples  
 3. Consult ESP-IDF documentation for hardware specifics
 4. Test with physical ESP32-C6 hardware when possible
+5. **When in doubt, prioritize correctness over speed**
 
 ---
 

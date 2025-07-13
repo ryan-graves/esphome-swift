@@ -192,7 +192,7 @@ To add a new component (e.g., a new sensor type):
 
 Example component implementation:
 ```swift
-public class MyNewSensorFactory: ComponentFactory {
+public struct MyNewSensorFactory: ComponentFactory {
     public let platform = "my_sensor"
     public let componentType = ComponentType.sensor
     public let requiredProperties = ["pin"]

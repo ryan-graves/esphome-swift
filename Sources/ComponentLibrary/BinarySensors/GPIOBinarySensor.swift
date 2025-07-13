@@ -2,46 +2,37 @@ import Foundation
 import ESPHomeSwiftCore
 
 /// GPIO-based binary sensor factory
-public class GPIOBinarySensorFactory: ComponentFactory {
+public struct GPIOBinarySensorFactory: ComponentFactory {
+    public typealias ConfigType = BinarySensorConfig
+    
     public let platform = "gpio"
     public let componentType = ComponentType.binarySensor
     public let requiredProperties = ["pin"]
     public let optionalProperties = ["name", "device_class", "inverted", "filters"]
     
-    public func validate(config: ComponentConfig) throws {
-        guard let sensorConfig = config as? BinarySensorConfig else {
-            throw ComponentValidationError.incompatibleConfiguration(
-                component: platform,
-                reason: "Expected BinarySensorConfig"
-            )
-        }
-        
+    private let pinValidator: PinValidator
+    
+    public init(pinValidator: PinValidator = PinValidator()) {
+        self.pinValidator = pinValidator
+    }
+    
+    public func validate(config: BinarySensorConfig) throws {
         // Validate required pin
-        guard sensorConfig.pin != nil else {
+        guard let pin = config.pin else {
             throw ComponentValidationError.missingRequiredProperty(
                 component: platform,
                 property: "pin"
             )
         }
         
-        // Validate pin is input-capable
-        if let pin = sensorConfig.pin {
-            try validateInputPin(pin)
-        }
+        try pinValidator.validatePin(pin, requirements: .input)
     }
     
-    public func generateCode(config: ComponentConfig, context: CodeGenerationContext) throws -> ComponentCode {
-        guard let sensorConfig = config as? BinarySensorConfig else {
-            throw ComponentValidationError.incompatibleConfiguration(
-                component: platform,
-                reason: "Expected BinarySensorConfig"
-            )
-        }
-        
-        let pinNumber = extractPinNumber(sensorConfig.pin!)
-        let componentId = sensorConfig.id ?? "binary_sensor_\(pinNumber)"
-        let inverted = sensorConfig.inverted ?? false
-        let pullMode = determinePullMode(sensorConfig.pin!)
+    public func generateCode(config: BinarySensorConfig, context: CodeGenerationContext) throws -> ComponentCode {
+        let pinNumber = try pinValidator.extractPinNumber(from: config.pin!)
+        let componentId = config.id ?? "binary_sensor_\(pinNumber)"
+        let inverted = config.inverted ?? false
+        let pullMode = determinePullMode(config.pin!)
         
         let headerIncludes = [
             "#include \"driver/gpio.h\""
@@ -77,7 +68,7 @@ public class GPIOBinarySensorFactory: ComponentFactory {
                     \(componentId)_last_state = \(componentId)_current_state;
                     \(componentId)_last_change = now;
                     
-                    Serial.printf("\(sensorConfig.name ?? componentId): %s\\n", \(componentId)_current_state ? "ON" : "OFF");
+                    printf("\(config.name ?? componentId): %s\\n", \(componentId)_current_state ? "ON" : "OFF");
                     // TODO: Send state via API
                     // TODO: Apply filters if configured
                 }
@@ -91,37 +82,6 @@ public class GPIOBinarySensorFactory: ComponentFactory {
             setupCode: setupCode,
             loopCode: loopCode
         )
-    }
-    
-    private func validateInputPin(_ pin: PinConfig) throws {
-        let pinNum = extractPinNumber(pin)
-        
-        if pinNum < 0 || pinNum > 48 {
-            throw ComponentValidationError.invalidPropertyValue(
-                component: platform,
-                property: "pin",
-                value: String(pinNum),
-                reason: "GPIO pin must be between 0 and 48"
-            )
-        }
-        
-        // All GPIO pins on ESP32-C6 can be used as input
-        // But some pins have special functions we should warn about
-        let specialPins = [0: "Boot button", 9: "Boot mode"]
-        if let specialFunction = specialPins[pinNum] {
-            // In a real implementation, we might log a warning here
-            // For now, we'll allow it but could add validation
-        }
-    }
-    
-    private func extractPinNumber(_ pin: PinConfig) -> Int {
-        switch pin.number {
-        case .integer(let num):
-            return num
-        case .gpio(let gpio):
-            let number = gpio.replacingOccurrences(of: "GPIO", with: "")
-            return Int(number) ?? 0
-        }
     }
     
     private func determinePullMode(_ pin: PinConfig) -> String {
