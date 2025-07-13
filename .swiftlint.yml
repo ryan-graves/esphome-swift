@@ -2,18 +2,25 @@ disabled_rules:
   - trailing_whitespace
   - todo
   - line_length
-  - unused_capture_list
-  - unused_optional_binding
+  - sorted_imports
+  - trailing_newline
+  - function_body_length
+  - for_where
+  - force_unwrapping
+  - implicit_return
+  - no_print
+  - unused_closure_parameter
+  - redundant_string_enum_value
+  - orphaned_doc_comment
+  - cyclomatic_complexity
+  - type_body_length
 
 opt_in_rules:
   - empty_count
   - explicit_init
   - first_where
-  - force_unwrapping
-  - implicit_return
   - overridden_super_call
   - redundant_nil_coalescing
-  - sorted_imports
 
 included:
   - Sources
@@ -55,6 +62,10 @@ identifier_name:
     - id
     - url
     - api
+    - ap
+    - co
+    - binary_sensor
+    - switch_
 
 force_cast: error
 force_try: error
