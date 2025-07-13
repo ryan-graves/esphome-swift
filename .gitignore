@@ -56,6 +56,12 @@ Network Trash Folder
 Temporary Items
 .apdisk
 
+# Editor/IDE specific
+.vscode/
+.idea/
+*.swp
+*.swo
+
 # ESPHome Swift specific
 build/
 *.bin
