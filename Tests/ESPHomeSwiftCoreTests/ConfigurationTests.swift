@@ -51,7 +51,8 @@ final class ConfigurationTests: XCTestCase {
         
         sensor:
           - platform: dht
-            pin: GPIO4
+            pin:
+              number: GPIO4
             model: DHT22
             temperature:
               name: "Living Room Temperature"
@@ -59,7 +60,8 @@ final class ConfigurationTests: XCTestCase {
               name: "Living Room Humidity"
             update_interval: 60s
           - platform: adc
-            pin: GPIO1
+            pin:
+              number: GPIO1
             name: "Battery Voltage"
         """
         
@@ -91,11 +93,13 @@ final class ConfigurationTests: XCTestCase {
         
         switch:
           - platform: gpio
-            pin: GPIO5
+            pin:
+              number: GPIO5
             name: "Relay 1"
             inverted: false
           - platform: gpio
-            pin: GPIO6
+            pin:
+              number: GPIO6
             name: "Relay 2"
             inverted: true
             restore_mode: ALWAYS_ON

@@ -5,7 +5,8 @@
       "Bash(swift build)",
       "Bash(swift run esphome-swift:*)",
       "Bash(git reset:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(swift test)"
     ],
     "deny": []
   }
