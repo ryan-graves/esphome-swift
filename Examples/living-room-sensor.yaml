@@ -1,0 +1,109 @@
+# ESPHome Swift Example Configuration
+# Living Room Environmental Sensor
+
+esphome_swift:
+  name: living_room_sensor
+  friendly_name: "Living Room Sensor"
+  comment: "Temperature, humidity, and motion sensor for living room"
+
+esp32:
+  board: esp32-c6-devkitc-1
+  framework:
+    type: esp-idf
+
+# Enable logging
+logger:
+  level: INFO
+
+# WiFi configuration
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  
+  # Enable fallback hotspot (captive portal) in case WiFi connection fails
+  ap:
+    ssid: "Living Room Sensor Fallback"
+    password: "12345678"
+
+# Enable Home Assistant API
+api:
+  encryption:
+    key: !secret api_encryption_key
+
+# Enable over-the-air updates
+ota:
+  - platform: esphome_swift
+
+# Sensors
+sensor:
+  # DHT22 temperature and humidity sensor
+  - platform: dht
+    pin:
+      number: GPIO4
+    model: DHT22
+    temperature:
+      name: "Living Room Temperature"
+      id: living_room_temperature
+    humidity:
+      name: "Living Room Humidity"
+      id: living_room_humidity
+    update_interval: 60s
+
+  # Light level sensor (photoresistor on ADC)
+  - platform: adc
+    pin:
+      number: GPIO1
+    name: "Living Room Light Level"
+    id: living_room_light
+    update_interval: 30s
+    accuracy: 2
+
+# Binary sensors
+binary_sensor:
+  # PIR motion sensor
+  - platform: gpio
+    pin: 
+      number: GPIO3
+      mode: INPUT_PULLDOWN
+    name: "Living Room Motion"
+    device_class: motion
+    filters:
+      - type: delayed_on
+        duration: 100ms
+      - type: delayed_off
+        duration: 10s
+
+# Switches
+switch:
+  # Control for room fan
+  - platform: gpio
+    pin:
+      number: GPIO5
+    name: "Living Room Fan"
+    id: living_room_fan
+    restore_mode: RESTORE_DEFAULT_OFF
+
+# Lights
+light:
+  # Status LED
+  - platform: binary
+    pin:
+      number: GPIO2
+    name: "Status LED"
+    id: status_led
+
+  # RGB mood lighting
+  - platform: rgb
+    red_pin:
+      number: GPIO6
+    green_pin:
+      number: GPIO7
+    blue_pin:
+      number: GPIO8
+    name: "Living Room Mood Light"
+    id: mood_light
+    effects:
+      - name: "Rainbow"
+        type: rainbow
+      - name: "Color Wipe"
+        type: color_wipe
