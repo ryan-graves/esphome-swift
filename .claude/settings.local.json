@@ -7,7 +7,8 @@
       "Bash(git reset:*)",
       "Bash(git add:*)",
       "Bash(swift test)",
-      "Bash(swiftlint:*)"
+      "Bash(swiftlint:*)",
+      "Bash(swiftformat:*)"
     ],
     "deny": []
   }

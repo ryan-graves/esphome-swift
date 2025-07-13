@@ -1,0 +1,39 @@
+# SwiftFormat configuration file
+# https://github.com/nicklockwood/SwiftFormat/blob/main/Rules.md
+
+# Disable rules that conflict with project style or are too strict for CI
+--disable redundantSelf
+--disable trailingCommas
+--disable wrapMultilineStatementBraces
+--disable fileHeader
+--disable sortImports
+--disable blankLinesAtStartOfScope
+--disable trailingSpace
+--disable linebreakAtEndOfFile
+--disable hoistPatternLet
+--disable enumNamespaces
+--disable redundantReturn
+--disable redundantBackticks
+--disable unusedArguments
+--disable indent
+--disable redundantRawValues
+--disable opaqueGenericParameters
+--disable numberFormatting
+--disable redundantOptionalBinding
+--disable wrap
+--disable andOperator
+
+# Configure indentation
+--indent 4
+--tabwidth 4
+
+# Configure line length
+--maxwidth 120
+
+# Exclude generated and build files
+--exclude .build
+--exclude .swiftpm
+--exclude Package.swift
+
+# Swift version
+--swiftversion 5.9
