@@ -92,7 +92,7 @@ brew install swiftformat
 
 # Linux:
 curl -L https://github.com/nicklockwood/SwiftFormat/releases/latest/download/swiftformat_linux.zip -o swiftformat.zip
-unzip swiftformat.zip && chmod +x swiftformat && sudo mv swiftformat /usr/local/bin/
+unzip swiftformat.zip && chmod +x swiftformat_linux && sudo mv swiftformat_linux /usr/local/bin/swiftformat
 
 # Check formatting
 swiftformat --lint .
