@@ -24,7 +24,7 @@ public struct ESPHomeSwiftCoreVersion {
 }
 
 /// Main entry point for configuration operations
-public final class ESPHomeSwiftCore: @unchecked Sendable {
+public final class ESPHomeSwiftCore {
     public static let shared = ESPHomeSwiftCore()
     
     public let parser: ConfigurationParser

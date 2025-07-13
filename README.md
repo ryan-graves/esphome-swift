@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/ryan-graves/esphome-swift/workflows/CI/badge.svg)](https://github.com/ryan-graves/esphome-swift/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Swift 6.0](https://img.shields.io/badge/Swift-6.0-orange.svg)](https://swift.org/)
+[![Swift 5.9](https://img.shields.io/badge/Swift-5.9+-orange.svg)](https://swift.org/)
 [![ESP-IDF](https://img.shields.io/badge/ESP--IDF-v5.3-blue.svg)](https://github.com/espressif/esp-idf)
 [![Documentation](https://img.shields.io/badge/docs-github.io-blue.svg)](https://ryan-graves.github.io/esphome-swift/)
 

@@ -8,7 +8,7 @@ import ESPHomeSwiftCore
 /// templates.
 
 /// Component registry for managing available components
-public final class ComponentRegistry: @unchecked Sendable {
+public final class ComponentRegistry {
     public static let shared = ComponentRegistry()
     
     private var componentFactories: [String: ComponentFactory] = [:]

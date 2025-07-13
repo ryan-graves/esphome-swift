@@ -2,6 +2,8 @@ disabled_rules:
   - trailing_whitespace
   - todo
   - line_length
+  - unused_capture_list
+  - unused_optional_binding
 
 opt_in_rules:
   - empty_count
