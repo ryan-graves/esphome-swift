@@ -22,11 +22,71 @@ public protocol BoardConstraints {
 /// ESP32-C6 specific hardware constraints
 @frozen
 public struct ESP32C6Constraints: BoardConstraints {
-    public let availableGPIOPins: Set<Int> = Set(0...30)
+    public let availableGPIOPins: Set<Int> = Set(0 ... 30)
     public let inputOnlyPins: Set<Int> = [18, 19]
-    public let outputCapablePins: Set<Int> = Set([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30])
-    public let pwmCapablePins: Set<Int> = Set([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30])
-    public let adcCapablePins: Set<Int> = Set(0...7) // ADC1 only
+    public let outputCapablePins: Set<Int> = Set([
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30
+    ])
+    public let pwmCapablePins: Set<Int> = Set([
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30
+    ])
+    public let adcCapablePins: Set<Int> = Set(0 ... 7) // ADC1 only
     public let i2cDefaultSDA: Int = 5
     public let i2cDefaultSCL: Int = 6
     public let spiDefaultMOSI: Int = 7
@@ -202,13 +262,25 @@ public struct PinValidator {
         return availablePins
     }
     
-    /// Get board-specific default pins for common interfaces
-    public func getDefaultPins() -> (sda: Int, scl: Int, mosi: Int, miso: Int, clk: Int, cs: Int) {
+    /// Get board-specific default pins for I2C interface
+    public func getDefaultI2CPins() -> (sda: Int, scl: Int) {
         return (
             sda: boardConstraints.i2cDefaultSDA,
-            scl: boardConstraints.i2cDefaultSCL,
+            scl: boardConstraints.i2cDefaultSCL
+        )
+    }
+    
+    /// Get board-specific default SPI data pins  
+    public func getDefaultSPIDataPins() -> (mosi: Int, miso: Int) {
+        return (
             mosi: boardConstraints.spiDefaultMOSI,
-            miso: boardConstraints.spiDefaultMISO,
+            miso: boardConstraints.spiDefaultMISO
+        )
+    }
+    
+    /// Get board-specific default SPI control pins
+    public func getDefaultSPIControlPins() -> (clk: Int, cs: Int) {
+        return (
             clk: boardConstraints.spiDefaultCLK,
             cs: boardConstraints.spiDefaultCS
         )

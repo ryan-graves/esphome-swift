@@ -13,7 +13,7 @@ final class ComponentLibraryTests: XCTestCase {
         let registry = ComponentRegistry.shared
         let platforms = registry.availablePlatforms
         
-        // Converted factories
+        // Available component platforms
         XCTAssertTrue(platforms.contains("dht"))
         XCTAssertTrue(platforms.contains("adc"))
         XCTAssertTrue(platforms.contains("gpio"))

@@ -5,7 +5,7 @@ import ESPHomeSwiftCore
 public struct GPIOBinarySensorFactory: ComponentFactory {
     public typealias ConfigType = BinarySensorConfig
     
-    public let platform = "gpio_binary"  // Unique platform name to avoid conflicts
+    public let platform = "gpio_binary" // Unique platform name to avoid conflicts
     public let componentType = ComponentType.binarySensor
     public let requiredProperties = ["pin"]
     public let optionalProperties = ["name", "device_class", "inverted", "filters"]
