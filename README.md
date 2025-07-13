@@ -1,5 +1,11 @@
 # ESPHome Swift
 
+[![CI](https://github.com/ryan-graves/esphome-swift/workflows/CI/badge.svg)](https://github.com/ryan-graves/esphome-swift/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Swift 6.0](https://img.shields.io/badge/Swift-6.0-orange.svg)](https://swift.org/)
+[![ESP-IDF](https://img.shields.io/badge/ESP--IDF-v5.3-blue.svg)](https://github.com/espressif/esp-idf)
+[![Documentation](https://img.shields.io/badge/docs-github.io-blue.svg)](https://ryan-graves.github.io/esphome-swift/)
+
 A Swift-based replacement for ESPHome that generates Embedded Swift firmware for ESP32 microcontrollers from declarative YAML configuration files.
 
 ## Project Overview
@@ -81,9 +87,39 @@ ESPHomeSwift/
 - macOS or Linux development environment
 - ESP32-C3/C6/H2/P4 development board
 
-## Getting Started
+## Quick Start
 
-*Coming soon - CLI installation and first project setup*
+### Installation
+
+#### From Source
+```bash
+git clone https://github.com/ryan-graves/esphome-swift.git
+cd esphome-swift
+swift build -c release
+sudo cp .build/release/esphome-swift /usr/local/bin/
+```
+
+### Create Your First Project
+
+```bash
+# Create a new project
+esphome-swift new my-sensor
+
+# Edit configuration (see documentation for details)
+cd my-sensor
+
+# Build and flash
+esphome-swift build my-sensor.yaml
+esphome-swift flash my-sensor
+```
+
+## Documentation
+
+📚 **[Complete Documentation](https://ryan-graves.github.io/esphome-swift/)**
+
+- [Getting Started Guide](https://ryan-graves.github.io/esphome-swift/getting-started.html)
+- [Configuration Reference](https://ryan-graves.github.io/esphome-swift/configuration.html)  
+- [Component Library](https://ryan-graves.github.io/esphome-swift/components.html)
 
 ## Example Configuration
 
@@ -123,10 +159,21 @@ switch:
     name: "Living Room Light"
 ```
 
-## License
-
-MIT License - see LICENSE file for details.
-
 ## Contributing
 
-Contributions welcome! Please read CONTRIBUTING.md for guidelines.
+We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details on:
+
+- 🐛 [Reporting bugs](CONTRIBUTING.md#reporting-bugs)
+- 💡 [Suggesting enhancements](CONTRIBUTING.md#suggesting-enhancements) 
+- 🔧 [Adding new components](CONTRIBUTING.md#adding-new-components)
+- 📖 [Improving documentation](CONTRIBUTING.md#documentation)
+
+## Community
+
+- 💬 [GitHub Discussions](https://github.com/ryan-graves/esphome-swift/discussions) - Ask questions and share ideas
+- 🐛 [Issue Tracker](https://github.com/ryan-graves/esphome-swift/issues) - Report bugs and request features
+- 📖 [Documentation](https://ryan-graves.github.io/esphome-swift/) - Complete guides and references
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
