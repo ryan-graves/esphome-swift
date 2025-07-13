@@ -211,14 +211,14 @@ Connect your ESP32 board via USB, then:
 ls /dev/tty.*  # macOS
 ls /dev/ttyUSB*  # Linux
 
-# Flash the firmware
-esphome-swift flash living-room-sensor --port /dev/ttyUSB0
+# Flash the firmware (provide path to built project)
+esphome-swift flash build/living-room-sensor --port /dev/ttyUSB0
 ```
 
 ### 7. Monitor Output
 
 ```bash
-esphome-swift monitor living-room-sensor --port /dev/ttyUSB0
+esphome-swift monitor build/living-room-sensor --port /dev/ttyUSB0
 ```
 
 You should see:

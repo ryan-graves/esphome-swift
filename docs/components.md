@@ -18,18 +18,13 @@ The DHT component supports DHT11, DHT22, and AM2302 temperature and humidity sen
 ```yaml
 sensor:
   - platform: dht
-    pin: GPIO4
+    pin:
+      number: GPIO4
     model: DHT22              # DHT11, DHT22, or AM2302
     temperature:
       name: "Room Temperature"
-      unit_of_measurement: "°C"
-      accuracy_decimals: 1
-      filters:
-        - offset: -0.5        # Calibration offset
     humidity:
       name: "Room Humidity"
-      unit_of_measurement: "%"
-      accuracy_decimals: 0
     update_interval: 60s      # How often to read
 ```
 
@@ -51,16 +46,11 @@ Read analog voltages using the ESP32's built-in ADC.
 ```yaml
 sensor:
   - platform: adc
-    pin: GPIO1               # ADC pins: GPIO0-7 on ESP32-C6
+    pin:
+      number: GPIO1          # ADC pins: GPIO0-7 on ESP32-C6
     name: "Battery Voltage"
     update_interval: 30s
-    unit_of_measurement: "V"
-    accuracy_decimals: 2
-    filters:
-      - multiply: 3.3        # Convert to voltage (0-3.3V)
-      - calibrate_linear:    # Two-point calibration
-          - 0.0 -> 0.0
-          - 3.3 -> 3.27
+    # Note: Advanced filtering is planned for future releases
 ```
 
 **ESP32-C6 ADC Pins:**
@@ -85,15 +75,12 @@ Control digital outputs like relays, LEDs, or other devices.
 ```yaml
 switch:
   - platform: gpio
-    pin: GPIO5
+    pin:
+      number: GPIO5
     name: "Relay Control"
-    id: relay1
     inverted: false          # true = active low
     restore_mode: RESTORE_DEFAULT_OFF
-    on_turn_on:
-      - logger.log: "Relay turned on"
-    on_turn_off:
-      - logger.log: "Relay turned off"
+    # Note: Automation actions are planned for future releases
 ```
 
 **Restore Modes:**
@@ -119,17 +106,10 @@ Simple on/off light control.
 ```yaml
 light:
   - platform: binary
-    pin: GPIO2
+    pin:
+      number: GPIO2
     name: "Status LED"
-    id: status_led
-    effects:
-      - strobe:
-          name: "Alarm"
-          colors:
-            - state: true
-              duration: 500ms
-            - state: false
-              duration: 500ms
+    # Note: Light effects are planned for future releases
 ```
 
 ### RGB Light
@@ -139,36 +119,28 @@ Full color control with red, green, and blue channels.
 ```yaml
 light:
   - platform: rgb
-    red_pin: GPIO6
-    green_pin: GPIO7
-    blue_pin: GPIO8
+    red_pin:
+      number: GPIO6
+    green_pin:
+      number: GPIO7
+    blue_pin:
+      number: GPIO8
     name: "RGB Strip"
-    effects:
-      - random:
-          name: "Random Colors"
-          transition_length: 5s
-          update_interval: 7s
-      - strobe:
-          name: "Police"
-          colors:
-            - red: 100%
-              green: 0%
-              blue: 0%
-              duration: 300ms
-            - red: 0%
-              green: 0%
-              blue: 100%
-              duration: 300ms
+    # Note: Light effects are planned for future releases
 ```
 
 **RGBW Light (with white channel):**
 ```yaml
 light:
   - platform: rgb
-    red_pin: GPIO6
-    green_pin: GPIO7
-    blue_pin: GPIO8
-    white_pin: GPIO9
+    red_pin:
+      number: GPIO6
+    green_pin:
+      number: GPIO7
+    blue_pin:
+      number: GPIO8
+    white_pin:
+      number: GPIO9
     name: "RGBW Strip"
 ```
 
@@ -194,23 +166,7 @@ binary_sensor:
       inverted: true         # true for active-low
     name: "Push Button"
     device_class: button
-    filters:
-      - delayed_on: 50ms     # Debounce
-      - delayed_off: 50ms
-    on_press:
-      - logger.log: "Button pressed"
-    on_release:
-      - logger.log: "Button released"
-    on_click:
-      min_length: 50ms
-      max_length: 500ms
-      then:
-        - logger.log: "Single click"
-    on_double_click:
-      min_length: 50ms
-      max_length: 500ms
-      then:
-        - logger.log: "Double click"
+    # Note: Advanced filtering and automation actions are planned for future releases
 ```
 
 **Common Device Classes:**
@@ -220,67 +176,24 @@ binary_sensor:
 - `window` - Window sensor
 - `presence` - Presence detection
 
-## Advanced Component Features
+## Planned Advanced Features
 
-### Component Actions
+> **Note**: The following features are planned for future releases:
 
-Components can trigger actions on state changes:
+### Component Actions & Automations
+- Trigger actions on component state changes
+- On-device automation rules
+- Conditional logic and delays
 
-```yaml
-binary_sensor:
-  - platform: gpio
-    # ... configuration ...
-    on_press:
-      - switch.turn_on: relay1
-      - delay: 5s
-      - switch.turn_off: relay1
-```
+### Advanced Filtering
+- Sensor value processing and smoothing
+- Custom mathematical operations
+- Multi-point calibration
 
-### Filters
-
-Process sensor values before sending:
-
-```yaml
-sensor:
-  - platform: adc
-    # ... configuration ...
-    filters:
-      # Remove noise
-      - sliding_window_moving_average:
-          window_size: 15
-          send_every: 5
-      
-      # Calibration
-      - calibrate_linear:
-          - 0.0 -> 0.0
-          - 100.0 -> 95.5
-      
-      # Custom processing
-      - lambda: |-
-          if (x > 30) {
-            return x * 1.05;
-          } else {
-            return x;
-          }
-```
-
-### Automations
-
-Create on-device automations:
-
-```yaml
-binary_sensor:
-  - platform: gpio
-    pin: GPIO3
-    name: "Motion Sensor"
-    on_press:
-      then:
-        - light.turn_on: 
-            id: hallway_light
-            brightness: 100%
-        - delay: 5min
-        - light.turn_off: hallway_light
-```
+### Light Effects
+- Built-in patterns (rainbow, strobe, fade)
+- Custom effect sequences
+- Synchronized multi-light control
 
 ## Creating Custom Components
 

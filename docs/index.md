@@ -20,18 +20,12 @@ A Swift-based replacement for ESPHome that generates Embedded Swift firmware for
 
 ### Installation
 
-#### Homebrew (coming soon)
-```bash
-brew tap ryan-graves/esphome-swift
-brew install esphome-swift
-```
-
 #### From Source
 ```bash
 git clone https://github.com/ryan-graves/esphome-swift.git
 cd esphome-swift
 swift build -c release
-cp .build/release/esphome-swift /usr/local/bin/
+sudo cp .build/release/esphome-swift /usr/local/bin/
 ```
 
 ### Create Your First Project
@@ -68,8 +62,9 @@ sensor:
 
 3. Build and flash:
 ```bash
-esphome-swift build my-sensor/my-sensor.yaml
-esphome-swift flash my-sensor
+cd my-sensor
+esphome-swift build my-sensor.yaml
+esphome-swift flash build/my-sensor
 ```
 
 ## Documentation
@@ -85,18 +80,22 @@ esphome-swift flash my-sensor
 ### Sensors
 - **DHT** - Temperature and humidity (DHT11, DHT22, AM2302)
 - **ADC** - Analog input readings
-- **GPIO** - Binary sensor input
 
-### Outputs
+### Binary Sensors
+- **GPIO Binary Sensor** - Digital input with debouncing
+
+### Switches
 - **GPIO Switch** - Digital output control
+
+### Lights
 - **Binary Light** - Simple on/off lighting
 - **RGB Light** - Full color LED control
 
 ### Coming Soon
 - I2C sensors (BME280, BMP280, etc.)
 - SPI devices
-- PWM outputs
-- Servo control
+- Climate control
+- Covers and fans
 - Display support
 
 ## Example Projects
@@ -105,36 +104,37 @@ esphome-swift flash my-sensor
 ```yaml
 sensor:
   - platform: dht
-    pin: GPIO4
+    pin:
+      number: GPIO4
     model: DHT22
     temperature:
       name: "Room Temperature"
-      filters:
-        - offset: -0.5
     humidity:
       name: "Room Humidity"
+    update_interval: 60s
 ```
 
 ### Smart Switch
 ```yaml
 switch:
   - platform: gpio
-    pin: GPIO5
+    pin:
+      number: GPIO5
     name: "Living Room Light"
-    restore_mode: RESTORE_DEFAULT_OFF
+    restore_mode: ALWAYS_OFF
 ```
 
 ### RGB Mood Light
 ```yaml
 light:
   - platform: rgb
-    red_pin: GPIO6
-    green_pin: GPIO7
-    blue_pin: GPIO8
+    red_pin:
+      number: GPIO6
+    green_pin:
+      number: GPIO7
+    blue_pin:
+      number: GPIO8
     name: "Mood Light"
-    effects:
-      - name: "Rainbow"
-        type: rainbow
 ```
 
 ## License

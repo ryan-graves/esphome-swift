@@ -137,13 +137,8 @@ sensor:
     model: DHT22            # Required: DHT11/DHT22/AM2302
     temperature:
       name: "Temperature"
-      id: temp_sensor       # Optional: Internal ID
-      filters:              # Optional: Value filters
-        - offset: -0.5
-        - multiply: 1.0
     humidity:
       name: "Humidity"
-      id: humid_sensor
     update_interval: 60s    # Optional: Read interval
 ```
 
@@ -156,12 +151,7 @@ sensor:
       number: GPIO1         # Required: ADC pin (0-7)
     name: "Battery Level"
     update_interval: 30s
-    accuracy: 12           # Optional: Bit resolution
-    filters:
-      - multiply: 3.3      # Convert to voltage
-      - calibrate_linear:
-          - 0.0 -> 0.0
-          - 3.3 -> 100.0
+    # Note: Advanced filtering is planned for future releases
 ```
 
 ### Switches
@@ -215,11 +205,7 @@ light:
     white_pin:            # Optional: White channel
       number: GPIO9
     name: "RGB Light"
-    effects:              # Optional: Light effects
-      - name: "Rainbow"
-        type: rainbow
-      - name: "Color Wipe"
-        type: color_wipe
+    # Note: Light effects are planned for future releases
 ```
 
 ### Binary Sensors
@@ -235,11 +221,7 @@ binary_sensor:
       inverted: true      # Optional: Invert logic
     name: "Button"
     device_class: button  # Optional: HA device class
-    filters:
-      - type: delayed_on
-        duration: 50ms    # Debounce delay
-      - type: delayed_off
-        duration: 50ms
+    # Note: Advanced filtering is planned for future releases
 ```
 
 **Device Classes:**
@@ -279,35 +261,7 @@ pin:
 
 ## Filters
 
-### Sensor Filters
-
-```yaml
-filters:
-  - offset: 1.5          # Add constant
-  - multiply: 2.0        # Multiply by constant
-  - calibrate_linear:    # Linear calibration
-      - 0.0 -> 0.0
-      - 100.0 -> 95.5
-  - sliding_window_moving_average:
-      window_size: 15
-      send_every: 5
-  - exponential_moving_average:
-      alpha: 0.1
-      send_every: 5
-  - lambda: return x * 2 + 1;  # Custom calculation
-```
-
-### Binary Sensor Filters
-
-```yaml
-filters:
-  - invert               # Invert state
-  - delayed_on: 100ms    # Delay ON state
-  - delayed_off: 100ms   # Delay OFF state
-  - delayed_on_off:      # Delay both
-      on: 100ms
-      off: 200ms
-```
+> **Note**: Advanced filtering capabilities are planned for future releases. Basic sensor reading and binary sensor input are currently supported.
 
 ## Secrets Management
 
@@ -399,6 +353,5 @@ binary_sensor:
       mode: INPUT_PULLUP
       inverted: true
     name: "Light Button"
-    on_press:
-      - switch.toggle: light_switch
+    # Note: Automation actions like on_press are planned for future releases
 ```
