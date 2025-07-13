@@ -11,7 +11,7 @@ import ESPHomeSwiftCore
 public final class ComponentRegistry {
     public static let shared = ComponentRegistry()
     
-    private var componentFactories: [String: ComponentFactory] = [:]
+    private var componentFactories: [String: AnyComponentFactory] = [:]
     
     private init() {
         registerBuiltInComponents()
@@ -19,11 +19,11 @@ public final class ComponentRegistry {
     
     /// Register a component factory
     public func register<T: ComponentFactory>(_ factory: T) {
-        componentFactories[factory.platform] = factory
+        componentFactories[factory.platform] = AnyComponentFactory(factory)
     }
     
     /// Get component factory for platform
-    public func factory(for platform: String) -> ComponentFactory? {
+    public func factory(for platform: String) -> AnyComponentFactory? {
         return componentFactories[platform]
     }
     
@@ -50,15 +50,77 @@ public final class ComponentRegistry {
     }
 }
 
-/// Base protocol for component factories
+/// Type-safe protocol for component factories
 public protocol ComponentFactory {
+    /// Associated type that defines the specific configuration this factory accepts
+    associatedtype ConfigType: ComponentConfig
+    
+    /// Platform identifier (e.g., "dht", "gpio")
     var platform: String { get }
+    
+    /// Component type classification
     var componentType: ComponentType { get }
+    
+    /// Required configuration properties
     var requiredProperties: [String] { get }
+    
+    /// Optional configuration properties  
     var optionalProperties: [String] { get }
     
-    func validate(config: ComponentConfig) throws
-    func generateCode(config: ComponentConfig, context: CodeGenerationContext) throws -> ComponentCode
+    /// Validate configuration with compile-time type safety
+    func validate(config: ConfigType) throws
+    
+    /// Generate code with compile-time type safety
+    func generateCode(config: ConfigType, context: CodeGenerationContext) throws -> ComponentCode
+}
+
+/// Type-erased wrapper for ComponentFactory storage in collections
+public struct AnyComponentFactory {
+    public let platform: String
+    public let componentType: ComponentType
+    public let requiredProperties: [String]
+    public let optionalProperties: [String]
+    
+    private let _validate: (ComponentConfig) throws -> Void
+    private let _generateCode: (ComponentConfig, CodeGenerationContext) throws -> ComponentCode
+    
+    /// Initialize with a type-safe factory
+    public init<T: ComponentFactory>(_ factory: T) {
+        // Store properties
+        self.platform = factory.platform
+        self.componentType = factory.componentType
+        self.requiredProperties = factory.requiredProperties
+        self.optionalProperties = factory.optionalProperties
+        
+        // Create type-safe closures
+        self._validate = { config in
+            guard let typedConfig = config as? T.ConfigType else {
+                throw ComponentValidationError.incompatibleConfiguration(
+                    component: factory.platform,
+                    reason: "Expected \(T.ConfigType.self) but got \(type(of: config))"
+                )
+            }
+            try factory.validate(config: typedConfig)
+        }
+        
+        self._generateCode = { config, context in
+            guard let typedConfig = config as? T.ConfigType else {
+                throw ComponentValidationError.incompatibleConfiguration(
+                    component: factory.platform,
+                    reason: "Expected \(T.ConfigType.self) but got \(type(of: config))"
+                )
+            }
+            return try factory.generateCode(config: typedConfig, context: context)
+        }
+    }
+    
+    public func validate(config: ComponentConfig) throws {
+        try _validate(config)
+    }
+    
+    public func generateCode(config: ComponentConfig, context: CodeGenerationContext) throws -> ComponentCode {
+        return try _generateCode(config, context)
+    }
 }
 
 /// Component types
