@@ -181,6 +181,28 @@ We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) f
 - 🔧 [Adding new components](CONTRIBUTING.md#adding-new-components)
 - 📖 [Improving documentation](CONTRIBUTING.md#documentation)
 
+### Development Workflow
+
+ESPHome Swift follows a Git Flow inspired branching strategy:
+
+- **`main`** - Production-ready code (protected)
+- **`develop`** - Integration branch for new features
+- **`feature/`** - New features and enhancements
+- **`fix/`** - Bug fixes and improvements
+- **`docs/`** - Documentation updates
+
+**Quick Start:**
+```bash
+# Start a new feature
+git checkout develop
+git pull origin develop
+git checkout -b feature/your-feature-name
+
+# After development, create PR targeting 'develop' branch
+```
+
+For complete branching guidelines, see [CONTRIBUTING.md](CONTRIBUTING.md).
+
 ## Community
 
 - 💬 [GitHub Discussions](https://github.com/ryan-graves/esphome-swift/discussions) - Ask questions and share ideas

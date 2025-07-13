@@ -50,26 +50,90 @@ Enhancement suggestions are tracked as GitHub issues. When creating an enhanceme
 
 ### Getting Started
 
-1. Clone your fork:
+1. Fork and clone the repository:
 ```bash
 git clone git@github.com:YOUR_USERNAME/esphome-swift.git
 cd esphome-swift
 ```
 
-2. Build the project:
+2. Set up upstream remote:
+```bash
+git remote add upstream git@github.com:ryan-graves/esphome-swift.git
+```
+
+3. Create and switch to develop branch:
+```bash
+git checkout -b develop origin/develop
+```
+
+4. Build the project:
 ```bash
 swift build
 ```
 
-3. Run tests:
+5. Run tests:
 ```bash
 swift test
 ```
 
-4. Run the CLI:
+6. Run the CLI:
 ```bash
 swift run esphome-swift --help
 ```
+
+### Branch Workflow
+
+ESPHome Swift uses a Git Flow inspired branching strategy. **All contributions must follow this workflow:**
+
+#### **For Features and Enhancements**
+
+1. **Start from develop:**
+```bash
+git checkout develop
+git pull upstream develop
+git checkout -b feature/your-feature-description
+```
+
+2. **Make your changes and commit:**
+```bash
+git add .
+git commit -m "feat: add your feature description"
+```
+
+3. **Push and create PR:**
+```bash
+git push origin feature/your-feature-description
+# Create PR targeting 'develop' branch (NOT main)
+```
+
+#### **For Bug Fixes**
+
+```bash
+git checkout develop
+git pull upstream develop
+git checkout -b fix/bug-description
+# Make changes, commit, push, and create PR to 'develop'
+```
+
+#### **For Documentation**
+
+```bash
+git checkout develop
+git pull upstream develop
+git checkout -b docs/documentation-update
+# Make changes, commit, push, and create PR to 'develop'
+```
+
+#### **Branch Naming Convention**
+
+- `feature/add-i2c-sensor-support`
+- `fix/dht-timeout-issue`
+- `docs/update-component-examples`
+- Use kebab-case (lowercase with hyphens)
+- Be descriptive but concise
+
+**❌ Never create PRs directly to `main` branch**
+**✅ Always target `develop` branch for contributions**
 
 ### Code Quality Tools
 
@@ -170,6 +234,10 @@ Manual style guidelines:
 - Follow Swift API Design Guidelines
 
 **Before submitting a PR**: Run both `swiftlint` (on macOS) and `swiftformat --lint .` to ensure your code passes CI checks.
+
+## Branching and Workflow Details
+
+The branch workflow described above covers the essential contribution process. For maintainers and advanced contributors, additional workflow details are documented separately.
 
 ## Commit Messages
 
