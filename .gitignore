@@ -62,6 +62,9 @@ Temporary Items
 *.swp
 *.swo
 
+# Claude Code local settings
+.claude/settings.local.json
+
 # ESPHome Swift specific
 build/
 *.bin
