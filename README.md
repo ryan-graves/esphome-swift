@@ -65,7 +65,8 @@ ESPHomeSwift/
 - [x] WiFi and API integration framework
 - [x] OTA update system support
 - [x] Web dashboard foundation (monitoring interface)
-- [x] GitHub Actions CI/CD with automated testing
+- [x] GitHub Actions CI/CD with cross-platform testing (macOS, Linux)
+- [x] SwiftLint and SwiftFormat code quality tools
 - [x] Documentation site with GitHub Pages
 
 ### 🚧 Phase 3: Advanced Features - IN PROGRESS
@@ -96,7 +97,7 @@ ESPHomeSwift/
 
 - **Swift 5.9+** (Swift 6.0+ recommended for Embedded Swift)
 - **ESP-IDF v5.3+** for firmware compilation
-- **macOS or Linux** development environment
+- **macOS, Linux, or Windows** development environment (full cross-platform support)
 - **ESP32-C3/C6/H2/P4** development board (RISC-V architecture)
 
 ## Quick Start

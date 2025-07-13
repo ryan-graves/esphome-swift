@@ -44,9 +44,9 @@ Enhancement suggestions are tracked as GitHub issues. When creating an enhanceme
 
 ### Prerequisites
 
-- Swift 6.0+
+- Swift 5.9+ (Swift 6.0+ recommended)
 - ESP-IDF v5.3+ (for testing firmware generation)
-- macOS or Linux development environment
+- macOS, Linux, or Windows development environment (full cross-platform support)
 
 ### Getting Started
 
@@ -69,6 +69,36 @@ swift test
 4. Run the CLI:
 ```bash
 swift run esphome-swift --help
+```
+
+### Code Quality Tools
+
+The project uses code quality tools to maintain consistent style:
+
+#### SwiftLint (macOS only)
+```bash
+# Install SwiftLint
+brew install swiftlint
+
+# Run SwiftLint
+swiftlint
+```
+
+#### SwiftFormat (Cross-platform)
+```bash
+# Install SwiftFormat
+# macOS:
+brew install swiftformat
+
+# Linux:
+curl -L https://github.com/nicklockwood/SwiftFormat/releases/latest/download/swiftformat_linux.zip -o swiftformat.zip
+unzip swiftformat.zip && chmod +x swiftformat && sudo mv swiftformat /usr/local/bin/
+
+# Check formatting
+swiftformat --lint .
+
+# Auto-fix formatting
+swiftformat .
 ```
 
 ## Project Structure
@@ -127,11 +157,19 @@ swift test --filter ESPHomeSwiftCoreTests
 
 ## Coding Style
 
+The project uses automated code quality tools to enforce consistent style:
+
+- **SwiftLint**: Enforces Swift best practices and style guidelines (macOS only)
+- **SwiftFormat**: Handles code formatting automatically (cross-platform)
+
+Manual style guidelines:
 - Use Swift's naming conventions (camelCase for variables, PascalCase for types)
 - Keep functions focused and small
 - Document public APIs with comments
 - Use meaningful variable names
 - Follow Swift API Design Guidelines
+
+**Before submitting a PR**: Run both `swiftlint` (on macOS) and `swiftformat --lint .` to ensure your code passes CI checks.
 
 ## Commit Messages
 

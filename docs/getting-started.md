@@ -11,8 +11,8 @@ This guide will walk you through setting up ESPHome Swift and creating your firs
 
 Before you begin, ensure you have:
 
-- **macOS** or **Linux** development environment
-- **Swift 6.0+** installed
+- **macOS, Linux, or Windows** development environment (full cross-platform support)
+- **Swift 5.9+** installed (Swift 6.0+ recommended)
 - **ESP-IDF v5.3+** for building firmware
 - An **ESP32-C3/C6/H2/P4** development board
 - USB cable for flashing
@@ -85,6 +85,20 @@ git clone -b v5.3 --recursive https://github.com/espressif/esp-idf.git
 cd esp-idf
 ./install.sh esp32c3,esp32c6,esp32h2
 . ./export.sh
+```
+
+### Windows
+
+For Windows development, we recommend using WSL2 (Windows Subsystem for Linux) or Docker:
+
+#### Option 1: WSL2
+1. Install WSL2 with Ubuntu
+2. Follow the Linux instructions above within WSL2
+
+#### Option 2: Docker
+```bash
+# Use official ESP-IDF Docker image
+docker run --rm -v ${PWD}:/project -w /project espressif/idf:v5.3 idf.py build
 ```
 
 ## Your First Project
