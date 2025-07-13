@@ -159,7 +159,7 @@ Read digital inputs from switches, buttons, or digital sensors.
 
 ```yaml
 binary_sensor:
-  - platform: gpio_binary
+  - platform: gpio
     pin:
       number: GPIO3
       mode: INPUT_PULLUP
