@@ -1,0 +1,133 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g., v1.0.0)'
+        required: true
+        type: string
+
+env:
+  SWIFT_VERSION: '6.0'
+
+jobs:
+  create-release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+      version: ${{ steps.get_version.outputs.version }}
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    
+    - name: Get Version
+      id: get_version
+      run: |
+        if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+          VERSION="${{ github.event.inputs.version }}"
+        else
+          VERSION=${GITHUB_REF#refs/tags/}
+        fi
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+    
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ steps.get_version.outputs.version }}
+        release_name: ESPHome Swift ${{ steps.get_version.outputs.version }}
+        draft: false
+        prerelease: false
+        body: |
+          ## What's Changed
+          
+          **Full Changelog**: https://github.com/${{ github.repository }}/compare/....${{ steps.get_version.outputs.version }}
+
+  build-binaries:
+    name: Build Binaries
+    needs: create-release
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: macos-latest
+            platform: macOS
+            arch: universal
+          - os: ubuntu-latest
+            platform: Linux
+            arch: x86_64
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    
+    - name: Setup Swift
+      uses: swift-actions/setup-swift@v2
+      with:
+        swift-version: ${{ env.SWIFT_VERSION }}
+    
+    - name: Build Release Binary
+      run: |
+        swift build -c release --arch arm64 --arch x86_64 || swift build -c release
+        cp .build/release/esphome-swift ./esphome-swift-${{ matrix.platform }}-${{ matrix.arch }}
+    
+    - name: Create Archive
+      run: |
+        tar czf esphome-swift-${{ needs.create-release.outputs.version }}-${{ matrix.platform }}-${{ matrix.arch }}.tar.gz \
+          esphome-swift-${{ matrix.platform }}-${{ matrix.arch }} \
+          README.md \
+          LICENSE
+    
+    - name: Upload Release Asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ needs.create-release.outputs.upload_url }}
+        asset_path: ./esphome-swift-${{ needs.create-release.outputs.version }}-${{ matrix.platform }}-${{ matrix.arch }}.tar.gz
+        asset_name: esphome-swift-${{ needs.create-release.outputs.version }}-${{ matrix.platform }}-${{ matrix.arch }}.tar.gz
+        asset_content_type: application/gzip
+
+  publish-homebrew:
+    name: Update Homebrew Formula
+    needs: [create-release, build-binaries]
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    
+    - name: Create Homebrew Formula
+      run: |
+        mkdir -p Formula
+        cat > Formula/esphome-swift.rb << EOF
+        class EsphomeSwift < Formula
+          desc "Swift-based firmware generator for ESP32 microcontrollers"
+          homepage "https://github.com/${{ github.repository }}"
+          version "${{ needs.create-release.outputs.version }}"
+          
+          on_macos do
+            url "https://github.com/${{ github.repository }}/releases/download/${{ needs.create-release.outputs.version }}/esphome-swift-${{ needs.create-release.outputs.version }}-macOS-universal.tar.gz"
+            sha256 "PLACEHOLDER_SHA256"
+          end
+          
+          on_linux do
+            url "https://github.com/${{ github.repository }}/releases/download/${{ needs.create-release.outputs.version }}/esphome-swift-${{ needs.create-release.outputs.version }}-Linux-x86_64.tar.gz"
+            sha256 "PLACEHOLDER_SHA256"
+          end
+          
+          def install
+            bin.install "esphome-swift-#{OS.kernel_name}-#{Hardware::CPU.arch}"
+          end
+          
+          test do
+            system "#{bin}/esphome-swift", "--version"
+          end
+        end
+        EOF

@@ -1,0 +1,5 @@
+theme: jekyll-theme-cayman
+title: ESPHome Swift
+description: Swift-based firmware generator for ESP32 microcontrollers
+show_downloads: true
+google_analytics:
