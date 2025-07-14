@@ -37,7 +37,7 @@ ota:
 # Matter configuration
 matter:
   enabled: true
-  device_type: dimmable_color_light
+  device_type: extended_color_light
   vendor_id: 0xFFF1  # Test vendor ID
   product_id: 0x8000
   
