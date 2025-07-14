@@ -1,0 +1,102 @@
+# ESPHome Swift Matter Thread Switch Example
+# Smart switch using Thread networking for Matter
+
+esphome_swift:
+  name: matter_thread_switch
+  friendly_name: "Matter Thread Switch"
+  comment: "Smart switch with Thread networking support"
+
+esp32:
+  board: esp32-c6-devkitc-1  # ESP32-C6 supports Thread
+  framework:
+    type: esp-idf
+
+# Enable logging
+logger:
+  level: DEBUG  # More verbose for Thread debugging
+
+# WiFi configuration as backup
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  
+  ap:
+    ssid: "Thread Switch Fallback"
+    password: "12345678"
+
+# Enable Home Assistant API
+api:
+  encryption:
+    key: !secret api_encryption_key
+
+# Enable over-the-air updates
+ota:
+  - platform: esphome_swift
+
+# Matter configuration with Thread support
+matter:
+  enabled: true
+  device_type: on_off_switch
+  vendor_id: 0xFFF1
+  product_id: 0x8002
+  
+  # Commissioning configuration
+  commissioning:
+    discriminator: 3842
+    passcode: 20202023
+  
+  # Thread network configuration
+  thread:
+    enabled: true
+    network_name: "Home Thread Network"
+    channel: 15
+    pan_id: 0x1234
+    # Network key and extended PAN ID would typically be set via commissioning
+    # or provided as secrets for existing Thread networks
+  
+  # Use Thread as primary transport with WiFi fallback
+  network:
+    transport: thread
+    ipv6_enabled: true
+    mdns:
+      enabled: true
+      hostname: thread-switch
+
+# Physical switch connected to relay
+switch:
+  - platform: gpio
+    pin:
+      number: GPIO5
+    name: "Main Switch"
+    id: main_switch
+    restore_mode: RESTORE_DEFAULT_OFF
+    # Matter will expose this as an On/Off cluster
+
+# Physical button for manual control
+binary_sensor:
+  - platform: gpio
+    pin:
+      number: GPIO3
+      mode: INPUT_PULLUP
+      inverted: true
+    name: "Physical Button"
+    id: physical_button
+    # Toggle switch when button is pressed
+    on_press:
+      - switch.toggle: main_switch
+
+# Status indicators
+light:
+  - platform: binary
+    pin:
+      number: GPIO2
+    name: "Power LED"
+    id: power_led
+    # Shows switch state
+    
+  - platform: binary
+    pin:
+      number: GPIO10
+    name: "Thread LED"
+    id: thread_led
+    # Shows Thread connectivity status

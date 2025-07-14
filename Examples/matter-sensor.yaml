@@ -1,0 +1,80 @@
+# ESPHome Swift Matter Sensor Example
+# Environmental sensor with Matter protocol support
+
+esphome_swift:
+  name: matter_sensor
+  friendly_name: "Matter Environmental Sensor"
+  comment: "Temperature and humidity sensor with Matter connectivity"
+
+esp32:
+  board: esp32-c6-devkitc-1
+  framework:
+    type: esp-idf
+
+# Enable logging
+logger:
+  level: INFO
+
+# WiFi configuration
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  
+  # Enable fallback hotspot
+  ap:
+    ssid: "Matter Sensor Fallback"
+    password: "12345678"
+
+# Enable Home Assistant API
+api:
+  encryption:
+    key: !secret api_encryption_key
+
+# Enable over-the-air updates
+ota:
+  - platform: esphome_swift
+
+# Matter configuration for temperature sensor
+matter:
+  enabled: true
+  device_type: temperature_sensor
+  vendor_id: 0xFFF1
+  product_id: 0x8001
+  
+  # Commissioning setup
+  commissioning:
+    discriminator: 3841
+    passcode: 20202022
+  
+  # Use WiFi transport
+  network:
+    transport: wifi
+    ipv6_enabled: true
+    mdns:
+      enabled: true
+      hostname: matter-sensor
+
+# DHT22 sensor for temperature and humidity
+sensor:
+  - platform: dht
+    pin:
+      number: GPIO4
+    model: DHT22
+    temperature:
+      name: "Temperature"
+      id: temperature
+      # Matter will expose this as a temperature measurement cluster
+    humidity:
+      name: "Humidity"
+      id: humidity
+      # Could be added to a humidity sensor device type in the future
+    update_interval: 30s
+
+# Status LED to show Matter commissioning state
+light:
+  - platform: binary
+    pin:
+      number: GPIO2
+    name: "Status LED"
+    id: status_led
+    # Will show Matter connection status
