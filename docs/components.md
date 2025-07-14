@@ -215,6 +215,175 @@ ESPHome Swift uses a modern, type-safe component architecture following Swift Em
 - **Optimized for embedded**: Minimal binary footprint and efficient execution
 - **Board-specific validation**: Hardware constraints enforced at development time
 
+## Matter Protocol Components
+
+ESPHome Swift includes comprehensive Matter protocol support for building interoperable smart home devices on ESP32-C6 and ESP32-H2 boards.
+
+### Matter Support Overview
+
+Matter is an industry-standard protocol that enables smart home devices from different manufacturers to work together seamlessly. ESPHome Swift provides native Matter support with:
+
+- **25+ Device Types** - Complete device type library covering lights, sensors, switches, locks, and appliances
+- **Thread Networking** - Mesh networking capabilities using 802.15.4 radios on ESP32-C6/H2
+- **WiFi Transport** - Standard WiFi connectivity for all Matter-enabled boards
+- **Type-safe Configuration** - Compile-time validation of Matter device configurations
+- **ESP-Matter SDK Integration** - Full Espressif Matter SDK support
+
+### Supported Matter Device Types
+
+#### Lighting Devices
+- `on_off_light` - Simple on/off light control
+- `dimmable_light` - Brightness control with level cluster
+- `color_temperature_light` - Tunable white temperature
+- `extended_color_light` - Full RGB color control
+
+#### Switch Devices  
+- `on_off_switch` - Basic switch functionality
+- `dimmer_switch` - Dimmer with level control
+- `color_dimmer_switch` - Color dimming capabilities
+- `generic_switch` - Multi-function switch
+
+#### Sensor Devices
+- `temperature_sensor` - Temperature measurements
+- `humidity_sensor` - Humidity readings
+- `occupancy_sensor` - Motion/presence detection
+- `contact_sensor` - Door/window contact sensing
+- `light_sensor` - Ambient light measurement
+- `air_quality_sensor` - Air quality monitoring
+
+#### Smart Appliances
+- `smart_plug` - Controllable outlet/plug
+- `door_lock` - Electronic lock control
+- `thermostat` - Climate control device
+- `fan` - Fan speed and direction control
+- `window_covering` - Blinds/shades automation
+
+### Matter Configuration Example
+
+```yaml
+# Enable Matter protocol support
+matter:
+  enabled: true
+  device_type: temperature_sensor
+  vendor_id: 0xFFF1              # Test vendor ID
+  product_id: 0x8000
+  
+  # Device commissioning setup
+  commissioning:
+    discriminator: 3840           # 12-bit commissioning discriminator
+    passcode: 20202021           # Setup passcode for pairing
+    manual_pairing_code: "34970112332" # Optional manual code
+  
+  # Thread network configuration (ESP32-C6/H2)
+  thread:
+    enabled: true
+    network_name: "Home Network"
+    channel: 15                   # 802.15.4 channel (11-26)
+    pan_id: 0x1234               # Personal Area Network ID
+  
+  # Network transport settings
+  network:
+    transport: wifi               # wifi/thread options
+    ipv6_enabled: true           # Enable IPv6 for Matter
+    mdns:
+      enabled: true
+      hostname: "my-sensor"
+```
+
+### Thread Networking
+
+Thread provides mesh networking capabilities for Matter devices using the 802.15.4 radio:
+
+**Thread Configuration Options:**
+- **Channel Selection** - Choose from 802.15.4 channels 11-26
+- **Network Credentials** - PAN ID, Extended PAN ID, Network Key
+- **Operational Dataset** - Complete Thread network configuration
+- **Border Router** - Connects Thread network to IP networks
+
+**Thread Requirements:**
+- ESP32-C6 or ESP32-H2 microcontroller
+- 802.15.4 radio support
+- Thread Border Router in network
+- IPv6 connectivity
+
+### Matter Security Features
+
+**Commissioning Security:**
+- Secure device pairing with setup codes
+- Certificate-based authentication
+- Encrypted communication channels
+- Device attestation certificates
+
+**Network Security:**
+- Thread network encryption
+- Matter message encryption
+- Access control lists (ACLs)
+- Fabric isolation between ecosystems
+
+### Hardware Requirements
+
+**ESP32-C6 Capabilities:**
+- WiFi 6 (802.11ax) + Bluetooth 5 LE
+- Thread/802.15.4 radio
+- Matter over WiFi and Thread
+- 32-bit RISC-V processor
+
+**ESP32-H2 Capabilities:**
+- Bluetooth 5 LE + 802.15.4
+- Thread networking only (no WiFi)
+- Matter over Thread
+- Ultra-low power design
+
+### Matter Integration Patterns
+
+```yaml
+# Matter temperature sensor with DHT22
+esp32:
+  board: esp32-c6-devkitc-1
+
+matter:
+  enabled: true
+  device_type: temperature_sensor
+  network:
+    transport: wifi
+
+sensor:
+  - platform: dht
+    pin: GPIO4
+    model: DHT22
+    temperature:
+      name: "Room Temperature"
+    humidity:
+      name: "Room Humidity"
+
+# Matter smart switch with relay
+matter:
+  enabled: true
+  device_type: on_off_switch
+
+switch:
+  - platform: gpio
+    pin: GPIO5
+    name: "Smart Switch"
+    restore_mode: RESTORE_DEFAULT_OFF
+```
+
+### Development and Testing
+
+**Test Configuration:**
+- Use vendor ID `0xFFF1-0xFFF4` for development
+- Test with Thread network simulators
+- Validate with Matter certification tools
+- Use Home Assistant Matter integration
+
+**Production Deployment:**
+- Obtain certified vendor ID from CSA
+- Complete Matter certification process
+- Configure production commissioning flow
+- Deploy with Thread Border Router
+
+For detailed Matter configuration options, see the [Configuration Reference](configuration.html#matter).
+
 ## Creating Custom Components
 
 To add a new component type to ESPHome Swift:

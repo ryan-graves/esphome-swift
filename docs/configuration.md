@@ -41,8 +41,10 @@ esp32:
 **Supported Boards:**
 - `esp32-c3-devkitm-1` - ESP32-C3 DevKit
 - `esp32-c3-devkitc-02` - ESP32-C3 DevKit
-- `esp32-c6-devkitc-1` - ESP32-C6 DevKit
-- `esp32-h2-devkitm-1` - ESP32-H2 DevKit
+- `esp32-c6-devkitc-1` - ESP32-C6 DevKit (Matter/Thread capable)
+- `esp32-c6-devkitm-1` - ESP32-C6 DevKit (Matter/Thread capable)
+- `esp32-h2-devkitc-1` - ESP32-H2 DevKit (Matter/Thread capable)
+- `esp32-h2-devkitm-1` - ESP32-H2 DevKit (Matter/Thread capable)
 - `esp32-p4-function-ev-board` - ESP32-P4 Board
 
 **Framework Types:**
@@ -75,6 +77,85 @@ wifi:
   
   use_address: 192.168.1.100 # Optional: Override mDNS
 ```
+
+### matter
+
+Enable Matter protocol support for interoperable smart home devices (ESP32-C6/H2 only).
+
+```yaml
+matter:
+  enabled: true                    # Required: Enable Matter support
+  device_type: temperature_sensor  # Required: Matter device type
+  vendor_id: 0xFFF1               # Optional: Vendor ID (test ID default)
+  product_id: 0x8000              # Optional: Product ID
+  
+  # Device commissioning configuration
+  commissioning:
+    discriminator: 3840           # Optional: 12-bit discriminator
+    passcode: 20202021           # Optional: Setup passcode
+    manual_pairing_code: "12345-67890"  # Optional: Manual code
+    qr_code_payload: "MT:..."    # Optional: QR code payload
+  
+  # Thread network configuration (ESP32-C6/H2)
+  thread:
+    enabled: true                 # Optional: Enable Thread networking
+    network_name: "Home Network"  # Optional: Thread network name
+    channel: 15                   # Optional: 802.15.4 channel (11-26)
+    pan_id: 0x1234               # Optional: PAN ID
+    ext_pan_id: "1234567890ABCDEF1234567890ABCDEF"  # Optional: Extended PAN ID
+    network_key: "FEDCBA0987654321FEDCBA0987654321"  # Optional: Network key
+    dataset: "0e080000..."        # Optional: Complete operational dataset
+  
+  # Network transport configuration
+  network:
+    transport: wifi               # Required: wifi/thread/ethernet
+    ipv6_enabled: true           # Optional: Enable IPv6
+    mdns:
+      enabled: true              # Optional: Enable mDNS
+      hostname: "my-device"      # Optional: Custom hostname
+      services: ["_matter._tcp"] # Optional: Additional services
+```
+
+**Matter Device Types:**
+
+*Lighting:*
+- `on_off_light` - Simple on/off light
+- `dimmable_light` - Dimmable light with level control
+- `color_temperature_light` - Tunable white light
+- `extended_color_light` - Full color RGB light
+
+*Switches:*
+- `on_off_switch` - Simple on/off switch
+- `dimmer_switch` - Dimmer switch with level control
+- `color_dimmer_switch` - Color dimmer switch
+- `generic_switch` - Generic switch device
+
+*Sensors:*
+- `temperature_sensor` - Temperature measurement
+- `humidity_sensor` - Humidity measurement
+- `occupancy_sensor` - Motion/occupancy detection
+- `contact_sensor` - Door/window contact
+- `light_sensor` - Light level measurement
+- `air_quality_sensor` - Air quality monitoring
+
+*Appliances:*
+- `smart_plug` - Smart outlet/plug
+- `door_lock` - Electronic door lock
+- `thermostat` - Climate control device
+- `fan` - Fan control device
+- `window_covering` - Blinds/shades control
+
+**Transport Options:**
+- `wifi` - Standard WiFi connectivity (all ESP32 boards)
+- `thread` - Thread mesh networking (ESP32-C6/H2 only)
+- `ethernet` - Wired ethernet (not currently supported)
+
+**Thread Configuration Notes:**
+- Thread requires ESP32-C6 or ESP32-H2 boards
+- Channel range: 11-26 (802.15.4)
+- PAN ID range: 0x0000-0xFFFE
+- Network keys and Extended PAN IDs must be 32 hex characters
+- Operational dataset is a complete Thread network configuration
 
 ## Services
 

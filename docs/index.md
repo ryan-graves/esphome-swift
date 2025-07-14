@@ -11,6 +11,7 @@ A Swift-based replacement for ESPHome that generates Embedded Swift firmware for
 
 - 🚀 **Native Swift Implementation** - Type-safe configuration and code generation
 - 📱 **ESP32 RISC-V Support** - Targets ESP32-C3, C6, H2, and P4 boards
+- 🌐 **Matter Protocol Support** - Thread networking for ESP32-C6/H2 boards
 - 🔧 **Extensible Component System** - Easy to add new sensors and actuators
 - 🏠 **Home Assistant Compatible** - Native API integration
 - 📦 **Simple YAML Configuration** - Familiar ESPHome-style syntax
@@ -91,6 +92,13 @@ esphome-swift flash build/my-sensor
 - **Binary Light** - Simple on/off lighting
 - **RGB Light** - Full color LED control
 
+### Matter Protocol
+- **25+ Device Types** - Lights, sensors, switches, locks, thermostats
+- **Thread Networking** - Mesh networking for ESP32-C6/H2
+- **WiFi Transport** - Standard WiFi connectivity option
+- **Type-safe Configuration** - Validated Matter device definitions
+- **ESP-Matter SDK** - Full Espressif Matter integration
+
 ### Coming Soon
 - I2C sensors (BME280, BMP280, etc.)
 - SPI devices
@@ -135,6 +143,33 @@ light:
     blue_pin:
       number: GPIO8
     name: "Mood Light"
+```
+
+### Matter Temperature Sensor
+```yaml
+# ESP32-C6 with Matter support
+esp32:
+  board: esp32-c6-devkitc-1
+  framework:
+    type: esp-idf
+
+matter:
+  enabled: true
+  device_type: temperature_sensor
+  vendor_id: 0xFFF1
+  product_id: 0x8000
+  commissioning:
+    discriminator: 3840
+    passcode: 20202021
+  network:
+    transport: wifi
+
+sensor:
+  - platform: dht
+    pin: GPIO4
+    model: DHT22
+    temperature:
+      name: "Room Temperature"
 ```
 
 ## License
