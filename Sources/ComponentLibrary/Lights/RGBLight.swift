@@ -8,7 +8,7 @@ public struct RGBLightFactory: ComponentFactory {
     public let platform = "rgb"
     public let componentType = ComponentType.light
     public let requiredProperties = ["red_pin", "green_pin", "blue_pin"]
-    public let optionalProperties = ["name", "white_pin"]
+    public let optionalProperties = ["name"]
     
     public init() {
         // No longer store pinValidator as instance variable - create board-specific validator per call
@@ -42,10 +42,6 @@ public struct RGBLightFactory: ComponentFactory {
         try pinValidator.validatePin(redPin, requirements: .pwm)
         try pinValidator.validatePin(greenPin, requirements: .pwm)
         try pinValidator.validatePin(bluePin, requirements: .pwm)
-        
-        if let whitePin = config.whitePin {
-            try pinValidator.validatePin(whitePin, requirements: .pwm)
-        }
     }
     
     public func generateCode(config: LightConfig, context: CodeGenerationContext) throws -> ComponentCode {

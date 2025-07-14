@@ -357,38 +357,13 @@ public struct PinValidator {
 
 /// Factory for creating board-specific constraints
 /// 
-/// - Important: Returns `nil` for unknown board identifiers to surface potential errors.
-///   Callers should handle the optional return value explicitly and provide appropriate
-///   error handling for unsupported boards.
+/// - Important: Use BoardCapabilities.boardDefinition(for:) for board-specific constraints.
+///   This provides a more comprehensive board management system with capabilities and features.
 /// 
 /// - Example:
 /// ```swift
-/// guard let constraints = BoardFactory.constraints(for: boardName) else {
+/// guard let boardDef = BoardCapabilities.boardDefinition(for: boardName) else {
 ///     throw ValidationError.unsupportedBoard(boardName)
 /// }
+/// let constraints = boardDef.pinConstraints
 /// ```
-public enum BoardFactory {
-    public static func constraints(for boardName: String) -> BoardConstraints? {
-        switch boardName.lowercased() {
-        // ESP32-C3 boards
-        case "esp32-c3-devkitm-1", "esp32-c3-devkitc-02", "esp32c3", "esp32-c3":
-            return ESP32C3Constraints()
-            
-        // ESP32-C6 boards
-        case "esp32-c6-devkitc-1", "esp32-c6-devkitm-1", "esp32c6", "esp32-c6":
-            return ESP32C6Constraints()
-            
-        // ESP32-H2 boards
-        case "esp32-h2-devkitc-1", "esp32-h2-devkitm-1", "esp32h2", "esp32-h2":
-            return ESP32H2Constraints()
-            
-        // ESP32-P4 boards
-        case "esp32-p4-function-ev-board", "esp32p4", "esp32-p4":
-            return ESP32P4Constraints()
-            
-        default:
-            // Return nil for unknown boards to surface potential errors
-            return nil
-        }
-    }
-}

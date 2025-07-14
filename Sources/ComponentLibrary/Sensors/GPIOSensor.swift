@@ -53,6 +53,9 @@ public struct GPIOSensorFactory: ComponentFactory {
         let componentId = config.id ?? "adc_sensor_\(pinNumber)"
         let updateInterval = parseUpdateInterval(config.updateInterval ?? "60s")
         
+        // Get board-specific ADC channel mapping
+        let adcChannel = try adcChannelForPin(pinNumber, board: boardDef)
+        
         let headerIncludes = [
             "#include \"driver/adc.h\""
         ]
@@ -64,13 +67,13 @@ public struct GPIOSensorFactory: ComponentFactory {
         
         let setupCode = [
             "adc1_config_width(ADC_WIDTH_BIT_12);",
-            "adc1_config_channel_atten(ADC1_CHANNEL_\(adcChannelForPin(pinNumber)), ADC_ATTEN_DB_11);"
+            "adc1_config_channel_atten(ADC1_CHANNEL_\(adcChannel), ADC_ATTEN_DB_11);"
         ]
         
         let loopCode = [
             """
             if (millis() - \(componentId)_last_update > \(componentId)_update_interval) {
-                int \(componentId)_raw = adc1_get_raw(ADC1_CHANNEL_\(adcChannelForPin(pinNumber)));
+                int \(componentId)_raw = adc1_get_raw(ADC1_CHANNEL_\(adcChannel));
                 float \(componentId)_voltage = \(componentId)_raw * (3.3 / 4095.0);
                 
                 // TODO: Apply filters if configured
@@ -90,11 +93,37 @@ public struct GPIOSensorFactory: ComponentFactory {
         )
     }
     
-    private func adcChannelForPin(_ pin: Int) -> Int {
-        // Map GPIO pin to ADC1 channel - varies by board
-        // For ESP32-C6: pins 0-7 map to ADC1 channels 0-7
-        // TODO: Make this board-specific based on BoardCapabilities
-        return pin
+    private func adcChannelForPin(_ pin: Int, board: BoardCapabilities.BoardDefinition) throws -> Int {
+        // Board-specific GPIO pin to ADC1 channel mapping
+        switch board.chipFamily {
+        case .esp32c6:
+            // ESP32-C6: GPIO0-7 → ADC1_CHANNEL_0-7
+            if pin >= 0 && pin <= 7 {
+                return pin
+            }
+        case .esp32c3:
+            // ESP32-C3: GPIO0-4 → ADC1_CHANNEL_0-4
+            if pin >= 0 && pin <= 4 {
+                return pin
+            }
+        case .esp32h2:
+            // ESP32-H2: GPIO0-4 → ADC1_CHANNEL_0-4
+            if pin >= 0 && pin <= 4 {
+                return pin
+            }
+        case .esp32p4:
+            // ESP32-P4: GPIO0-7 → ADC1_CHANNEL_0-7
+            if pin >= 0 && pin <= 7 {
+                return pin
+            }
+        }
+        
+        throw ComponentValidationError.invalidPropertyValue(
+            component: platform,
+            property: "pin",
+            value: "GPIO\(pin)",
+            reason: "Pin not available for ADC on \(board.chipFamily) boards"
+        )
     }
     
     private func parseUpdateInterval(_ interval: String) -> Int {
