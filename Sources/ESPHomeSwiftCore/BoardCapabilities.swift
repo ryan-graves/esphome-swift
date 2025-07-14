@@ -56,7 +56,6 @@ public struct BoardCapabilities {
         case uart = "UART"
     }
     
-    
     /// All supported board definitions
     public static let supportedBoards: [String: BoardDefinition] = [
         // ESP32-C3 boards
@@ -135,7 +134,7 @@ public struct BoardCapabilities {
     
     /// Get all boards that support a specific capability
     public static func boardsWithCapability(_ capability: BoardCapability) -> [String] {
-        return supportedBoards.compactMap { (identifier, board) in
+        return supportedBoards.compactMap { identifier, board in
             board.capabilities.contains(capability) ? identifier : nil
         }.sorted()
     }
@@ -152,13 +151,14 @@ public struct BoardCapabilities {
     
     /// Get boards by chip family
     public static func boards(for chipFamily: ChipFamily) -> [String] {
-        return supportedBoards.compactMap { (identifier, board) in
+        return supportedBoards.compactMap { identifier, board in
             board.chipFamily == chipFamily ? identifier : nil
         }.sorted()
     }
 }
 
 // MARK: - Matter-specific extensions
+
 public extension BoardCapabilities {
     
     /// Get all Matter-capable boards

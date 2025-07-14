@@ -102,7 +102,7 @@ public struct ESP32C6Constraints: BoardConstraints {
 /// ESP32-C3 specific hardware constraints
 @frozen
 public struct ESP32C3Constraints: BoardConstraints {
-    public let availableGPIOPins: Set<Int> = Set(0...21)
+    public let availableGPIOPins: Set<Int> = Set(0 ... 21)
     public let inputOnlyPins: Set<Int> = [18, 19]
     public let outputCapablePins: Set<Int> = Set([
         0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
@@ -112,7 +112,7 @@ public struct ESP32C3Constraints: BoardConstraints {
         0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
         20, 21
     ])
-    public let adcCapablePins: Set<Int> = Set(0...4) // ADC1 only
+    public let adcCapablePins: Set<Int> = Set(0 ... 4) // ADC1 only
     public let i2cDefaultSDA: Int = 5
     public let i2cDefaultSCL: Int = 6
     public let spiDefaultMOSI: Int = 7
@@ -128,11 +128,11 @@ public struct ESP32C3Constraints: BoardConstraints {
 /// ESP32-H2 specific hardware constraints
 @frozen
 public struct ESP32H2Constraints: BoardConstraints {
-    public let availableGPIOPins: Set<Int> = Set(0...27)
+    public let availableGPIOPins: Set<Int> = Set(0 ... 27)
     public let inputOnlyPins: Set<Int> = [] // ESP32-H2 has no input-only pins
-    public let outputCapablePins: Set<Int> = Set(0...23) // Skip 24-27 (flash)
-    public let pwmCapablePins: Set<Int> = Set(0...23)
-    public let adcCapablePins: Set<Int> = Set(0...4) // ADC1 only
+    public let outputCapablePins: Set<Int> = Set(0 ... 23) // Skip 24-27 (flash)
+    public let pwmCapablePins: Set<Int> = Set(0 ... 23)
+    public let adcCapablePins: Set<Int> = Set(0 ... 4) // ADC1 only
     public let i2cDefaultSDA: Int = 5
     public let i2cDefaultSCL: Int = 6
     public let spiDefaultMOSI: Int = 7
@@ -148,11 +148,11 @@ public struct ESP32H2Constraints: BoardConstraints {
 /// ESP32-P4 specific hardware constraints
 @frozen
 public struct ESP32P4Constraints: BoardConstraints {
-    public let availableGPIOPins: Set<Int> = Set(0...55)
+    public let availableGPIOPins: Set<Int> = Set(0 ... 55)
     public let inputOnlyPins: Set<Int> = [] // ESP32-P4 has no input-only pins
-    public let outputCapablePins: Set<Int> = Set(0...25) // Skip 26-31 (flash/PSRAM)
-    public let pwmCapablePins: Set<Int> = Set(0...25)
-    public let adcCapablePins: Set<Int> = Set(0...7) // ADC1 only
+    public let outputCapablePins: Set<Int> = Set(0 ... 25) // Skip 26-31 (flash/PSRAM)
+    public let pwmCapablePins: Set<Int> = Set(0 ... 25)
+    public let adcCapablePins: Set<Int> = Set(0 ... 7) // ADC1 only
     public let i2cDefaultSDA: Int = 5
     public let i2cDefaultSCL: Int = 6
     public let spiDefaultMOSI: Int = 7
