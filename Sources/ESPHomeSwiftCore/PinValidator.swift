@@ -353,9 +353,9 @@ public struct PinValidator {
     }
 }
 
-// MARK: - Board Factory
+// MARK: - Board Constraints Usage
 
-/// Factory for creating board-specific constraints
+/// Recommended pattern for obtaining board-specific constraints
 /// 
 /// - Important: Use BoardCapabilities.boardDefinition(for:) for board-specific constraints.
 ///   This provides a more comprehensive board management system with capabilities and features.
