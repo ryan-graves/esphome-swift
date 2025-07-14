@@ -18,9 +18,9 @@ public struct MatterSupport {
     public static let version = "1.0.0"
     
     /// Supported ESP32 boards for Matter functionality
-    /// Uses centralized board registry for maintainable board management
+    /// Uses centralized BoardCapabilities for maintainable board management
     public static var supportedBoards: Set<String> {
-        return SupportedBoards.matterCapableBoards
+        return Set(BoardCapabilities.matterCapableBoards)
     }
     
     /// Validates if the given board supports Matter functionality

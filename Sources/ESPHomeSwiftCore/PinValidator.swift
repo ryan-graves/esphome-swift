@@ -97,6 +97,72 @@ public struct ESP32C6Constraints: BoardConstraints {
     public init() {}
 }
 
+// MARK: - ESP32-C3 Board Constraints
+
+/// ESP32-C3 specific hardware constraints
+@frozen
+public struct ESP32C3Constraints: BoardConstraints {
+    public let availableGPIOPins: Set<Int> = Set(0...21)
+    public let inputOnlyPins: Set<Int> = [18, 19]
+    public let outputCapablePins: Set<Int> = Set([
+        0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
+        20, 21 // Skip 11-17 (flash), skip 18-19 (input only)
+    ])
+    public let pwmCapablePins: Set<Int> = Set([
+        0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
+        20, 21
+    ])
+    public let adcCapablePins: Set<Int> = Set(0...4) // ADC1 only
+    public let i2cDefaultSDA: Int = 5
+    public let i2cDefaultSCL: Int = 6
+    public let spiDefaultMOSI: Int = 7
+    public let spiDefaultMISO: Int = 2
+    public let spiDefaultCLK: Int = 6
+    public let spiDefaultCS: Int = 10
+    
+    public init() {}
+}
+
+// MARK: - ESP32-H2 Board Constraints
+
+/// ESP32-H2 specific hardware constraints
+@frozen
+public struct ESP32H2Constraints: BoardConstraints {
+    public let availableGPIOPins: Set<Int> = Set(0...27)
+    public let inputOnlyPins: Set<Int> = [] // ESP32-H2 has no input-only pins
+    public let outputCapablePins: Set<Int> = Set(0...23) // Skip 24-27 (flash)
+    public let pwmCapablePins: Set<Int> = Set(0...23)
+    public let adcCapablePins: Set<Int> = Set(0...4) // ADC1 only
+    public let i2cDefaultSDA: Int = 5
+    public let i2cDefaultSCL: Int = 6
+    public let spiDefaultMOSI: Int = 7
+    public let spiDefaultMISO: Int = 2
+    public let spiDefaultCLK: Int = 6
+    public let spiDefaultCS: Int = 10
+    
+    public init() {}
+}
+
+// MARK: - ESP32-P4 Board Constraints
+
+/// ESP32-P4 specific hardware constraints
+@frozen
+public struct ESP32P4Constraints: BoardConstraints {
+    public let availableGPIOPins: Set<Int> = Set(0...55)
+    public let inputOnlyPins: Set<Int> = [] // ESP32-P4 has no input-only pins
+    public let outputCapablePins: Set<Int> = Set(0...25) // Skip 26-31 (flash/PSRAM)
+    public let pwmCapablePins: Set<Int> = Set(0...25)
+    public let adcCapablePins: Set<Int> = Set(0...7) // ADC1 only
+    public let i2cDefaultSDA: Int = 5
+    public let i2cDefaultSCL: Int = 6
+    public let spiDefaultMOSI: Int = 7
+    public let spiDefaultMISO: Int = 2
+    public let spiDefaultCLK: Int = 6
+    public let spiDefaultCS: Int = 10
+    
+    public init() {}
+}
+
 // MARK: - Pin Requirements
 
 /// Requirements for pin validation
@@ -293,10 +359,24 @@ public struct PinValidator {
 public enum BoardFactory {
     public static func constraints(for boardName: String) -> BoardConstraints {
         switch boardName.lowercased() {
-        case "esp32-c6-devkitc-1", "esp32c6", "esp32-c6":
+        // ESP32-C3 boards
+        case "esp32-c3-devkitm-1", "esp32-c3-devkitc-02", "esp32c3", "esp32-c3":
+            return ESP32C3Constraints()
+            
+        // ESP32-C6 boards
+        case "esp32-c6-devkitc-1", "esp32-c6-devkitm-1", "esp32c6", "esp32-c6":
             return ESP32C6Constraints()
+            
+        // ESP32-H2 boards
+        case "esp32-h2-devkitc-1", "esp32-h2-devkitm-1", "esp32h2", "esp32-h2":
+            return ESP32H2Constraints()
+            
+        // ESP32-P4 boards
+        case "esp32-p4-function-ev-board", "esp32p4", "esp32-p4":
+            return ESP32P4Constraints()
+            
         default:
-            // Default to ESP32-C6 for now, can be extended for other boards
+            // Default to ESP32-C6 for backwards compatibility
             return ESP32C6Constraints()
         }
     }
