@@ -363,7 +363,12 @@ public struct PinValidator {
 /// - Example:
 /// ```swift
 /// guard let boardDef = BoardCapabilities.boardDefinition(for: boardName) else {
-///     throw ValidationError.unsupportedBoard(boardName)
+///     throw ComponentValidationError.invalidPropertyValue(
+///         component: "component",
+///         property: "board", 
+///         value: boardName,
+///         reason: "Unsupported board"
+///     )
 /// }
 /// let constraints = boardDef.pinConstraints
 /// ```
