@@ -404,7 +404,7 @@ public struct MySensorFactory: ComponentFactory {
     public let optionalProperties = ["name", "update_interval"]
     
     public init() {
-        // Component factories are stateless and board-agnostic
+        // Component factories are stateless but perform board-aware validation
     }
     
     public func validate(config: SensorConfig, board: String) throws {

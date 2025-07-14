@@ -24,9 +24,6 @@ public protocol ComponentFactory {
     /// Optional configuration properties  
     var optionalProperties: [String] { get }
     
-    /// Validate configuration with compile-time type safety
-    func validate(config: ConfigType) throws
-    
     /// Validate configuration with board-specific constraints
     func validate(config: ConfigType, board: String) throws
     

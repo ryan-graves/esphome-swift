@@ -147,11 +147,31 @@ int value = gpio_get_level(sensor_pin);
 ```swift
 // IMPORTANT: Components should use board-specific validation (Core Principle #5)
 public func validate(config: ConfigType, board: String) throws {
+    // Validate required properties first
+    guard let pin = config.pin else {
+        throw ComponentValidationError.missingRequiredProperty(
+            component: platform,
+            property: "pin"
+        )
+    }
+    
     // Use shared helper for consistent board validation (eliminates boilerplate)
+    // This will throw ComponentValidationError.invalidPropertyValue if board is unsupported
     let pinValidator = try createPinValidator(for: board)
     
-    // Board-specific pin validation 
+    // Board-specific pin validation with appropriate requirements
     try pinValidator.validatePin(pin, requirements: .output)
+    
+    // Example: Additional board-specific validation
+    if board.contains("esp32-h2") && someH2SpecificFeature {
+        // Handle H2-specific constraints
+        throw ComponentValidationError.invalidPropertyValue(
+            component: platform,
+            property: "feature", 
+            value: "not_supported_on_h2",
+            reason: "This feature is not available on ESP32-H2 boards"
+        )
+    }
 }
 
 // Example: Code generation with board context
