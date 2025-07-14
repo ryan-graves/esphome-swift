@@ -133,21 +133,64 @@ public struct MatterCodeGenerator {
             switch cluster {
             case .identify:
                 clusterCode.append("esp_matter::identify::create(endpoint, CLUSTER_FLAG_SERVER);")
+                
+            case .groups:
+                clusterCode.append("esp_matter::groups::create(endpoint, CLUSTER_FLAG_SERVER);")
+                
+            case .scenes:
+                clusterCode.append("esp_matter::scenes::create(endpoint, CLUSTER_FLAG_SERVER);")
+                
+            case .descriptor:
+                // Descriptor cluster is already added above for all device types
+                continue
+                
             case .onOff:
                 clusterCode.append("esp_matter::on_off::create(endpoint, CLUSTER_FLAG_SERVER, esp_matter::on_off::get_feature_map_value(0));")
+                
             case .levelControl:
                 clusterCode.append("esp_matter::level_control::create(endpoint, CLUSTER_FLAG_SERVER, esp_matter::level_control::get_feature_map_value(0));")
+                
             case .colorControl:
                 clusterCode.append("esp_matter::color_control::create(endpoint, CLUSTER_FLAG_SERVER, esp_matter::color_control::get_feature_map_value(esp_matter::color_control::feature::hue_saturation::get_id()));")
-            case .temperatureMeasurement:
-                clusterCode.append("esp_matter::temperature_measurement::create(endpoint, CLUSTER_FLAG_SERVER);")
-            case .relativeHumidityMeasurement:
-                clusterCode.append("esp_matter::relative_humidity_measurement::create(endpoint, CLUSTER_FLAG_SERVER);")
+                
             case .switch:
                 clusterCode.append("esp_matter::switch_cluster::create(endpoint, CLUSTER_FLAG_SERVER);")
-            default:
-                // Add basic cluster creation for other types
-                clusterCode.append("// TODO: Add cluster for \(cluster.rawValue)")
+                
+            case .temperatureMeasurement:
+                clusterCode.append("esp_matter::temperature_measurement::create(endpoint, CLUSTER_FLAG_SERVER);")
+                
+            case .relativeHumidityMeasurement:
+                clusterCode.append("esp_matter::relative_humidity_measurement::create(endpoint, CLUSTER_FLAG_SERVER);")
+                
+            case .pressureMeasurement:
+                clusterCode.append("esp_matter::pressure_measurement::create(endpoint, CLUSTER_FLAG_SERVER);")
+                
+            case .flowMeasurement:
+                clusterCode.append("esp_matter::flow_measurement::create(endpoint, CLUSTER_FLAG_SERVER);")
+                
+            case .illuminanceMeasurement:
+                clusterCode.append("esp_matter::illuminance_measurement::create(endpoint, CLUSTER_FLAG_SERVER);")
+                
+            case .occupancySensing:
+                clusterCode.append("esp_matter::occupancy_sensing::create(endpoint, CLUSTER_FLAG_SERVER);")
+                
+            case .booleanState:
+                clusterCode.append("esp_matter::boolean_state::create(endpoint, CLUSTER_FLAG_SERVER);")
+                
+            case .airQuality:
+                clusterCode.append("esp_matter::air_quality::create(endpoint, CLUSTER_FLAG_SERVER);")
+                
+            case .doorLock:
+                clusterCode.append("esp_matter::door_lock::create(endpoint, CLUSTER_FLAG_SERVER, esp_matter::door_lock::get_feature_map_value(esp_matter::door_lock::feature::pin_credential::get_id()));")
+                
+            case .thermostat:
+                clusterCode.append("esp_matter::thermostat::create(endpoint, CLUSTER_FLAG_SERVER, esp_matter::thermostat::get_feature_map_value(esp_matter::thermostat::feature::heating::get_id() | esp_matter::thermostat::feature::cooling::get_id()));")
+                
+            case .fanControl:
+                clusterCode.append("esp_matter::fan_control::create(endpoint, CLUSTER_FLAG_SERVER, esp_matter::fan_control::get_feature_map_value(esp_matter::fan_control::feature::multi_speed::get_id()));")
+                
+            case .windowCovering:
+                clusterCode.append("esp_matter::window_covering::create(endpoint, CLUSTER_FLAG_SERVER, esp_matter::window_covering::get_feature_map_value(esp_matter::window_covering::feature::lift::get_id()));")
             }
         }
         
