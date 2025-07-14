@@ -105,6 +105,34 @@ final class BoardCapabilitiesTests: XCTestCase {
         XCTAssertTrue(c3Board.pinConstraints.adcCapablePins.contains(0))
         XCTAssertTrue(c3Board.pinConstraints.adcCapablePins.contains(4))
         XCTAssertFalse(c3Board.pinConstraints.adcCapablePins.contains(5)) // Not ADC on C3
+        
+        // Test ESP32-H2 pin constraints
+        guard let h2Board = BoardCapabilities.boardDefinition(for: "esp32-h2-devkitc-1") else {
+            XCTFail("ESP32-H2 board definition not found")
+            return
+        }
+        
+        XCTAssertTrue(h2Board.pinConstraints.availableGPIOPins.contains(0))
+        XCTAssertTrue(h2Board.pinConstraints.availableGPIOPins.contains(27)) // GPIO0-27 (28 pins)
+        XCTAssertFalse(h2Board.pinConstraints.availableGPIOPins.contains(28)) // Should not have GPIO28
+        XCTAssertTrue(h2Board.pinConstraints.inputOnlyPins.isEmpty) // No input-only pins
+        XCTAssertTrue(h2Board.pinConstraints.adcCapablePins.contains(0))
+        XCTAssertTrue(h2Board.pinConstraints.adcCapablePins.contains(4))
+        XCTAssertFalse(h2Board.pinConstraints.adcCapablePins.contains(5)) // Only GPIO0-4 for ADC
+        
+        // Test ESP32-P4 pin constraints
+        guard let p4Board = BoardCapabilities.boardDefinition(for: "esp32-p4-function-ev-board") else {
+            XCTFail("ESP32-P4 board definition not found")
+            return
+        }
+        
+        XCTAssertTrue(p4Board.pinConstraints.availableGPIOPins.contains(0))
+        XCTAssertTrue(p4Board.pinConstraints.availableGPIOPins.contains(54)) // GPIO0-54 (55 pins)
+        XCTAssertFalse(p4Board.pinConstraints.availableGPIOPins.contains(55)) // Should not have GPIO55
+        XCTAssertTrue(p4Board.pinConstraints.inputOnlyPins.isEmpty) // No input-only pins
+        XCTAssertTrue(p4Board.pinConstraints.adcCapablePins.contains(0))
+        XCTAssertTrue(p4Board.pinConstraints.adcCapablePins.contains(7))
+        XCTAssertFalse(p4Board.pinConstraints.adcCapablePins.contains(8)) // Only GPIO0-7 for ADC
     }
     
     func testMatterExtensions() {
@@ -158,5 +186,50 @@ final class BoardCapabilitiesTests: XCTestCase {
         XCTAssertEqual(c6Board.displayName, "ESP32-C6 DevKit-C")
         XCTAssertEqual(c6Board.chipFamily, .esp32c6)
         XCTAssertEqual(c6Board.architecture, .riscv)
+    }
+    
+    func testZigbeeCapability() {
+        // Test Zigbee capability - ESP32-C6 and ESP32-H2 should support it
+        XCTAssertTrue(BoardCapabilities.boardSupports("esp32-c6-devkitc-1", capability: .zigbee))
+        XCTAssertTrue(BoardCapabilities.boardSupports("esp32-c6-devkitm-1", capability: .zigbee))
+        XCTAssertTrue(BoardCapabilities.boardSupports("esp32-h2-devkitc-1", capability: .zigbee))
+        XCTAssertTrue(BoardCapabilities.boardSupports("esp32-h2-devkitm-1", capability: .zigbee))
+        
+        // ESP32-C3 and ESP32-P4 should not support Zigbee
+        XCTAssertFalse(BoardCapabilities.boardSupports("esp32-c3-devkitm-1", capability: .zigbee))
+        XCTAssertFalse(BoardCapabilities.boardSupports("esp32-c3-devkitc-02", capability: .zigbee))
+        XCTAssertFalse(BoardCapabilities.boardSupports("esp32-p4-function-ev-board", capability: .zigbee))
+        
+        // Test that C6 and H2 boards appear in Zigbee-capable boards list
+        let zigbeeBoards = BoardCapabilities.boardsWithCapability(.zigbee)
+        XCTAssertTrue(zigbeeBoards.contains("esp32-c6-devkitc-1"))
+        XCTAssertTrue(zigbeeBoards.contains("esp32-c6-devkitm-1"))
+        XCTAssertTrue(zigbeeBoards.contains("esp32-h2-devkitc-1"))
+        XCTAssertTrue(zigbeeBoards.contains("esp32-h2-devkitm-1"))
+        XCTAssertEqual(zigbeeBoards.count, 4) // 2 C6 boards + 2 H2 boards should support Zigbee
+    }
+    
+    func testCaseInsensitiveBoardLookup() {
+        // Test that board lookups work with different case variations
+        let testVariations = [
+            "ESP32-C6-DEVKITC-1",
+            "Esp32-C6-DevKitC-1", 
+            "esp32-c6-devkitc-1",
+            "ESP32-c6-DEVKITC-1"
+        ]
+        
+        for variation in testVariations {
+            XCTAssertTrue(BoardCapabilities.boardSupports(variation, capability: .wifi), 
+                         "Board lookup should be case-insensitive for: \(variation)")
+            XCTAssertNotNil(BoardCapabilities.boardDefinition(for: variation),
+                           "Board definition lookup should be case-insensitive for: \(variation)")
+        }
+        
+        // Test that the returned board definition is the same regardless of case
+        let lowerBoard = BoardCapabilities.boardDefinition(for: "esp32-c6-devkitc-1")
+        let upperBoard = BoardCapabilities.boardDefinition(for: "ESP32-C6-DEVKITC-1")
+        
+        XCTAssertEqual(lowerBoard?.identifier, upperBoard?.identifier)
+        XCTAssertEqual(lowerBoard?.displayName, upperBoard?.displayName)
     }
 }

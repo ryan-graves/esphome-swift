@@ -77,13 +77,13 @@ public struct BoardCapabilities {
             pinConstraints: ESP32C3Constraints()
         ),
         
-        // ESP32-C6 boards (Matter/Thread capable)
+        // ESP32-C6 boards (Matter/Thread/Zigbee capable)
         "esp32-c6-devkitc-1": BoardDefinition(
             identifier: "esp32-c6-devkitc-1",
             displayName: "ESP32-C6 DevKit-C",
             chipFamily: .esp32c6,
             architecture: .riscv,
-            capabilities: [.wifi, .bluetooth, .thread, .matter, .adc, .pwm, .i2c, .spi, .uart],
+            capabilities: [.wifi, .bluetooth, .thread, .matter, .zigbee, .adc, .pwm, .i2c, .spi, .uart],
             pinConstraints: ESP32C6Constraints()
         ),
         
@@ -92,7 +92,7 @@ public struct BoardCapabilities {
             displayName: "ESP32-C6 DevKit-M",
             chipFamily: .esp32c6,
             architecture: .riscv,
-            capabilities: [.wifi, .bluetooth, .thread, .matter, .adc, .pwm, .i2c, .spi, .uart],
+            capabilities: [.wifi, .bluetooth, .thread, .matter, .zigbee, .adc, .pwm, .i2c, .spi, .uart],
             pinConstraints: ESP32C6Constraints()
         ),
         
@@ -128,7 +128,7 @@ public struct BoardCapabilities {
     
     /// Check if a board supports a specific capability
     public static func boardSupports(_ board: String, capability: BoardCapability) -> Bool {
-        guard let boardDef = supportedBoards[board] else { return false }
+        guard let boardDef = supportedBoards[board.lowercased()] else { return false }
         return boardDef.capabilities.contains(capability)
     }
     
@@ -141,7 +141,7 @@ public struct BoardCapabilities {
     
     /// Get board definition by identifier
     public static func boardDefinition(for identifier: String) -> BoardDefinition? {
-        return supportedBoards[identifier]
+        return supportedBoards[identifier.lowercased()]
     }
     
     /// Get all supported board identifiers

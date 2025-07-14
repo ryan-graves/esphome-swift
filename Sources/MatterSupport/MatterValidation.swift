@@ -14,7 +14,7 @@ public struct MatterValidator {
         guard BoardCapabilities.supportsMatter(board) else {
             throw MatterValidationError.unsupportedBoard(
                 board: board,
-                reason: "Matter is only supported on ESP32-C6 and ESP32-H2 variants"
+                reason: "Matter is only supported on the following boards: \(BoardCapabilities.matterCapableBoards.joined(separator: ", "))"
             )
         }
         

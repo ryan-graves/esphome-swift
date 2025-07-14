@@ -128,13 +128,13 @@ public struct ESP32C3Constraints: BoardConstraints {
 /// ESP32-H2 specific hardware constraints
 @frozen
 public struct ESP32H2Constraints: BoardConstraints {
-    public let availableGPIOPins: Set<Int> = Set(0 ... 27)
+    public let availableGPIOPins: Set<Int> = Set(0 ... 27) // 28 pins total (GPIO0-27)
     public let inputOnlyPins: Set<Int> = [] // ESP32-H2 has no input-only pins
-    public let outputCapablePins: Set<Int> = Set(0 ... 23) // Skip 24-27 (flash)
+    public let outputCapablePins: Set<Int> = Set(0 ... 23) // Skip 24-27 (flash/PSRAM)
     public let pwmCapablePins: Set<Int> = Set(0 ... 23)
-    public let adcCapablePins: Set<Int> = Set(0 ... 4) // ADC1 only
-    public let i2cDefaultSDA: Int = 5
-    public let i2cDefaultSCL: Int = 6
+    public let adcCapablePins: Set<Int> = Set(0 ... 4) // ADC1: GPIO0-4
+    public let i2cDefaultSDA: Int = 1
+    public let i2cDefaultSCL: Int = 0
     public let spiDefaultMOSI: Int = 7
     public let spiDefaultMISO: Int = 2
     public let spiDefaultCLK: Int = 6
@@ -148,16 +148,16 @@ public struct ESP32H2Constraints: BoardConstraints {
 /// ESP32-P4 specific hardware constraints
 @frozen
 public struct ESP32P4Constraints: BoardConstraints {
-    public let availableGPIOPins: Set<Int> = Set(0 ... 55)
+    public let availableGPIOPins: Set<Int> = Set(0 ... 54) // 55 pins total (GPIO0-54)
     public let inputOnlyPins: Set<Int> = [] // ESP32-P4 has no input-only pins
-    public let outputCapablePins: Set<Int> = Set(0 ... 25) // Skip 26-31 (flash/PSRAM)
-    public let pwmCapablePins: Set<Int> = Set(0 ... 25)
-    public let adcCapablePins: Set<Int> = Set(0 ... 7) // ADC1 only
-    public let i2cDefaultSDA: Int = 5
-    public let i2cDefaultSCL: Int = 6
-    public let spiDefaultMOSI: Int = 7
-    public let spiDefaultMISO: Int = 2
-    public let spiDefaultCLK: Int = 6
+    public let outputCapablePins: Set<Int> = Set(0 ... 54) // All GPIO pins support output
+    public let pwmCapablePins: Set<Int> = Set(0 ... 54) // All GPIO pins support PWM
+    public let adcCapablePins: Set<Int> = Set([0, 1, 2, 3, 4, 5, 6, 7]) // ADC1: GPIO0-7
+    public let i2cDefaultSDA: Int = 8
+    public let i2cDefaultSCL: Int = 9
+    public let spiDefaultMOSI: Int = 11
+    public let spiDefaultMISO: Int = 13
+    public let spiDefaultCLK: Int = 12
     public let spiDefaultCS: Int = 10
     
     public init() {}
