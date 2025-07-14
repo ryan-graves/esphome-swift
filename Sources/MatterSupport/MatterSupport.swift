@@ -18,12 +18,10 @@ public struct MatterSupport {
     public static let version = "1.0.0"
     
     /// Supported ESP32 boards for Matter functionality
-    public static let supportedBoards: Set<String> = [
-        "esp32-c6-devkitc-1",
-        "esp32-h2-devkitc-1", 
-        "esp32-c6-devkitm-1",
-        "esp32-h2-devkitm-1"
-    ]
+    /// Uses centralized board registry for maintainable board management
+    public static var supportedBoards: Set<String> {
+        return SupportedBoards.matterCapableBoards
+    }
     
     /// Validates if the given board supports Matter functionality
     /// - Parameter board: ESP32 board identifier

@@ -10,11 +10,11 @@ public struct MatterValidator {
     ///   - board: Target ESP32 board identifier
     /// - Throws: MatterValidationError if configuration is invalid
     public static func validate(_ config: MatterConfig, for board: String) throws {
-        // Check if board supports Matter
-        guard MatterSupport.isSupported(board: board) else {
+        // Check if board supports Matter using centralized registry
+        guard SupportedBoards.supportsMatter(board) else {
             throw MatterValidationError.unsupportedBoard(
                 board: board,
-                reason: "Matter is only supported on ESP32-C6 and ESP32-H2 variants"
+                reason: SupportedBoards.matterRequirementsDescription()
             )
         }
         
@@ -86,17 +86,12 @@ public struct MatterValidator {
     
     /// Validates Thread network configuration
     private static func validateThread(_ config: ThreadConfig, for board: String) throws {
-        // Check if board supports Thread
-        let threadCapableBoards: Set<String> = [
-            "esp32-c6-devkitc-1", "esp32-c6-devkitm-1",
-            "esp32-h2-devkitc-1", "esp32-h2-devkitm-1"
-        ]
-        
-        guard threadCapableBoards.contains(board) else {
+        // Check if board supports Thread using centralized registry
+        guard SupportedBoards.supportsThread(board) else {
             throw MatterValidationError.unsupportedFeature(
                 feature: "Thread",
                 board: board,
-                reason: "Thread networking requires ESP32-C6 or ESP32-H2"
+                reason: SupportedBoards.threadRequirementsDescription()
             )
         }
         
