@@ -161,7 +161,7 @@ public struct BoardCapabilities {
             
         // ESP32-H2 aliases
         case "esp32h2", "esp32-h2":
-            return supportedBoards["esp32-h2-devkitc-1"] // Default H2 board
+            return supportedBoards["esp32-h2-devkitc-1"] // Default H2 board (DevKitC variant)
             
         // ESP32-P4 aliases
         case "esp32p4", "esp32-p4":
