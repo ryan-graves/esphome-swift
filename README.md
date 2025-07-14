@@ -63,6 +63,7 @@ ESPHomeSwift/
 
 ### ✅ Phase 2: Core Features - COMPLETED  
 - [x] Component library (DHT, GPIO, ADC, RGB lights, binary sensors)
+- [x] Board capabilities system with multi-board validation
 - [x] WiFi and API integration framework
 - [x] OTA update system support
 - [x] Web dashboard foundation (monitoring interface)
@@ -92,6 +93,7 @@ ESPHomeSwift/
 
 - **Type Safety**: Swift's strong typing system prevents configuration errors at compile time
 - **Memory Safety**: Automatic memory management with compile-time guarantees
+- **Board-Aware Validation**: Hardware constraints enforced for ESP32-C3, C6, H2, P4 variants
 - **Matter Protocol**: Full Matter/Thread support for interoperable smart home devices
 - **Modern Tooling**: Leverages Swift Package Manager and Xcode ecosystem
 - **Embedded Swift**: Optimized compilation mode for microcontrollers

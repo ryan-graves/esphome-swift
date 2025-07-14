@@ -40,12 +40,20 @@ esp32:
 
 **Supported Boards:**
 - `esp32-c3-devkitm-1` - ESP32-C3 DevKit
-- `esp32-c3-devkitc-02` - ESP32-C3 DevKit
+- `esp32-c3-devkitc-02` - ESP32-C3 DevKit  
 - `esp32-c6-devkitc-1` - ESP32-C6 DevKit (Matter/Thread capable)
 - `esp32-c6-devkitm-1` - ESP32-C6 DevKit (Matter/Thread capable)
-- `esp32-h2-devkitc-1` - ESP32-H2 DevKit (Matter/Thread capable)
+- `esp32-h2-devkitc-1` - ESP32-H2 DevKit (Matter/Thread capable) 
 - `esp32-h2-devkitm-1` - ESP32-H2 DevKit (Matter/Thread capable)
 - `esp32-p4-function-ev-board` - ESP32-P4 Board
+
+**Board Shorthand Aliases:**
+- `esp32c3` → `esp32-c3-devkitm-1`
+- `esp32c6` → `esp32-c6-devkitc-1` 
+- `esp32h2` → `esp32-h2-devkitc-1`
+- `esp32p4` → `esp32-p4-function-ev-board`
+
+Use `swift run esphome-swift boards` to see all available boards and their capabilities.
 
 **Framework Types:**
 - `esp-idf` - Recommended for Embedded Swift
@@ -319,6 +327,8 @@ binary_sensor:
 
 ## Pin Configuration
 
+Pin assignments are validated against your target board's capabilities. Each ESP32 variant has different GPIO constraints, and ESPHome Swift enforces these automatically.
+
 ### Simple Format
 
 ```yaml
@@ -334,6 +344,15 @@ pin:
   mode: INPUT_PULLUP     # Pin mode
   inverted: true         # Invert logic
 ```
+
+### Board-Specific Pin Constraints
+
+Pin validation depends on your board selection:
+
+**ESP32-C3**: GPIO0-21 available, GPIO18-19 input-only  
+**ESP32-C6**: GPIO0-30 available, GPIO18-19 input-only  
+**ESP32-H2**: GPIO0-27 available, GPIO18-19 input-only  
+**ESP32-P4**: GPIO0-55 available, various peripheral constraints
 
 **Pin Modes:**
 - `INPUT` - Standard input
