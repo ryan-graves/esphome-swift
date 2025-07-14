@@ -110,7 +110,6 @@ public struct GPIOSensorFactory: ComponentFactory {
         )
     }
     
-    
     private func parseUpdateInterval(_ interval: String) -> Int {
         // Parse interval like "60s", "1000ms" to milliseconds
         if interval.hasSuffix("s") {
