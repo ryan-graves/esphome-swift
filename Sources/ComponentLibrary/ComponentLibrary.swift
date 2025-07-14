@@ -108,11 +108,17 @@ public protocol ComponentFactory {
     /// Validate configuration with compile-time type safety
     func validate(config: ConfigType) throws
     
+    /// Validate configuration with board-specific constraints
+    func validate(config: ConfigType, board: String) throws
+    
     /// Generate code with compile-time type safety
     func generateCode(config: ConfigType, context: CodeGenerationContext) throws -> ComponentCode
     
     /// Type-erased validate method for dynamic dispatch
     func validateAny(config: ComponentConfig) throws
+    
+    /// Type-erased board-aware validate method for dynamic dispatch
+    func validateAny(config: ComponentConfig, board: String) throws
     
     /// Type-erased generateCode method for dynamic dispatch  
     func generateCodeAny(config: ComponentConfig, context: CodeGenerationContext) throws -> ComponentCode
@@ -120,6 +126,11 @@ public protocol ComponentFactory {
 
 /// Default implementations for type-erased methods
 public extension ComponentFactory {
+    /// Default board-unaware validation - calls board-aware version with ESP32-C6 default
+    func validate(config: ConfigType) throws {
+        try validate(config: config, board: "esp32-c6-devkitc-1")
+    }
+    
     func validateAny(config: ComponentConfig) throws {
         guard let typedConfig = config as? ConfigType else {
             throw ComponentValidationError.incompatibleConfiguration(
@@ -128,6 +139,16 @@ public extension ComponentFactory {
             )
         }
         try validate(config: typedConfig)
+    }
+    
+    func validateAny(config: ComponentConfig, board: String) throws {
+        guard let typedConfig = config as? ConfigType else {
+            throw ComponentValidationError.incompatibleConfiguration(
+                component: platform,
+                reason: "Expected \(ConfigType.self) but got \(type(of: config))"
+            )
+        }
+        try validate(config: typedConfig, board: board)
     }
     
     func generateCodeAny(config: ComponentConfig, context: CodeGenerationContext) throws -> ComponentCode {

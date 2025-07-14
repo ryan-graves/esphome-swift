@@ -10,13 +10,11 @@ public struct RGBLightFactory: ComponentFactory {
     public let requiredProperties = ["red_pin", "green_pin", "blue_pin"]
     public let optionalProperties = ["name", "white_pin"]
     
-    private let pinValidator: PinValidator
-    
-    public init(pinValidator: PinValidator = PinValidator()) {
-        self.pinValidator = pinValidator
+    public init() {
+        // No longer store pinValidator as instance variable - create board-specific validator per call
     }
     
-    public func validate(config: LightConfig) throws {
+    public func validate(config: LightConfig, board: String) throws {
         // Validate required pins
         guard let redPin = config.redPin else {
             throw ComponentValidationError.missingRequiredProperty(component: platform, property: "red_pin")
@@ -28,7 +26,19 @@ public struct RGBLightFactory: ComponentFactory {
             throw ComponentValidationError.missingRequiredProperty(component: platform, property: "blue_pin")
         }
         
-        // Validate all pins are PWM-capable using shared validator
+        // Create board-specific pin validator
+        guard let boardDef = BoardCapabilities.boardDefinition(for: board) else {
+            throw ComponentValidationError.invalidPropertyValue(
+                component: platform,
+                property: "board",
+                value: board,
+                reason: "Unsupported board. Use 'swift run esphome-swift boards' to see available boards."
+            )
+        }
+        
+        let pinValidator = PinValidator(boardConstraints: boardDef.pinConstraints)
+        
+        // Validate all pins are PWM-capable using board-specific validator
         try pinValidator.validatePin(redPin, requirements: .pwm)
         try pinValidator.validatePin(greenPin, requirements: .pwm)
         try pinValidator.validatePin(bluePin, requirements: .pwm)
@@ -39,6 +49,17 @@ public struct RGBLightFactory: ComponentFactory {
     }
     
     public func generateCode(config: LightConfig, context: CodeGenerationContext) throws -> ComponentCode {
+        // Create board-specific pin validator for code generation
+        guard let boardDef = BoardCapabilities.boardDefinition(for: context.targetBoard) else {
+            throw ComponentValidationError.invalidPropertyValue(
+                component: platform,
+                property: "board",
+                value: context.targetBoard,
+                reason: "Unsupported board"
+            )
+        }
+        
+        let pinValidator = PinValidator(boardConstraints: boardDef.pinConstraints)
         let redPin = try pinValidator.extractPinNumber(from: config.redPin!)
         let greenPin = try pinValidator.extractPinNumber(from: config.greenPin!)
         let bluePin = try pinValidator.extractPinNumber(from: config.bluePin!)

@@ -356,6 +356,17 @@ public struct PinValidator {
 // MARK: - Board Factory
 
 /// Factory for creating board-specific constraints
+/// 
+/// - Important: Returns `nil` for unknown board identifiers to surface potential errors.
+///   Callers should handle the optional return value explicitly and provide appropriate
+///   error handling for unsupported boards.
+/// 
+/// - Example:
+/// ```swift
+/// guard let constraints = BoardFactory.constraints(for: boardName) else {
+///     throw ValidationError.unsupportedBoard(boardName)
+/// }
+/// ```
 public enum BoardFactory {
     public static func constraints(for boardName: String) -> BoardConstraints? {
         switch boardName.lowercased() {

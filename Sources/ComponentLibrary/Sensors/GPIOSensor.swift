@@ -10,13 +10,11 @@ public struct GPIOSensorFactory: ComponentFactory {
     public let requiredProperties = ["pin"]
     public let optionalProperties = ["name", "update_interval", "accuracy", "filters"]
     
-    private let pinValidator: PinValidator
-    
-    public init(pinValidator: PinValidator = PinValidator()) {
-        self.pinValidator = pinValidator
+    public init() {
+        // No longer store pinValidator as instance variable - create board-specific validator per call
     }
     
-    public func validate(config: SensorConfig) throws {
+    public func validate(config: SensorConfig, board: String) throws {
         // Validate required pin
         guard let pin = config.pin else {
             throw ComponentValidationError.missingRequiredProperty(
@@ -25,10 +23,32 @@ public struct GPIOSensorFactory: ComponentFactory {
             )
         }
         
+        // Create board-specific pin validator
+        guard let boardDef = BoardCapabilities.boardDefinition(for: board) else {
+            throw ComponentValidationError.invalidPropertyValue(
+                component: platform,
+                property: "board",
+                value: board,
+                reason: "Unsupported board. Use 'swift run esphome-swift boards' to see available boards."
+            )
+        }
+        
+        let pinValidator = PinValidator(boardConstraints: boardDef.pinConstraints)
         try pinValidator.validatePin(pin, requirements: .adc)
     }
     
     public func generateCode(config: SensorConfig, context: CodeGenerationContext) throws -> ComponentCode {
+        // Create board-specific pin validator for code generation
+        guard let boardDef = BoardCapabilities.boardDefinition(for: context.targetBoard) else {
+            throw ComponentValidationError.invalidPropertyValue(
+                component: platform,
+                property: "board",
+                value: context.targetBoard,
+                reason: "Unsupported board"
+            )
+        }
+        
+        let pinValidator = PinValidator(boardConstraints: boardDef.pinConstraints)
         let pinNumber = try pinValidator.extractPinNumber(from: config.pin!)
         let componentId = config.id ?? "adc_sensor_\(pinNumber)"
         let updateInterval = parseUpdateInterval(config.updateInterval ?? "60s")
@@ -71,8 +91,10 @@ public struct GPIOSensorFactory: ComponentFactory {
     }
     
     private func adcChannelForPin(_ pin: Int) -> Int {
-        // Map GPIO pin to ADC1 channel for ESP32-C6
-        return pin // Direct mapping for ESP32-C6
+        // Map GPIO pin to ADC1 channel - varies by board
+        // For ESP32-C6: pins 0-7 map to ADC1 channels 0-7
+        // TODO: Make this board-specific based on BoardCapabilities
+        return pin
     }
     
     private func parseUpdateInterval(_ interval: String) -> Int {

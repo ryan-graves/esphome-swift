@@ -67,6 +67,30 @@ final class BoardCapabilitiesTests: XCTestCase {
         XCTAssertTrue(BoardCapabilities.boardSupports("esp32-c3-devkitm-1", capability: .adc))
         XCTAssertTrue(BoardCapabilities.boardSupports("esp32-h2-devkitc-1", capability: .adc))
         XCTAssertTrue(BoardCapabilities.boardSupports("esp32-p4-function-ev-board", capability: .adc))
+        
+        // Test PWM capability (all boards should have this)
+        XCTAssertTrue(BoardCapabilities.boardSupports("esp32-c6-devkitc-1", capability: .pwm))
+        XCTAssertTrue(BoardCapabilities.boardSupports("esp32-c3-devkitm-1", capability: .pwm))
+        XCTAssertTrue(BoardCapabilities.boardSupports("esp32-h2-devkitc-1", capability: .pwm))
+        XCTAssertTrue(BoardCapabilities.boardSupports("esp32-p4-function-ev-board", capability: .pwm))
+        
+        // Test I2C capability (all boards should have this)
+        XCTAssertTrue(BoardCapabilities.boardSupports("esp32-c6-devkitc-1", capability: .i2c))
+        XCTAssertTrue(BoardCapabilities.boardSupports("esp32-c3-devkitm-1", capability: .i2c))
+        XCTAssertTrue(BoardCapabilities.boardSupports("esp32-h2-devkitc-1", capability: .i2c))
+        XCTAssertTrue(BoardCapabilities.boardSupports("esp32-p4-function-ev-board", capability: .i2c))
+        
+        // Test SPI capability (all boards should have this)
+        XCTAssertTrue(BoardCapabilities.boardSupports("esp32-c6-devkitc-1", capability: .spi))
+        XCTAssertTrue(BoardCapabilities.boardSupports("esp32-c3-devkitm-1", capability: .spi))
+        XCTAssertTrue(BoardCapabilities.boardSupports("esp32-h2-devkitc-1", capability: .spi))
+        XCTAssertTrue(BoardCapabilities.boardSupports("esp32-p4-function-ev-board", capability: .spi))
+        
+        // Test UART capability (all boards should have this)
+        XCTAssertTrue(BoardCapabilities.boardSupports("esp32-c6-devkitc-1", capability: .uart))
+        XCTAssertTrue(BoardCapabilities.boardSupports("esp32-c3-devkitm-1", capability: .uart))
+        XCTAssertTrue(BoardCapabilities.boardSupports("esp32-h2-devkitc-1", capability: .uart))
+        XCTAssertTrue(BoardCapabilities.boardSupports("esp32-p4-function-ev-board", capability: .uart))
     }
     
     func testChipFamilyGrouping() {
@@ -266,6 +290,38 @@ final class BoardCapabilitiesTests: XCTestCase {
         
         XCTAssertEqual(lowerBoard?.identifier, upperBoard?.identifier)
         XCTAssertEqual(lowerBoard?.displayName, upperBoard?.displayName)
+    }
+    
+    func testShorthandAliasSupport() {
+        // Test shorthand aliases return default boards for each chip family
+        let aliasTests = [
+            ("esp32c3", "esp32-c3-devkitm-1"),
+            ("ESP32-C3", "esp32-c3-devkitm-1"),
+            ("esp32c6", "esp32-c6-devkitc-1"),
+            ("ESP32-C6", "esp32-c6-devkitc-1"),
+            ("esp32h2", "esp32-h2-devkitc-1"),
+            ("ESP32-H2", "esp32-h2-devkitc-1"),
+            ("esp32p4", "esp32-p4-function-ev-board"),
+            ("ESP32-P4", "esp32-p4-function-ev-board")
+        ]
+        
+        for (alias, expectedBoard) in aliasTests {
+            guard let aliasBoard = BoardCapabilities.boardDefinition(for: alias),
+                  let expectedBoardDef = BoardCapabilities.boardDefinition(for: expectedBoard) else {
+                XCTFail("Failed to resolve alias '\(alias)' or expected board '\(expectedBoard)'")
+                continue
+            }
+            
+            XCTAssertEqual(aliasBoard.identifier, expectedBoardDef.identifier,
+                           "Alias '\(alias)' should resolve to '\(expectedBoard)'")
+            XCTAssertEqual(aliasBoard.chipFamily, expectedBoardDef.chipFamily,
+                           "Alias '\(alias)' should have same chip family as '\(expectedBoard)'")
+        }
+        
+        // Test that aliases support capability queries
+        XCTAssertTrue(BoardCapabilities.boardSupports("esp32c6", capability: .wifi))
+        XCTAssertTrue(BoardCapabilities.boardSupports("esp32h2", capability: .thread))
+        XCTAssertFalse(BoardCapabilities.boardSupports("esp32c3", capability: .matter))
     }
     
     func testMatterValidatorErrorHandling() {

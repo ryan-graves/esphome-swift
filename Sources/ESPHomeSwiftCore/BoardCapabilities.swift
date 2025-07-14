@@ -128,7 +128,7 @@ public struct BoardCapabilities {
     
     /// Check if a board supports a specific capability
     public static func boardSupports(_ board: String, capability: BoardCapability) -> Bool {
-        guard let boardDef = supportedBoards[board.lowercased()] else { return false }
+        guard let boardDef = boardDefinition(for: board) else { return false }
         return boardDef.capabilities.contains(capability)
     }
     
@@ -140,8 +140,36 @@ public struct BoardCapabilities {
     }
     
     /// Get board definition by identifier
+    /// Supports both exact board names and shorthand aliases (e.g., "esp32c6" for chip families)
     public static func boardDefinition(for identifier: String) -> BoardDefinition? {
-        return supportedBoards[identifier.lowercased()]
+        let normalizedId = identifier.lowercased()
+        
+        // First try exact match
+        if let board = supportedBoards[normalizedId] {
+            return board
+        }
+        
+        // Try shorthand/alias matching
+        switch normalizedId {
+        // ESP32-C3 aliases
+        case "esp32c3", "esp32-c3":
+            return supportedBoards["esp32-c3-devkitm-1"] // Default C3 board
+            
+        // ESP32-C6 aliases  
+        case "esp32c6", "esp32-c6":
+            return supportedBoards["esp32-c6-devkitc-1"] // Default C6 board
+            
+        // ESP32-H2 aliases
+        case "esp32h2", "esp32-h2":
+            return supportedBoards["esp32-h2-devkitc-1"] // Default H2 board
+            
+        // ESP32-P4 aliases
+        case "esp32p4", "esp32-p4":
+            return supportedBoards["esp32-p4-function-ev-board"] // Default P4 board
+            
+        default:
+            return nil
+        }
     }
     
     /// Get all supported board identifiers

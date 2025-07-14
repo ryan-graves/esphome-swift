@@ -10,13 +10,11 @@ public struct GPIOSwitchFactory: ComponentFactory {
     public let requiredProperties = ["pin"]
     public let optionalProperties = ["name", "inverted", "restore_mode"]
     
-    private let pinValidator: PinValidator
-    
-    public init(pinValidator: PinValidator = PinValidator()) {
-        self.pinValidator = pinValidator
+    public init() {
+        // No longer store pinValidator as instance variable - create board-specific validator per call
     }
     
-    public func validate(config: SwitchConfig) throws {
+    public func validate(config: SwitchConfig, board: String) throws {
         // Validate required pin
         guard let pin = config.pin else {
             throw ComponentValidationError.missingRequiredProperty(
@@ -25,10 +23,32 @@ public struct GPIOSwitchFactory: ComponentFactory {
             )
         }
         
+        // Create board-specific pin validator
+        guard let boardDef = BoardCapabilities.boardDefinition(for: board) else {
+            throw ComponentValidationError.invalidPropertyValue(
+                component: platform,
+                property: "board",
+                value: board,
+                reason: "Unsupported board. Use 'swift run esphome-swift boards' to see available boards."
+            )
+        }
+        
+        let pinValidator = PinValidator(boardConstraints: boardDef.pinConstraints)
         try pinValidator.validatePin(pin, requirements: .output)
     }
     
     public func generateCode(config: SwitchConfig, context: CodeGenerationContext) throws -> ComponentCode {
+        // Create board-specific pin validator for code generation
+        guard let boardDef = BoardCapabilities.boardDefinition(for: context.targetBoard) else {
+            throw ComponentValidationError.invalidPropertyValue(
+                component: platform,
+                property: "board",
+                value: context.targetBoard,
+                reason: "Unsupported board"
+            )
+        }
+        
+        let pinValidator = PinValidator(boardConstraints: boardDef.pinConstraints)
         let pinNumber = try pinValidator.extractPinNumber(from: config.pin!)
         let componentId = config.id ?? "gpio_switch_\(pinNumber)"
         let inverted = config.inverted ?? false

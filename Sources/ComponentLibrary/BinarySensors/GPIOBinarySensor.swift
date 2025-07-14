@@ -10,13 +10,11 @@ public struct GPIOBinarySensorFactory: ComponentFactory {
     public let requiredProperties = ["pin"]
     public let optionalProperties = ["name", "device_class", "inverted", "filters"]
     
-    private let pinValidator: PinValidator
-    
-    public init(pinValidator: PinValidator = PinValidator()) {
-        self.pinValidator = pinValidator
+    public init() {
+        // No longer store pinValidator as instance variable - create board-specific validator per call
     }
     
-    public func validate(config: BinarySensorConfig) throws {
+    public func validate(config: BinarySensorConfig, board: String) throws {
         // Validate required pin
         guard let pin = config.pin else {
             throw ComponentValidationError.missingRequiredProperty(
@@ -25,10 +23,32 @@ public struct GPIOBinarySensorFactory: ComponentFactory {
             )
         }
         
+        // Create board-specific pin validator
+        guard let boardDef = BoardCapabilities.boardDefinition(for: board) else {
+            throw ComponentValidationError.invalidPropertyValue(
+                component: platform,
+                property: "board",
+                value: board,
+                reason: "Unsupported board. Use 'swift run esphome-swift boards' to see available boards."
+            )
+        }
+        
+        let pinValidator = PinValidator(boardConstraints: boardDef.pinConstraints)
         try pinValidator.validatePin(pin, requirements: .input)
     }
     
     public func generateCode(config: BinarySensorConfig, context: CodeGenerationContext) throws -> ComponentCode {
+        // Create board-specific pin validator for code generation
+        guard let boardDef = BoardCapabilities.boardDefinition(for: context.targetBoard) else {
+            throw ComponentValidationError.invalidPropertyValue(
+                component: platform,
+                property: "board",
+                value: context.targetBoard,
+                reason: "Unsupported board"
+            )
+        }
+        
+        let pinValidator = PinValidator(boardConstraints: boardDef.pinConstraints)
         let pinNumber = try pinValidator.extractPinNumber(from: config.pin!)
         let componentId = config.id ?? "binary_sensor_\(pinNumber)"
         let inverted = config.inverted ?? false
