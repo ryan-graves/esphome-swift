@@ -65,8 +65,4 @@ light:
     restore_mode: RESTORE_DEFAULT_OFF
     
     # Matter integration will automatically sync this with Matter attributes
-    effects:
-      - name: "Rainbow"
-        type: rainbow
-      - name: "Breathe"
-        type: breathe
+    # Note: Light effects are planned for future releases

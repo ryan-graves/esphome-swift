@@ -46,7 +46,7 @@ public enum MatterDeviceType: String, Codable, CaseIterable {
         case .dimmableLight: return 0x0101
         case .colorTemperatureLight: return 0x010C
         case .extendedColorLight: return 0x010D
-        // Switches (0x0000-0x00FF)  
+        // Switches (0x000F-0x0105)  
         case .onOffSwitch: return 0x0103
         case .dimmerSwitch: return 0x0104
         case .colorDimmerSwitch: return 0x0105

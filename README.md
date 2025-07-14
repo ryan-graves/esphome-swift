@@ -28,8 +28,7 @@ ESPHome Swift brings the power and type safety of Swift to embedded IoT developm
 
 ### Target Platforms
 - ESP32-C3, ESP32-C6, ESP32-H2, ESP32-P4 (RISC-V architecture)
-- WiFi, Bluetooth, **Matter protocol support** (ESP32-C6/H2)
-- Thread networking with 802.15.4 mesh capabilities
+- **WiFi, Bluetooth, and Matter protocol** with Thread/802.15.4 mesh networking (ESP32-C6/H2)
 - Over-the-air (OTA) firmware updates
 - Home Assistant native API integration
 

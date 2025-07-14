@@ -136,6 +136,8 @@ matter:
 - `occupancy_sensor` - Motion/occupancy detection
 - `contact_sensor` - Door/window contact
 - `light_sensor` - Light level measurement
+- `pressure_sensor` - Pressure measurement
+- `flow_sensor` - Flow measurement
 - `air_quality_sensor` - Air quality monitoring
 
 *Appliances:*

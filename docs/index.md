@@ -11,7 +11,7 @@ A Swift-based replacement for ESPHome that generates Embedded Swift firmware for
 
 - 🚀 **Native Swift Implementation** - Type-safe configuration and code generation
 - 📱 **ESP32 RISC-V Support** - Targets ESP32-C3, C6, H2, and P4 boards
-- 🌐 **Matter Protocol Support** - Thread networking for ESP32-C6/H2 boards
+- 🌐 **Matter Protocol Support** - WiFi and Thread networking for ESP32-C6/H2 boards
 - 🔧 **Extensible Component System** - Easy to add new sensors and actuators
 - 🏠 **Home Assistant Compatible** - Native API integration
 - 📦 **Simple YAML Configuration** - Familiar ESPHome-style syntax
