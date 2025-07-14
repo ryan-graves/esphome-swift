@@ -1,5 +1,6 @@
 import XCTest
 @testable import ESPHomeSwiftCore
+@testable import MatterSupport
 
 final class BoardCapabilitiesTests: XCTestCase {
 
@@ -133,6 +134,40 @@ final class BoardCapabilitiesTests: XCTestCase {
         XCTAssertTrue(p4Board.pinConstraints.adcCapablePins.contains(0))
         XCTAssertTrue(p4Board.pinConstraints.adcCapablePins.contains(7))
         XCTAssertFalse(p4Board.pinConstraints.adcCapablePins.contains(8)) // Only GPIO0-7 for ADC
+        
+        // Test default peripheral pins match datasheet specifications
+        
+        // ESP32-C6 defaults
+        XCTAssertEqual(c6Board.pinConstraints.i2cDefaultSDA, 5)
+        XCTAssertEqual(c6Board.pinConstraints.i2cDefaultSCL, 6)
+        XCTAssertEqual(c6Board.pinConstraints.spiDefaultMOSI, 7)
+        XCTAssertEqual(c6Board.pinConstraints.spiDefaultMISO, 2)
+        XCTAssertEqual(c6Board.pinConstraints.spiDefaultCLK, 6)
+        XCTAssertEqual(c6Board.pinConstraints.spiDefaultCS, 10)
+        
+        // ESP32-C3 defaults
+        XCTAssertEqual(c3Board.pinConstraints.i2cDefaultSDA, 5)
+        XCTAssertEqual(c3Board.pinConstraints.i2cDefaultSCL, 6)
+        XCTAssertEqual(c3Board.pinConstraints.spiDefaultMOSI, 7)
+        XCTAssertEqual(c3Board.pinConstraints.spiDefaultMISO, 2)
+        XCTAssertEqual(c3Board.pinConstraints.spiDefaultCLK, 6)
+        XCTAssertEqual(c3Board.pinConstraints.spiDefaultCS, 10)
+        
+        // ESP32-H2 defaults (different from C6/C3)
+        XCTAssertEqual(h2Board.pinConstraints.i2cDefaultSDA, 1)
+        XCTAssertEqual(h2Board.pinConstraints.i2cDefaultSCL, 0)
+        XCTAssertEqual(h2Board.pinConstraints.spiDefaultMOSI, 7)
+        XCTAssertEqual(h2Board.pinConstraints.spiDefaultMISO, 2)
+        XCTAssertEqual(h2Board.pinConstraints.spiDefaultCLK, 6)
+        XCTAssertEqual(h2Board.pinConstraints.spiDefaultCS, 10)
+        
+        // ESP32-P4 defaults (different layout)
+        XCTAssertEqual(p4Board.pinConstraints.i2cDefaultSDA, 8)
+        XCTAssertEqual(p4Board.pinConstraints.i2cDefaultSCL, 9)
+        XCTAssertEqual(p4Board.pinConstraints.spiDefaultMOSI, 11)
+        XCTAssertEqual(p4Board.pinConstraints.spiDefaultMISO, 13)
+        XCTAssertEqual(p4Board.pinConstraints.spiDefaultCLK, 12)
+        XCTAssertEqual(p4Board.pinConstraints.spiDefaultCS, 10)
     }
     
     func testMatterExtensions() {
@@ -231,5 +266,96 @@ final class BoardCapabilitiesTests: XCTestCase {
         
         XCTAssertEqual(lowerBoard?.identifier, upperBoard?.identifier)
         XCTAssertEqual(lowerBoard?.displayName, upperBoard?.displayName)
+    }
+    
+    func testMatterValidatorErrorHandling() {
+        // Test MatterValidator.validate() throws correct errors for unsupported boards
+        let matterConfig = MatterConfig(
+            deviceType: "dimmable_light",
+            vendorId: 0xFFF1,
+            productId: 0x8000,
+            commissioning: nil,
+            thread: nil,
+            network: nil
+        )
+        
+        // Test unsupported board throws correct error
+        XCTAssertThrowsError(try MatterValidator.validate(matterConfig, for: "esp32-c3-devkitm-1")) { error in
+            guard let matterError = error as? MatterValidationError,
+                  case .unsupportedBoard(let board, let reason) = matterError else {
+                XCTFail("Expected MatterValidationError.unsupportedBoard, got \(error)")
+                return
+            }
+            XCTAssertEqual(board, "esp32-c3-devkitm-1")
+            XCTAssertTrue(reason.contains("esp32-c6-devkitc-1")) // Should contain supported boards
+        }
+        
+        // Test supported board does not throw
+        XCTAssertNoThrow(try MatterValidator.validate(matterConfig, for: "esp32-c6-devkitc-1"))
+    }
+    
+    func testThreadValidatorErrorHandling() {
+        // Test Thread validation through MatterValidator.validate() for unsupported boards
+        let matterConfigWithThread = MatterConfig(
+            deviceType: "dimmable_light",
+            vendorId: 0xFFF1,
+            productId: 0x8000,
+            commissioning: nil,
+            thread: ThreadConfig(
+                enabled: true,
+                dataset: nil,
+                networkName: nil,
+                extPanId: nil,
+                networkKey: nil,
+                channel: 15,
+                panId: 0x1234
+            ),
+            network: nil
+        )
+        
+        // Test that ESP32-C3 (non-Matter board) throws unsupportedBoard error first
+        XCTAssertThrowsError(try MatterValidator.validate(matterConfigWithThread, for: "esp32-c3-devkitm-1")) { error in
+            guard let matterError = error as? MatterValidationError,
+                  case .unsupportedBoard(let board, let reason) = matterError else {
+                XCTFail("Expected MatterValidationError.unsupportedBoard, got \(error)")
+                return
+            }
+            XCTAssertEqual(board, "esp32-c3-devkitm-1")
+            XCTAssertTrue(reason.contains("esp32-c6-devkitc-1")) // Should contain supported boards
+        }
+        
+        // Test supported boards do not throw Thread errors
+        XCTAssertNoThrow(try MatterValidator.validate(matterConfigWithThread, for: "esp32-c6-devkitc-1"))
+        XCTAssertNoThrow(try MatterValidator.validate(matterConfigWithThread, for: "esp32-h2-devkitc-1"))
+        
+        // Test Thread validation specifically by testing with invalid channel on supported board
+        let matterConfigInvalidThread = MatterConfig(
+            deviceType: "dimmable_light",
+            vendorId: 0xFFF1,
+            productId: 0x8000,
+            commissioning: nil,
+            thread: ThreadConfig(
+                enabled: true,
+                dataset: nil,
+                networkName: nil,
+                extPanId: nil,
+                networkKey: nil,
+                channel: 99, // Invalid channel (should be 11-26)
+                panId: 0x1234
+            ),
+            network: nil
+        )
+        
+        // Test invalid Thread configuration throws correct error
+        XCTAssertThrowsError(try MatterValidator.validate(matterConfigInvalidThread, for: "esp32-c6-devkitc-1")) { error in
+            guard let matterError = error as? MatterValidationError,
+                  case .invalidThreadParameter(let parameter, let value, let reason) = matterError else {
+                XCTFail("Expected MatterValidationError.invalidThreadParameter, got \(error)")
+                return
+            }
+            XCTAssertEqual(parameter, "channel")
+            XCTAssertEqual(value, "99")
+            XCTAssertTrue(reason.contains("between 11 and 26"))
+        }
     }
 }

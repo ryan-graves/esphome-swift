@@ -357,7 +357,7 @@ public struct PinValidator {
 
 /// Factory for creating board-specific constraints
 public enum BoardFactory {
-    public static func constraints(for boardName: String) -> BoardConstraints {
+    public static func constraints(for boardName: String) -> BoardConstraints? {
         switch boardName.lowercased() {
         // ESP32-C3 boards
         case "esp32-c3-devkitm-1", "esp32-c3-devkitc-02", "esp32c3", "esp32-c3":
@@ -376,8 +376,8 @@ public enum BoardFactory {
             return ESP32P4Constraints()
             
         default:
-            // Default to ESP32-C6 for backwards compatibility
-            return ESP32C6Constraints()
+            // Return nil for unknown boards to surface potential errors
+            return nil
         }
     }
 }
