@@ -414,15 +414,8 @@ public struct MySensorFactory: ComponentFactory {
             )
         }
         
-        // Validate pin against board capabilities
-        guard let boardDef = BoardCapabilities.boardDefinition(for: board) else {
-            throw ComponentValidationError.invalidPropertyValue(
-                component: platform, property: "board", value: board,
-                reason: "Unsupported board. Use 'swift run esphome-swift boards' to see available boards."
-            )
-        }
-        
-        let pinValidator = PinValidator(boardConstraints: boardDef.pinConstraints)
+        // Validate pin against board capabilities using shared helper
+        let pinValidator = try createPinValidator(for: board)
         try pinValidator.validatePin(pin, requirements: .input)
     }
     
@@ -431,12 +424,7 @@ public struct MySensorFactory: ComponentFactory {
         context: CodeGenerationContext
     ) throws -> ComponentCode {
         // Use board-specific context for code generation
-        guard let boardDef = BoardCapabilities.boardDefinition(for: context.targetBoard) else {
-            throw ComponentValidationError.invalidPropertyValue(
-                component: platform, property: "board", 
-                value: context.targetBoard, reason: "Unsupported board"
-            )
-        }
+        let boardDef = try getBoardDefinition(from: context)
         
         let pinValidator = PinValidator(boardConstraints: boardDef.pinConstraints)
         let pinNumber = try pinValidator.extractPinNumber(from: config.pin!)
@@ -461,7 +449,40 @@ private func registerBuiltInComponents() {
 }
 ```
 
-### 3. Add Tests
+### 3. Using Shared Helper Methods
+
+The ComponentFactory protocol provides shared helper methods to eliminate boilerplate code:
+
+**Board Validation Helper:**
+```swift
+public func validate(config: ConfigType, board: String) throws {
+    // ✅ Use shared helper - handles all error cases consistently
+    let pinValidator = try createPinValidator(for: board)
+    try pinValidator.validatePin(pin, requirements: .input)
+    
+    // ❌ Don't repeat boilerplate manually
+    // guard let boardDef = BoardCapabilities.boardDefinition(for: board) else { ... }
+}
+```
+
+**Code Generation Helper:**
+```swift
+public func generateCode(config: ConfigType, context: CodeGenerationContext) throws -> ComponentCode {
+    // ✅ Use shared helper for consistent error handling  
+    let boardDef = try getBoardDefinition(from: context)
+    let pinValidator = PinValidator(boardConstraints: boardDef.pinConstraints)
+    
+    // Component-specific code generation...
+}
+```
+
+**Available Helper Methods:**
+- `createPinValidator(for: String)` - Creates board-specific pin validator with proper error handling
+- `getBoardDefinition(from: CodeGenerationContext)` - Extracts board definition from generation context
+
+These helpers ensure consistent error messages and reduce code duplication across all component factories.
+
+### 4. Add Tests
 
 ```swift
 // Tests/ComponentLibraryTests/MySensorTests.swift

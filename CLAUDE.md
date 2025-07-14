@@ -146,20 +146,21 @@ int value = gpio_get_level(sensor_pin);
 #### Board-Aware Pin Validation
 ```swift
 // IMPORTANT: Components should use board-specific validation (Core Principle #5)
-private func validatePin(_ pinNumber: String, board: String) throws {
-    // Create appropriate pin validator for the target board
-    let pinValidator = PinValidator(board: board)
+public func validate(config: ConfigType, board: String) throws {
+    // Use shared helper for consistent board validation (eliminates boilerplate)
+    let pinValidator = try createPinValidator(for: board)
     
-    // Use board-specific constraints
-    try pinValidator.validatePin(pinNumber, 
-                                mode: requiresOutput ? .output : .input)
+    // Board-specific pin validation 
+    try pinValidator.validatePin(pin, requirements: .output)
 }
 
-// Example: Components should get board from context
-func validate(config: ComponentConfig, context: CodeGenerationContext) throws {
-    if let pin = config.properties["pin"]?.stringValue {
-        try validatePin(pin, board: context.targetBoard)
-    }
+// Example: Code generation with board context
+public func generateCode(config: ConfigType, context: CodeGenerationContext) throws -> ComponentCode {
+    // Use shared helper for board definition extraction
+    let boardDef = try getBoardDefinition(from: context)
+    let pinValidator = PinValidator(boardConstraints: boardDef.pinConstraints)
+    
+    // Component-specific code generation...
 }
 ```
 
