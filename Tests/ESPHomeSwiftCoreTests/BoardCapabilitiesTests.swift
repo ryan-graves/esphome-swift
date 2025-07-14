@@ -222,7 +222,7 @@ final class BoardCapabilitiesTests: XCTestCase {
             XCTAssertTrue(BoardCapabilities.boardSupports(variation, capability: .wifi), 
                          "Board lookup should be case-insensitive for: \(variation)")
             XCTAssertNotNil(BoardCapabilities.boardDefinition(for: variation),
-                           "Board definition lookup should be case-insensitive for: \(variation)")
+                            "Board definition lookup should be case-insensitive for: \(variation)")
         }
         
         // Test that the returned board definition is the same regardless of case
