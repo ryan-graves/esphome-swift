@@ -288,6 +288,17 @@ ESPHome Swift uses a Git Flow inspired branching strategy following CONTRIBUTING
    - All tests pass
    - Cross-platform builds succeed
 
+6. **MANDATORY: Run all status checks before pushing**:
+   ```bash
+   # Always run these commands before git push
+   swift test                    # Ensure all tests pass
+   swiftlint                    # Check for linting violations  
+   swiftformat --lint .         # Check formatting compliance
+   swift build                  # Ensure clean build
+   ```
+   
+   **Critical**: Never push code that fails any of these checks. GitHub CI will fail and block the PR. Fix all issues locally first.
+
 ### Useful Development Commands
 
 ```bash
@@ -339,6 +350,7 @@ swift run esphome-swift validate Examples/basic-sensor.yaml
 5. **Future-Proof**: Design with extensibility and maintainability in mind
 6. **Test-Driven**: Ensure all changes are covered by tests and don't break existing functionality (see Core Principle #3)
 7. **ESPHome Compatibility**: Maintain familiar patterns and conventions for ESPHome users (see Core Principle #2)
+8. **CRITICAL: Pre-Push Validation**: Always run `swift test`, `swiftlint`, `swiftformat --lint .`, and `swift build` before pushing. Never push failing code.
 
 **When Refactoring**:
 - Complete each architectural change thoroughly before moving to the next

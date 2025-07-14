@@ -111,7 +111,6 @@ public protocol ComponentFactory {
     /// Generate code with compile-time type safety
     func generateCode(config: ConfigType, context: CodeGenerationContext) throws -> ComponentCode
     
-    
     /// Type-erased board-aware validate method for dynamic dispatch
     func validateAny(config: ComponentConfig, board: String) throws
     
@@ -157,7 +156,6 @@ public extension ComponentFactory {
         }
         return boardDef
     }
-    
     
     func validateAny(config: ComponentConfig, board: String) throws {
         guard let typedConfig = config as? ConfigType else {
