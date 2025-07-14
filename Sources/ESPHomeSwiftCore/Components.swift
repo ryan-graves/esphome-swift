@@ -262,6 +262,9 @@ public enum LightEffectType: String, Codable, CaseIterable {
     case fireworks
     case flicker
     case addressableRainbow = "addressable_rainbow"
+    case strobe
+    case pulse
+    case breathe
 }
 
 // MARK: - Binary Sensor Components
