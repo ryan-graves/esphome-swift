@@ -86,6 +86,7 @@ ESPHomeSwift/
 - [ ] Advanced debugging and monitoring tools
 - [ ] Integration with other home automation platforms
 - [ ] Mobile companion app for device management
+- [ ] [Matter protocol enhancements](docs/matter-roadmap.md) (QR code generation, advanced security, extended device types)
 
 ## Key Differentiators
 
