@@ -352,7 +352,7 @@ Pin validation depends on your board selection:
 **ESP32-C3**: GPIO0-21 available, GPIO18-19 input-only  
 **ESP32-C6**: GPIO0-30 available, GPIO18-19 input-only  
 **ESP32-H2**: GPIO0-27 available, GPIO18-19 input-only  
-**ESP32-P4**: GPIO0-55 available, various peripheral constraints
+**ESP32-P4**: GPIO0-54 available, various peripheral constraints
 
 **Pin Modes:**
 - `INPUT` - Standard input

@@ -62,8 +62,12 @@ public protocol BoardConstraints {
     var outputCapablePins: Set<Int> { get }
     var pwmCapablePins: Set<Int> { get }
     var adcCapablePins: Set<Int> { get }
-    var i2cPins: (sda: Set<Int>, scl: Set<Int>) { get }
-    var spiPins: (mosi: Set<Int>, miso: Set<Int>, clk: Set<Int>, cs: Set<Int>) { get }
+    var i2cDefaultSDA: Int { get }
+    var i2cDefaultSCL: Int { get }
+    var spiDefaultMOSI: Int { get }
+    var spiDefaultMISO: Int { get }
+    var spiDefaultCLK: Int { get }
+    var spiDefaultCS: Int { get }
 }
 
 /// Pin validator with board-specific constraints

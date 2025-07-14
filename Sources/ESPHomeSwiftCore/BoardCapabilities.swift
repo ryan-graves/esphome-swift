@@ -216,4 +216,57 @@ public extension BoardCapabilities {
         let supportedBoards = boardsWithCapability(capability)
         return supportedBoards.joined(separator: ", ")
     }
+    
+    /// Map GPIO pin to ADC1 channel for board-specific ADC functionality
+    /// - Parameters:
+    ///   - pin: GPIO pin number
+    ///   - board: Board identifier
+    /// - Returns: ADC1 channel number for the pin
+    /// - Throws: BoardCapabilityError if pin doesn't support ADC on the board
+    static func adcChannelForPin(_ pin: Int, board: String) throws -> Int {
+        guard let boardDef = boardDefinition(for: board) else {
+            throw BoardCapabilityError.unsupportedBoard(board)
+        }
+        
+        // Board-specific GPIO pin to ADC1 channel mapping
+        switch boardDef.chipFamily {
+        case .esp32c6:
+            // ESP32-C6: GPIO0-7 → ADC1_CHANNEL_0-7
+            if pin >= 0 && pin <= 7 {
+                return pin
+            }
+        case .esp32c3:
+            // ESP32-C3: GPIO0-4 → ADC1_CHANNEL_0-4
+            if pin >= 0 && pin <= 4 {
+                return pin
+            }
+        case .esp32h2:
+            // ESP32-H2: GPIO0-4 → ADC1_CHANNEL_0-4
+            if pin >= 0 && pin <= 4 {
+                return pin
+            }
+        case .esp32p4:
+            // ESP32-P4: GPIO0-7 → ADC1_CHANNEL_0-7
+            if pin >= 0 && pin <= 7 {
+                return pin
+            }
+        }
+        
+        throw BoardCapabilityError.pinNotSupportedForADC(pin, boardDef.chipFamily)
+    }
+}
+
+/// Errors that can occur during board capability operations
+public enum BoardCapabilityError: Error, LocalizedError {
+    case unsupportedBoard(String)
+    case pinNotSupportedForADC(Int, BoardCapabilities.ChipFamily)
+    
+    public var errorDescription: String? {
+        switch self {
+        case .unsupportedBoard(let board):
+            return "Unsupported board: \(board). Use 'swift run esphome-swift boards' to see available boards."
+        case .pinNotSupportedForADC(let pin, let chipFamily):
+            return "GPIO\(pin) does not support ADC on \(chipFamily) boards"
+        }
+    }
 }
