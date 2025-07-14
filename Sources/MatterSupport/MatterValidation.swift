@@ -14,7 +14,7 @@ public struct MatterValidator {
         guard BoardCapabilities.supportsMatter(board) else {
             throw MatterValidationError.unsupportedBoard(
                 board: board,
-                reason: "Matter is only supported on the following boards: \(BoardCapabilities.matterCapableBoards.joined(separator: ", "))"
+                reason: "Matter is only supported on the following boards: \(BoardCapabilities.requirementsDescription(for: .matter))"
             )
         }
         
@@ -88,11 +88,10 @@ public struct MatterValidator {
     private static func validateThread(_ config: ThreadConfig, for board: String) throws {
         // Check if board supports Thread using centralized capabilities
         guard BoardCapabilities.supportsThread(board) else {
-            let supportedBoards = BoardCapabilities.threadCapableBoards.joined(separator: ", ")
             throw MatterValidationError.unsupportedFeature(
                 feature: "Thread",
                 board: board,
-                reason: "Thread networking requires ESP32-C6 or ESP32-H2. Supported boards: \(supportedBoards)"
+                reason: "Thread networking requires ESP32-C6 or ESP32-H2. Supported boards: \(BoardCapabilities.requirementsDescription(for: .thread))"
             )
         }
         

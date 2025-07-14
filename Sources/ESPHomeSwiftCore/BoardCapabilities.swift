@@ -180,4 +180,12 @@ public extension BoardCapabilities {
     static func supportsThread(_ board: String) -> Bool {
         return boardSupports(board, capability: .thread)
     }
+    
+    /// Generate consistent requirements description for error messages
+    /// - Parameter capability: The required capability
+    /// - Returns: Formatted string listing all boards supporting the capability
+    static func requirementsDescription(for capability: BoardCapability) -> String {
+        let supportedBoards = boardsWithCapability(capability)
+        return supportedBoards.joined(separator: ", ")
+    }
 }
