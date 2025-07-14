@@ -13,6 +13,7 @@ public struct ESPHomeConfiguration: Codable {
     public let `switch`: [SwitchConfig]?
     public let light: [LightConfig]?
     public let binary_sensor: [BinarySensorConfig]?
+    public let matter: MatterConfig?
     
     enum CodingKeys: String, CodingKey {
         case esphomeSwift = "esphome_swift"
@@ -25,6 +26,7 @@ public struct ESPHomeConfiguration: Codable {
         case `switch`
         case light
         case binary_sensor
+        case matter
     }
     
     public init(
@@ -37,7 +39,8 @@ public struct ESPHomeConfiguration: Codable {
         sensor: [SensorConfig]? = nil,
         `switch`: [SwitchConfig]? = nil,
         light: [LightConfig]? = nil,
-        binary_sensor: [BinarySensorConfig]? = nil
+        binary_sensor: [BinarySensorConfig]? = nil,
+        matter: MatterConfig? = nil
     ) {
         self.esphomeSwift = esphomeSwift
         self.esp32 = esp32
@@ -49,6 +52,7 @@ public struct ESPHomeConfiguration: Codable {
         self.`switch` = `switch`
         self.light = light
         self.binary_sensor = binary_sensor
+        self.matter = matter
     }
 }
 

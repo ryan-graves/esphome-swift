@@ -1,0 +1,162 @@
+# ESPHome Swift Matter Multi-Device Example
+# Combined sensor and actuator hub with Matter support
+
+esphome_swift:
+  name: matter_hub
+  friendly_name: "Matter Smart Hub"
+  comment: "Multi-function device with sensors, switches, and lights"
+
+esp32:
+  board: esp32-h2-devkitc-1  # ESP32-H2 for enhanced Thread support
+  framework:
+    type: esp-idf
+    
+# Enable logging
+logger:
+  level: INFO
+
+# WiFi configuration
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  
+  ap:
+    ssid: "Matter Hub Fallback"
+    password: "12345678"
+
+# Enable Home Assistant API
+api:
+  encryption:
+    key: !secret api_encryption_key
+
+# Enable over-the-air updates
+ota:
+  - platform: esphome_swift
+
+# Matter configuration for a composed device
+# Note: This example shows multiple device types - in a real implementation,
+# Matter devices typically have a single primary device type with additional features
+matter:
+  enabled: true
+  device_type: temperature_sensor  # Primary device type
+  vendor_id: 0xFFF1
+  product_id: 0x8003
+  
+  # Advanced commissioning setup
+  commissioning:
+    discriminator: 3843
+    passcode: 20202024
+    # QR code and manual pairing codes can be pre-generated
+    # qr_code_payload: "MT:..."
+    # manual_pairing_code: "12345-67890"
+  
+  # Thread configuration for mesh networking
+  thread:
+    enabled: true
+    network_name: "Smart Home Mesh"
+    channel: 20
+    pan_id: 0x5678
+    # Use a complete Thread operational dataset for production
+    # dataset: "0e080000000000000001000035060004001fffe0020811111111222222220708fd00..."
+  
+  # Primary transport is Thread with WiFi backup
+  network:
+    transport: thread
+    ipv6_enabled: true
+    mdns:
+      enabled: true
+      hostname: matter-hub
+      services:
+        - "_matter._tcp"
+        - "_matterc._udp"
+
+# Environmental sensors (primary device function)
+sensor:
+  # Primary temperature sensor (Matter device type)
+  - platform: dht
+    pin:
+      number: GPIO4
+    model: DHT22
+    temperature:
+      name: "Hub Temperature"
+      id: hub_temperature
+      # This will be the primary Matter temperature measurement
+    humidity:
+      name: "Hub Humidity"
+      id: hub_humidity
+    update_interval: 60s
+  
+  # Light level sensor (additional sensor)
+  - platform: adc
+    pin:
+      number: GPIO1
+    name: "Light Level"
+    id: light_level
+    update_interval: 30s
+
+# Motion detection
+binary_sensor:
+  # PIR motion sensor
+  - platform: gpio
+    pin:
+      number: GPIO3
+      mode: INPUT_PULLDOWN
+    name: "Motion Detected"
+    device_class: motion
+    filters:
+      - type: delayed_on
+        duration: 100ms
+      - type: delayed_off
+        duration: 30s
+
+# Control outputs
+switch:
+  # Fan control
+  - platform: gpio
+    pin:
+      number: GPIO5
+    name: "Ventilation Fan"
+    id: fan_switch
+    restore_mode: RESTORE_DEFAULT_OFF
+  
+  # Auxiliary relay
+  - platform: gpio
+    pin:
+      number: GPIO6
+    name: "Auxiliary Output"
+    id: aux_switch
+    restore_mode: RESTORE_DEFAULT_OFF
+
+# Status and mood lighting
+light:
+  # RGB status light
+  - platform: rgb
+    red_pin:
+      number: GPIO7
+    green_pin:
+      number: GPIO8
+    blue_pin:
+      number: GPIO9
+    name: "Hub Status Light"
+    id: status_light
+    restore_mode: RESTORE_DEFAULT_OFF
+    effects:
+      - name: "Matter Commissioning"
+        type: strobe
+      - name: "Thread Connecting"
+        type: pulse
+      - name: "Normal Operation"
+        type: breathe
+  
+  # Simple indicator LEDs
+  - platform: binary
+    pin:
+      number: GPIO2
+    name: "Power LED"
+    id: power_led
+    
+  - platform: binary
+    pin:
+      number: GPIO10
+    name: "Network LED"
+    id: network_led

@@ -28,7 +28,7 @@ ESPHome Swift brings the power and type safety of Swift to embedded IoT developm
 
 ### Target Platforms
 - ESP32-C3, ESP32-C6, ESP32-H2, ESP32-P4 (RISC-V architecture)
-- WiFi, Bluetooth, Matter protocol support
+- **WiFi, Bluetooth, and Matter protocol** with Thread/802.15.4 mesh networking (ESP32-C6/H2)
 - Over-the-air (OTA) firmware updates
 - Home Assistant native API integration
 
@@ -40,6 +40,7 @@ ESPHomeSwift/
 │   ├── ESPHomeSwiftCore/          # Core configuration & validation
 │   ├── CodeGeneration/            # Swift code generation engine
 │   ├── ComponentLibrary/          # Built-in component definitions
+│   ├── MatterSupport/             # Matter protocol implementation
 │   ├── CLI/                       # Command-line interface
 │   └── WebDashboard/              # Web-based monitoring
 ├── Resources/
@@ -71,9 +72,11 @@ ESPHomeSwift/
 
 ### 🚧 Phase 3: Advanced Features - IN PROGRESS
 - [x] Home Assistant API compatibility framework
-- [ ] Matter protocol support (ESP32-C6/H2 ready)
+- [x] **Matter protocol support** (ESP32-C6/H2 with Thread networking)
+- [x] **25+ Matter device types** (lights, sensors, switches, locks)
+- [x] **WiFi and Thread transport** with comprehensive validation
+- [ ] Plugin system architecture for custom components
 - [ ] Advanced automation engine with on-device rules
-- [x] Plugin system architecture for custom components
 - [ ] Advanced sensor filters and data processing
 - [ ] Multi-device management and discovery
 
@@ -83,11 +86,13 @@ ESPHomeSwift/
 - [ ] Advanced debugging and monitoring tools
 - [ ] Integration with other home automation platforms
 - [ ] Mobile companion app for device management
+- [ ] [Matter protocol enhancements](docs/matter-roadmap.md) (QR code generation, advanced security, extended device types)
 
 ## Key Differentiators
 
 - **Type Safety**: Swift's strong typing system prevents configuration errors at compile time
 - **Memory Safety**: Automatic memory management with compile-time guarantees
+- **Matter Protocol**: Full Matter/Thread support for interoperable smart home devices
 - **Modern Tooling**: Leverages Swift Package Manager and Xcode ecosystem
 - **Embedded Swift**: Optimized compilation mode for microcontrollers
 - **Developer Experience**: Superior error messages and debugging capabilities
@@ -170,6 +175,18 @@ switch:
   - platform: gpio
     pin: GPIO5
     name: "Living Room Light"
+
+# Enable Matter protocol support
+matter:
+  enabled: true
+  device_type: temperature_sensor
+  vendor_id: 0xFFF1
+  product_id: 0x8000
+  commissioning:
+    discriminator: 3840
+    passcode: 20202021
+  network:
+    transport: wifi
 ```
 
 ## Contributing

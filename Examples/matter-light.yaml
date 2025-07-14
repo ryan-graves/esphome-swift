@@ -1,0 +1,68 @@
+# ESPHome Swift Matter Light Example
+# A simple Matter-compatible smart light
+
+esphome_swift:
+  name: matter_light
+  friendly_name: "Matter Smart Light"
+  comment: "RGB light with Matter protocol support"
+
+esp32:
+  board: esp32-c6-devkitc-1
+  framework:
+    type: esp-idf
+
+# Enable logging
+logger:
+  level: INFO
+
+# WiFi configuration
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  
+  # Enable fallback hotspot (captive portal) in case WiFi connection fails
+  ap:
+    ssid: "Matter Light Fallback"
+    password: "12345678"
+
+# Enable Home Assistant API
+api:
+  encryption:
+    key: !secret api_encryption_key
+
+# Enable over-the-air updates
+ota:
+  - platform: esphome_swift
+
+# Matter configuration
+matter:
+  enabled: true
+  device_type: extended_color_light
+  vendor_id: 0xFFF1  # Test vendor ID
+  product_id: 0x8000
+  
+  # Commissioning configuration
+  commissioning:
+    discriminator: 3840
+    passcode: 20202021
+  
+  # Network configuration
+  network:
+    transport: wifi
+    ipv6_enabled: true
+
+# RGB light with dimming support
+light:
+  - platform: rgb
+    red_pin:
+      number: GPIO6
+    green_pin:
+      number: GPIO7
+    blue_pin:
+      number: GPIO8
+    name: "Smart RGB Light"
+    id: rgb_light
+    restore_mode: RESTORE_DEFAULT_OFF
+    
+    # Matter integration will automatically sync this with Matter attributes
+    # Note: Light effects are planned for future releases

@@ -1,0 +1,165 @@
+# ESPHome Swift Matter Door Lock Example
+# Smart door lock with Matter protocol support
+
+esphome_swift:
+  name: matter_door_lock
+  friendly_name: "Matter Smart Lock"
+  comment: "Electronic door lock with Matter connectivity and security features"
+
+esp32:
+  board: esp32-c6-devkitc-1
+  framework:
+    type: esp-idf
+
+# Enable logging with security considerations
+logger:
+  level: INFO  # Avoid DEBUG in production for security
+
+# WiFi configuration
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  
+  # Secure fallback AP
+  ap:
+    ssid: "Secure Lock Fallback"
+    password: !secret fallback_password
+
+# Enable Home Assistant API with strong encryption
+api:
+  encryption:
+    key: !secret api_encryption_key
+
+# Enable secure OTA updates
+ota:
+  - platform: esphome_swift
+    password: !secret ota_password
+
+# Matter configuration for door lock
+matter:
+  enabled: true
+  device_type: door_lock
+  vendor_id: 0xFFF1
+  product_id: 0x8004
+  
+  # Strong commissioning setup for security devices
+  commissioning:
+    discriminator: 3844
+    passcode: 87654321  # Should be randomly generated for production
+  
+  # Use WiFi for reliable connectivity (Thread could be added)
+  network:
+    transport: wifi
+    ipv6_enabled: true
+    mdns:
+      enabled: true
+      hostname: smart-lock
+
+# Door lock mechanism control
+switch:
+  # Main lock actuator (solenoid, motor, etc.)
+  - platform: gpio
+    pin:
+      number: GPIO5
+    name: "Lock Actuator"
+    id: lock_actuator
+    restore_mode: RESTORE_DEFAULT_OFF  # Fail-safe: default to locked
+    # Matter will control this via Door Lock cluster commands
+    
+  # Deadbolt position confirmation
+  - platform: gpio
+    pin:
+      number: GPIO6
+    name: "Deadbolt Extended"
+    id: deadbolt_extended
+    restore_mode: RESTORE_DEFAULT_OFF
+
+# Security sensors
+binary_sensor:
+  # Door position sensor
+  - platform: gpio
+    pin:
+      number: GPIO3
+      mode: INPUT_PULLUP
+      inverted: true
+    name: "Door Closed"
+    device_class: door
+    id: door_closed
+    # Matter lock should monitor door state
+    
+  # Lock position sensor (confirm actual lock state)
+  - platform: gpio
+    pin:
+      number: GPIO4
+      mode: INPUT_PULLUP
+      inverted: true
+    name: "Lock Engaged"
+    id: lock_engaged
+    
+  # Tamper detection
+  - platform: gpio
+    pin:
+      number: GPIO7
+      mode: INPUT_PULLUP
+      inverted: true
+    name: "Tamper Detected"
+    device_class: safety
+    id: tamper_sensor
+    # Should trigger security alerts
+    
+  # Optional keypad/button input
+  - platform: gpio
+    pin:
+      number: GPIO8
+      mode: INPUT_PULLUP
+      inverted: true
+    name: "Manual Unlock Button"
+    id: manual_unlock
+    # Physical unlock mechanism
+    on_press:
+      # Only allow manual unlock if door is closed and no tamper
+      - if:
+          condition:
+            and:
+              - binary_sensor.is_on: door_closed
+              - binary_sensor.is_off: tamper_sensor
+          then:
+            - switch.turn_on: lock_actuator
+            - delay: 500ms
+            - switch.turn_off: lock_actuator
+
+# Status indicators
+light:
+  # Lock status LED (red/green)
+  - platform: binary
+    pin:
+      number: GPIO2
+    name: "Lock Status LED"
+    id: lock_led
+    # Red when locked, green when unlocked
+    
+  # Security alert LED
+  - platform: binary
+    pin:
+      number: GPIO9
+    name: "Security Alert LED"
+    id: alert_led
+    # Flashes on security events
+    
+  # Network connectivity indicator
+  - platform: binary
+    pin:
+      number: GPIO10
+    name: "Network LED"
+    id: network_led
+    # Shows Matter connectivity status
+
+# Optional: Battery monitoring for backup power
+sensor:
+  - platform: adc
+    pin:
+      number: GPIO1
+    name: "Battery Voltage"
+    id: battery_voltage
+    update_interval: 300s  # Check every 5 minutes
+    # Matter could report battery level via power source cluster
