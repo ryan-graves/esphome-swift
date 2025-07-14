@@ -131,6 +131,42 @@ public extension ComponentFactory {
         try validate(config: config, board: "esp32-c6-devkitc-1")
     }
     
+    // MARK: - Shared Board Validation Helpers
+    
+    /// Create a board-specific pin validator
+    /// - Parameters:
+    ///   - board: Board identifier
+    /// - Returns: PinValidator configured for the specified board
+    /// - Throws: ComponentValidationError if board is unsupported
+    func createPinValidator(for board: String) throws -> PinValidator {
+        guard let boardDef = BoardCapabilities.boardDefinition(for: board) else {
+            throw ComponentValidationError.invalidPropertyValue(
+                component: platform,
+                property: "board",
+                value: board,
+                reason: "Unsupported board. Use 'swift run esphome-swift boards' to see available boards."
+            )
+        }
+        return PinValidator(boardConstraints: boardDef.pinConstraints)
+    }
+    
+    /// Get board definition for code generation context
+    /// - Parameters:
+    ///   - context: Code generation context containing target board
+    /// - Returns: Board definition for the target board
+    /// - Throws: ComponentValidationError if board is unsupported
+    func getBoardDefinition(from context: CodeGenerationContext) throws -> BoardCapabilities.BoardDefinition {
+        guard let boardDef = BoardCapabilities.boardDefinition(for: context.targetBoard) else {
+            throw ComponentValidationError.invalidPropertyValue(
+                component: platform,
+                property: "board",
+                value: context.targetBoard,
+                reason: "Unsupported board"
+            )
+        }
+        return boardDef
+    }
+    
     func validateAny(config: ComponentConfig) throws {
         guard let typedConfig = config as? ConfigType else {
             throw ComponentValidationError.incompatibleConfiguration(

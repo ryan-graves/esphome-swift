@@ -31,31 +31,14 @@ public struct DHTSensorFactory: ComponentFactory {
             )
         }
         
-        // Create board-specific pin validator
-        guard let boardDef = BoardCapabilities.boardDefinition(for: board) else {
-            throw ComponentValidationError.invalidPropertyValue(
-                component: platform,
-                property: "board",
-                value: board,
-                reason: "Unsupported board. Use 'swift run esphome-swift boards' to see available boards."
-            )
-        }
-        
-        let pinValidator = PinValidator(boardConstraints: boardDef.pinConstraints)
+        // Create board-specific pin validator using shared helper
+        let pinValidator = try createPinValidator(for: board)
         try pinValidator.validatePin(pin, requirements: .input)
     }
     
     public func generateCode(config: SensorConfig, context: CodeGenerationContext) throws -> ComponentCode {
-        // Create board-specific pin validator for code generation
-        guard let boardDef = BoardCapabilities.boardDefinition(for: context.targetBoard) else {
-            throw ComponentValidationError.invalidPropertyValue(
-                component: platform,
-                property: "board",
-                value: context.targetBoard,
-                reason: "Unsupported board"
-            )
-        }
-        
+        // Get board definition and create pin validator using shared helpers
+        let boardDef = try getBoardDefinition(from: context)
         let pinValidator = PinValidator(boardConstraints: boardDef.pinConstraints)
         let pinNumber = try pinValidator.extractPinNumber(from: config.pin!)
         let model = config.model!
