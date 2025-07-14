@@ -26,6 +26,11 @@ let package = Package(
         .library(
             name: "ComponentLibrary",
             targets: ["ComponentLibrary"]
+        ),
+        // Matter protocol support library
+        .library(
+            name: "MatterSupport",
+            targets: ["MatterSupport"]
         )
     ],
     dependencies: [
@@ -57,6 +62,7 @@ let package = Package(
             dependencies: [
                 "ESPHomeSwiftCore",
                 "ComponentLibrary",
+                "MatterSupport",
                 .product(name: "Logging", package: "swift-log"),
                 .product(name: "SystemPackage", package: "swift-system")
             ]
@@ -67,6 +73,15 @@ let package = Package(
             name: "ComponentLibrary",
             dependencies: [
                 "ESPHomeSwiftCore"
+            ]
+        ),
+        
+        // Matter protocol support
+        .target(
+            name: "MatterSupport",
+            dependencies: [
+                "ESPHomeSwiftCore",
+                "ComponentLibrary"
             ]
         ),
         
@@ -108,6 +123,10 @@ let package = Package(
         .testTarget(
             name: "CLITests",
             dependencies: ["CLI"]
+        ),
+        .testTarget(
+            name: "MatterSupportTests",
+            dependencies: ["MatterSupport", "ESPHomeSwiftCore", "ComponentLibrary"]
         )
     ]
 )

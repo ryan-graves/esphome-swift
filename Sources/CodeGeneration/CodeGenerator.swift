@@ -1,6 +1,7 @@
 import Foundation
 import ESPHomeSwiftCore
 import ComponentLibrary
+import MatterSupport
 import Logging
 
 /// Main code generation engine for ESPHome Swift
@@ -73,6 +74,16 @@ public class CodeGenerator {
                     logger.warning("Unknown binary sensor platform: \(sensor.platform)")
                 }
             }
+        }
+        
+        // Generate Matter code if enabled
+        if let matterConfig = configuration.matter, matterConfig.enabled {
+            logger.info("Generating Matter protocol support")
+            let matterCode = try MatterCodeGenerator.generateMatterCode(
+                config: matterConfig,
+                context: context
+            )
+            allComponentCode.append(matterCode)
         }
         
         // Combine all component code
