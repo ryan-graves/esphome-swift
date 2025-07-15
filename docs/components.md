@@ -130,9 +130,12 @@ light:
 ```
 
 **RGBW Light (with white channel):**
+> **Note**: RGBW lights require a separate `platform: rgbw` component (planned for future release). The RGB platform only supports 3-channel RGB lights.
+
 ```yaml
+# Future RGBW implementation (not yet available)
 light:
-  - platform: rgb
+  - platform: rgbw
     red_pin:
       number: GPIO6
     green_pin:

@@ -293,8 +293,6 @@ light:
       number: GPIO7       # Required: Green channel
     blue_pin:
       number: GPIO8       # Required: Blue channel
-    white_pin:            # Optional: White channel
-      number: GPIO9
     name: "RGB Light"
     # Note: Light effects are planned for future releases
 ```
