@@ -10,12 +10,9 @@ public struct GPIOBinarySensorFactory: ComponentFactory {
     public let requiredProperties = ["pin"]
     public let optionalProperties = ["name", "device_class", "inverted", "filters"]
     
-    public init() {
-        // No longer store pinValidator as instance variable - create board-specific validator per call
-    }
+    public init() {}
     
     public func validate(config: BinarySensorConfig, board: String) throws {
-        // Validate required pin
         guard let pin = config.pin else {
             throw ComponentValidationError.missingRequiredProperty(
                 component: platform,
@@ -23,13 +20,11 @@ public struct GPIOBinarySensorFactory: ComponentFactory {
             )
         }
         
-        // Create board-specific pin validator using shared helper
         let pinValidator = try createPinValidator(for: board)
         try pinValidator.validatePin(pin, requirements: .input)
     }
     
     public func generateCode(config: BinarySensorConfig, context: CodeGenerationContext) throws -> ComponentCode {
-        // Get board definition and create pin validator using shared helpers
         let boardDef = try getBoardDefinition(from: context)
         let pinValidator = PinValidator(boardConstraints: boardDef.pinConstraints)
         let pinNumber = try pinValidator.extractPinNumber(from: config.pin!)

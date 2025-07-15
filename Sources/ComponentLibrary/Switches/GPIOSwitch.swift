@@ -10,9 +10,7 @@ public struct GPIOSwitchFactory: ComponentFactory {
     public let requiredProperties = ["pin"]
     public let optionalProperties = ["name", "inverted", "restore_mode"]
     
-    public init() {
-        // No longer store pinValidator as instance variable - create board-specific validator per call
-    }
+    public init() {}
     
     public func validate(config: SwitchConfig, board: String) throws {
         // Validate required pin
@@ -23,13 +21,11 @@ public struct GPIOSwitchFactory: ComponentFactory {
             )
         }
         
-        // Create board-specific pin validator using shared helper
         let pinValidator = try createPinValidator(for: board)
         try pinValidator.validatePin(pin, requirements: .output)
     }
     
     public func generateCode(config: SwitchConfig, context: CodeGenerationContext) throws -> ComponentCode {
-        // Get board definition and create pin validator using shared helpers
         let boardDef = try getBoardDefinition(from: context)
         let pinValidator = PinValidator(boardConstraints: boardDef.pinConstraints)
         let pinNumber = try pinValidator.extractPinNumber(from: config.pin!)

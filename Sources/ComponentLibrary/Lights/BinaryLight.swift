@@ -10,9 +10,7 @@ public struct BinaryLightFactory: ComponentFactory {
     public let requiredProperties = ["pin"]
     public let optionalProperties = ["name"]
     
-    public init() {
-        // No longer store pinValidator as instance variable - create board-specific validator per call
-    }
+    public init() {}
     
     public func validate(config: LightConfig, board: String) throws {
         // Validate required pin
@@ -23,13 +21,11 @@ public struct BinaryLightFactory: ComponentFactory {
             )
         }
         
-        // Create board-specific pin validator using shared helper
         let pinValidator = try createPinValidator(for: board)
         try pinValidator.validatePin(pin, requirements: .output)
     }
     
     public func generateCode(config: LightConfig, context: CodeGenerationContext) throws -> ComponentCode {
-        // Get board definition and create pin validator using shared helpers
         let boardDef = try getBoardDefinition(from: context)
         let pinValidator = PinValidator(boardConstraints: boardDef.pinConstraints)
         let pinNumber = try pinValidator.extractPinNumber(from: config.pin!)

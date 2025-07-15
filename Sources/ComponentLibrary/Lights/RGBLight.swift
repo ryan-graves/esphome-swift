@@ -10,12 +10,9 @@ public struct RGBLightFactory: ComponentFactory {
     public let requiredProperties = ["red_pin", "green_pin", "blue_pin"]
     public let optionalProperties = ["name", "effects"]
     
-    public init() {
-        // No longer store pinValidator as instance variable - create board-specific validator per call
-    }
+    public init() {}
     
     public func validate(config: LightConfig, board: String) throws {
-        // Validate required pins
         guard let redPin = config.redPin else {
             throw ComponentValidationError.missingRequiredProperty(component: platform, property: "red_pin")
         }
@@ -26,17 +23,13 @@ public struct RGBLightFactory: ComponentFactory {
             throw ComponentValidationError.missingRequiredProperty(component: platform, property: "blue_pin")
         }
         
-        // Create board-specific pin validator using shared helper
         let pinValidator = try createPinValidator(for: board)
-        
-        // Validate all pins are PWM-capable using board-specific validator
         try pinValidator.validatePin(redPin, requirements: .pwm)
         try pinValidator.validatePin(greenPin, requirements: .pwm)
         try pinValidator.validatePin(bluePin, requirements: .pwm)
     }
     
     public func generateCode(config: LightConfig, context: CodeGenerationContext) throws -> ComponentCode {
-        // Get board definition and create pin validator using shared helpers
         let boardDef = try getBoardDefinition(from: context)
         let pinValidator = PinValidator(boardConstraints: boardDef.pinConstraints)
         let redPin = try pinValidator.extractPinNumber(from: config.redPin!)

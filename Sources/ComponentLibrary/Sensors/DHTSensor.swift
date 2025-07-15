@@ -10,9 +10,7 @@ public struct DHTSensorFactory: ComponentFactory {
     public let requiredProperties = ["pin", "model"]
     public let optionalProperties = ["update_interval", "temperature", "humidity"]
     
-    public init() {
-        // No longer store pinValidator as instance variable - create board-specific validator per call
-    }
+    public init() {}
     
     public func validate(config: SensorConfig, board: String) throws {
         // Validate required pin
@@ -31,13 +29,11 @@ public struct DHTSensorFactory: ComponentFactory {
             )
         }
         
-        // Create board-specific pin validator using shared helper
         let pinValidator = try createPinValidator(for: board)
         try pinValidator.validatePin(pin, requirements: .input)
     }
     
     public func generateCode(config: SensorConfig, context: CodeGenerationContext) throws -> ComponentCode {
-        // Get board definition and create pin validator using shared helpers
         let boardDef = try getBoardDefinition(from: context)
         let pinValidator = PinValidator(boardConstraints: boardDef.pinConstraints)
         let pinNumber = try pinValidator.extractPinNumber(from: config.pin!)
