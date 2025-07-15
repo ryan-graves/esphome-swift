@@ -416,4 +416,63 @@ final class BoardCapabilitiesTests: XCTestCase {
             XCTAssertTrue(reason.contains("between 11 and 26"))
         }
     }
+    
+    func testADCChannelMapping() {
+        // Test ADC channel mapping for all chip families
+        
+        // ESP32-C6: GPIO0-7 → ADC1_CHANNEL_0-7
+        for pin in 0 ... 7 {
+            XCTAssertNoThrow(try BoardCapabilities.adcChannelForPin(pin, board: "esp32-c6-devkitc-1"))
+            do {
+                let channel = try BoardCapabilities.adcChannelForPin(pin, board: "esp32-c6-devkitc-1")
+                XCTAssertEqual(channel, pin)
+            } catch {
+                XCTFail("Unexpected error for ESP32-C6 GPIO\(pin): \(error)")
+            }
+        }
+        // GPIO8+ should throw error for C6
+        XCTAssertThrowsError(try BoardCapabilities.adcChannelForPin(8, board: "esp32-c6-devkitc-1"))
+        
+        // ESP32-C3: GPIO0-4 → ADC1_CHANNEL_0-4
+        for pin in 0 ... 4 {
+            XCTAssertNoThrow(try BoardCapabilities.adcChannelForPin(pin, board: "esp32-c3-devkitm-1"))
+            do {
+                let channel = try BoardCapabilities.adcChannelForPin(pin, board: "esp32-c3-devkitm-1")
+                XCTAssertEqual(channel, pin)
+            } catch {
+                XCTFail("Unexpected error for ESP32-C3 GPIO\(pin): \(error)")
+            }
+        }
+        // GPIO5+ should throw error for C3
+        XCTAssertThrowsError(try BoardCapabilities.adcChannelForPin(5, board: "esp32-c3-devkitm-1"))
+        
+        // ESP32-H2: GPIO0-4 → ADC1_CHANNEL_0-4
+        for pin in 0 ... 4 {
+            XCTAssertNoThrow(try BoardCapabilities.adcChannelForPin(pin, board: "esp32-h2-devkitc-1"))
+            do {
+                let channel = try BoardCapabilities.adcChannelForPin(pin, board: "esp32-h2-devkitc-1")
+                XCTAssertEqual(channel, pin)
+            } catch {
+                XCTFail("Unexpected error for ESP32-H2 GPIO\(pin): \(error)")
+            }
+        }
+        // GPIO5+ should throw error for H2
+        XCTAssertThrowsError(try BoardCapabilities.adcChannelForPin(5, board: "esp32-h2-devkitc-1"))
+        
+        // ESP32-P4: GPIO0-7 → ADC1_CHANNEL_0-7
+        for pin in 0 ... 7 {
+            XCTAssertNoThrow(try BoardCapabilities.adcChannelForPin(pin, board: "esp32-p4-function-ev-board"))
+            do {
+                let channel = try BoardCapabilities.adcChannelForPin(pin, board: "esp32-p4-function-ev-board")
+                XCTAssertEqual(channel, pin)
+            } catch {
+                XCTFail("Unexpected error for ESP32-P4 GPIO\(pin): \(error)")
+            }
+        }
+        // GPIO8+ should throw error for P4
+        XCTAssertThrowsError(try BoardCapabilities.adcChannelForPin(8, board: "esp32-p4-function-ev-board"))
+        
+        // Test with unsupported board
+        XCTAssertThrowsError(try BoardCapabilities.adcChannelForPin(0, board: "unsupported-board"))
+    }
 }

@@ -220,7 +220,7 @@ public enum PinValidationError: Error, Equatable {
 public struct PinValidator {
     private let boardConstraints: BoardConstraints
     
-    public init(boardConstraints: BoardConstraints = ESP32C6Constraints()) {
+    public init(boardConstraints: BoardConstraints) {
         self.boardConstraints = boardConstraints
     }
     

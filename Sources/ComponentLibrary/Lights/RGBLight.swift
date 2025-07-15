@@ -8,7 +8,7 @@ public struct RGBLightFactory: ComponentFactory {
     public let platform = "rgb"
     public let componentType = ComponentType.light
     public let requiredProperties = ["red_pin", "green_pin", "blue_pin"]
-    public let optionalProperties = ["name"]
+    public let optionalProperties = ["name", "effects"]
     
     public init() {
         // No longer store pinValidator as instance variable - create board-specific validator per call
