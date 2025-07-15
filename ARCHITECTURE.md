@@ -24,8 +24,8 @@ public protocol ComponentFactory {
     /// Optional configuration properties  
     var optionalProperties: [String] { get }
     
-    /// Validate configuration with compile-time type safety
-    func validate(config: ConfigType) throws
+    /// Validate configuration with board-specific constraints
+    func validate(config: ConfigType, board: String) throws
     
     /// Generate code with compile-time type safety
     func generateCode(config: ConfigType, context: CodeGenerationContext) throws -> ComponentCode
@@ -36,37 +36,47 @@ public protocol ComponentFactory {
 
 The component registry uses `any ComponentFactory` for storage while maintaining type safety through protocol extension methods that handle the type conversion automatically.
 
-### Board-Specific Pin Validation
+### Board Capabilities System
 
 ```swift
-/// Protocol defining hardware constraints for different ESP32 boards
+/// Board capabilities provide hardware-specific constraints and features
+public struct BoardCapabilities {
+    /// Get board definition for validation and code generation
+    public static func boardDefinition(for board: String) -> BoardDefinition? {
+        // Resolve board identifier and return capabilities
+    }
+    
+    /// Query board capability support
+    public static func boardSupports(_ board: String, capability: BoardCapability) -> Bool {
+        // Check if board supports WiFi, Thread, Matter, etc.
+    }
+}
+
+/// Board-specific hardware constraints
 public protocol BoardConstraints {
     var availableGPIOPins: Set<Int> { get }
     var inputOnlyPins: Set<Int> { get }
     var outputCapablePins: Set<Int> { get }
     var pwmCapablePins: Set<Int> { get }
     var adcCapablePins: Set<Int> { get }
-    // ... additional constraints
+    var i2cDefaultSDA: Int { get }
+    var i2cDefaultSCL: Int { get }
+    var spiDefaultMOSI: Int { get }
+    var spiDefaultMISO: Int { get }
+    var spiDefaultCLK: Int { get }
+    var spiDefaultCS: Int { get }
 }
 
-/// ESP32-C6 specific constraints
-@frozen
-public struct ESP32C6Constraints: BoardConstraints {
-    public let availableGPIOPins: Set<Int> = Set(0...30)
-    public let inputOnlyPins: Set<Int> = [18, 19]
-    // ... implement all constraints
-}
-
-/// Centralized pin validator
+/// Pin validator with board-specific constraints
 public struct PinValidator {
     private let boardConstraints: BoardConstraints
     
-    public init(boardConstraints: BoardConstraints = ESP32C6Constraints()) {
+    public init(boardConstraints: BoardConstraints) {
         self.boardConstraints = boardConstraints
     }
     
     public func validatePin(_ pinConfig: PinConfig, requirements: PinRequirements) throws {
-        // Shared validation logic
+        // Validate against board-specific constraints
     }
 }
 ```
@@ -103,10 +113,11 @@ public enum TemplateValue {
 - `@frozen` structs minimize runtime overhead in embedded contexts
 - Value types reduce heap allocations
 
-### Centralized Validation
-- PinValidator handles board-specific constraints for all components
-- Shared validation logic prevents duplication across factories
-- Clear error messages guide users to valid alternatives
+### Board-Aware Validation
+- BoardCapabilities system provides hardware constraints for all ESP32 variants
+- PinValidator enforces board-specific limitations during configuration parsing
+- Components validate pin assignments against target board capabilities
+- Clear error messages guide users to valid alternatives for their hardware
 
 ### Secure Code Generation
 - Template system automatically escapes values to prevent injection attacks
@@ -118,4 +129,50 @@ public enum TemplateValue {
 - Type erasure enables heterogeneous storage while preserving compile-time safety
 - Protocol extensions provide seamless dynamic dispatch
 
-This architecture balances type safety, performance, and maintainability for embedded Swift development.
+### Example Component Implementation
+
+```swift
+public struct GPIOSwitchFactory: ComponentFactory {
+    public typealias ConfigType = SwitchConfig
+    
+    public let platform = "gpio"
+    public let componentType = ComponentType.switch_
+    public let requiredProperties = ["pin"]
+    public let optionalProperties = ["name", "inverted", "restore_mode"]
+    
+    public func validate(config: SwitchConfig, board: String) throws {
+        guard let pin = config.pin else {
+            throw ComponentValidationError.missingRequiredProperty(
+                component: platform, property: "pin"
+            )
+        }
+        
+        // Validate pin against board capabilities
+        guard let boardDef = BoardCapabilities.boardDefinition(for: board) else {
+            throw ComponentValidationError.invalidPropertyValue(
+                component: platform, property: "board", value: board,
+                reason: "Unsupported board"
+            )
+        }
+        
+        let pinValidator = PinValidator(boardConstraints: boardDef.pinConstraints)
+        try pinValidator.validatePin(pin, requirements: .output)
+    }
+    
+    public func generateCode(config: SwitchConfig, context: CodeGenerationContext) throws -> ComponentCode {
+        // Code generation uses board-specific context
+        let boardDef = BoardCapabilities.boardDefinition(for: context.targetBoard)!
+        let pinValidator = PinValidator(boardConstraints: boardDef.pinConstraints)
+        let pinNumber = try pinValidator.extractPinNumber(from: config.pin!)
+        
+        return ComponentCode(
+            headerIncludes: ["#include \"driver/gpio.h\""],
+            globalDeclarations: ["bool switch_\(pinNumber)_state = false;"],
+            setupCode: ["gpio_set_direction(GPIO_NUM_\(pinNumber), GPIO_MODE_OUTPUT);"],
+            classDefinitions: ["void switch_\(pinNumber)_toggle() { /* ... */ }"]
+        )
+    }
+}
+```
+
+This architecture balances type safety, performance, and maintainability for embedded Swift development across multiple ESP32 board variants.

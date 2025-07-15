@@ -8,16 +8,11 @@ public struct RGBLightFactory: ComponentFactory {
     public let platform = "rgb"
     public let componentType = ComponentType.light
     public let requiredProperties = ["red_pin", "green_pin", "blue_pin"]
-    public let optionalProperties = ["name", "white_pin"]
+    public let optionalProperties = ["name", "effects"]
     
-    private let pinValidator: PinValidator
+    public init() {}
     
-    public init(pinValidator: PinValidator = PinValidator()) {
-        self.pinValidator = pinValidator
-    }
-    
-    public func validate(config: LightConfig) throws {
-        // Validate required pins
+    public func validate(config: LightConfig, board: String) throws {
         guard let redPin = config.redPin else {
             throw ComponentValidationError.missingRequiredProperty(component: platform, property: "red_pin")
         }
@@ -28,17 +23,15 @@ public struct RGBLightFactory: ComponentFactory {
             throw ComponentValidationError.missingRequiredProperty(component: platform, property: "blue_pin")
         }
         
-        // Validate all pins are PWM-capable using shared validator
+        let pinValidator = try createPinValidator(for: board)
         try pinValidator.validatePin(redPin, requirements: .pwm)
         try pinValidator.validatePin(greenPin, requirements: .pwm)
         try pinValidator.validatePin(bluePin, requirements: .pwm)
-        
-        if let whitePin = config.whitePin {
-            try pinValidator.validatePin(whitePin, requirements: .pwm)
-        }
     }
     
     public func generateCode(config: LightConfig, context: CodeGenerationContext) throws -> ComponentCode {
+        let boardDef = try getBoardDefinition(from: context)
+        let pinValidator = PinValidator(boardConstraints: boardDef.pinConstraints)
         let redPin = try pinValidator.extractPinNumber(from: config.redPin!)
         let greenPin = try pinValidator.extractPinNumber(from: config.greenPin!)
         let bluePin = try pinValidator.extractPinNumber(from: config.bluePin!)

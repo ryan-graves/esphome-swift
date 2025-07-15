@@ -10,13 +10,9 @@ public struct GPIOSensorFactory: ComponentFactory {
     public let requiredProperties = ["pin"]
     public let optionalProperties = ["name", "update_interval", "accuracy", "filters"]
     
-    private let pinValidator: PinValidator
+    public init() {}
     
-    public init(pinValidator: PinValidator = PinValidator()) {
-        self.pinValidator = pinValidator
-    }
-    
-    public func validate(config: SensorConfig) throws {
+    public func validate(config: SensorConfig, board: String) throws {
         // Validate required pin
         guard let pin = config.pin else {
             throw ComponentValidationError.missingRequiredProperty(
@@ -25,13 +21,36 @@ public struct GPIOSensorFactory: ComponentFactory {
             )
         }
         
+        let pinValidator = try createPinValidator(for: board)
         try pinValidator.validatePin(pin, requirements: .adc)
     }
     
     public func generateCode(config: SensorConfig, context: CodeGenerationContext) throws -> ComponentCode {
+        let boardDef = try getBoardDefinition(from: context)
+        let pinValidator = PinValidator(boardConstraints: boardDef.pinConstraints)
         let pinNumber = try pinValidator.extractPinNumber(from: config.pin!)
         let componentId = config.id ?? "adc_sensor_\(pinNumber)"
         let updateInterval = parseUpdateInterval(config.updateInterval ?? "60s")
+        
+        // Get board-specific ADC channel mapping
+        let adcChannel: Int
+        do {
+            adcChannel = try BoardCapabilities.adcChannelForPin(pinNumber, board: context.targetBoard)
+        } catch BoardCapabilityError.unsupportedBoard(let board) {
+            throw ComponentValidationError.invalidPropertyValue(
+                component: platform,
+                property: "board",
+                value: board,
+                reason: "Unsupported board. Use 'swift run esphome-swift boards' to see available boards."
+            )
+        } catch BoardCapabilityError.pinNotSupportedForADC(let pin, let chipFamily) {
+            throw ComponentValidationError.invalidPropertyValue(
+                component: platform,
+                property: "pin",
+                value: "GPIO\(pin)",
+                reason: "Pin not available for ADC on \(chipFamily) boards"
+            )
+        }
         
         let headerIncludes = [
             "#include \"driver/adc.h\""
@@ -44,13 +63,13 @@ public struct GPIOSensorFactory: ComponentFactory {
         
         let setupCode = [
             "adc1_config_width(ADC_WIDTH_BIT_12);",
-            "adc1_config_channel_atten(ADC1_CHANNEL_\(adcChannelForPin(pinNumber)), ADC_ATTEN_DB_11);"
+            "adc1_config_channel_atten(ADC1_CHANNEL_\(adcChannel), ADC_ATTEN_DB_11);"
         ]
         
         let loopCode = [
             """
             if (millis() - \(componentId)_last_update > \(componentId)_update_interval) {
-                int \(componentId)_raw = adc1_get_raw(ADC1_CHANNEL_\(adcChannelForPin(pinNumber)));
+                int \(componentId)_raw = adc1_get_raw(ADC1_CHANNEL_\(adcChannel));
                 float \(componentId)_voltage = \(componentId)_raw * (3.3 / 4095.0);
                 
                 // TODO: Apply filters if configured
@@ -68,11 +87,6 @@ public struct GPIOSensorFactory: ComponentFactory {
             setupCode: setupCode,
             loopCode: loopCode
         )
-    }
-    
-    private func adcChannelForPin(_ pin: Int) -> Int {
-        // Map GPIO pin to ADC1 channel for ESP32-C6
-        return pin // Direct mapping for ESP32-C6
     }
     
     private func parseUpdateInterval(_ interval: String) -> Int {

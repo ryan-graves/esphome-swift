@@ -97,6 +97,72 @@ public struct ESP32C6Constraints: BoardConstraints {
     public init() {}
 }
 
+// MARK: - ESP32-C3 Board Constraints
+
+/// ESP32-C3 specific hardware constraints
+@frozen
+public struct ESP32C3Constraints: BoardConstraints {
+    public let availableGPIOPins: Set<Int> = Set(0 ... 21)
+    public let inputOnlyPins: Set<Int> = [18, 19]
+    public let outputCapablePins: Set<Int> = Set([
+        0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
+        20, 21 // Skip 11-17 (flash), skip 18-19 (input only)
+    ])
+    public let pwmCapablePins: Set<Int> = Set([
+        0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
+        20, 21
+    ])
+    public let adcCapablePins: Set<Int> = Set(0 ... 4) // ADC1 only
+    public let i2cDefaultSDA: Int = 5
+    public let i2cDefaultSCL: Int = 6
+    public let spiDefaultMOSI: Int = 7
+    public let spiDefaultMISO: Int = 2
+    public let spiDefaultCLK: Int = 6
+    public let spiDefaultCS: Int = 10
+    
+    public init() {}
+}
+
+// MARK: - ESP32-H2 Board Constraints
+
+/// ESP32-H2 specific hardware constraints
+@frozen
+public struct ESP32H2Constraints: BoardConstraints {
+    public let availableGPIOPins: Set<Int> = Set(0 ... 27) // 28 pins total (GPIO0-27)
+    public let inputOnlyPins: Set<Int> = [] // ESP32-H2 has no input-only pins
+    public let outputCapablePins: Set<Int> = Set(0 ... 23) // Skip 24-27 (flash/PSRAM)
+    public let pwmCapablePins: Set<Int> = Set(0 ... 23)
+    public let adcCapablePins: Set<Int> = Set(0 ... 4) // ADC1: GPIO0-4
+    public let i2cDefaultSDA: Int = 1
+    public let i2cDefaultSCL: Int = 0
+    public let spiDefaultMOSI: Int = 7
+    public let spiDefaultMISO: Int = 2
+    public let spiDefaultCLK: Int = 6
+    public let spiDefaultCS: Int = 10
+    
+    public init() {}
+}
+
+// MARK: - ESP32-P4 Board Constraints
+
+/// ESP32-P4 specific hardware constraints
+@frozen
+public struct ESP32P4Constraints: BoardConstraints {
+    public let availableGPIOPins: Set<Int> = Set(0 ... 54) // 55 pins total (GPIO0-54)
+    public let inputOnlyPins: Set<Int> = [] // ESP32-P4 has no input-only pins
+    public let outputCapablePins: Set<Int> = Set(0 ... 54) // All GPIO pins support output
+    public let pwmCapablePins: Set<Int> = Set(0 ... 54) // All GPIO pins support PWM
+    public let adcCapablePins: Set<Int> = Set([0, 1, 2, 3, 4, 5, 6, 7]) // ADC1: GPIO0-7
+    public let i2cDefaultSDA: Int = 8
+    public let i2cDefaultSCL: Int = 9
+    public let spiDefaultMOSI: Int = 11
+    public let spiDefaultMISO: Int = 13
+    public let spiDefaultCLK: Int = 12
+    public let spiDefaultCS: Int = 10
+    
+    public init() {}
+}
+
 // MARK: - Pin Requirements
 
 /// Requirements for pin validation
@@ -154,7 +220,7 @@ public enum PinValidationError: Error, Equatable {
 public struct PinValidator {
     private let boardConstraints: BoardConstraints
     
-    public init(boardConstraints: BoardConstraints = ESP32C6Constraints()) {
+    public init(boardConstraints: BoardConstraints) {
         self.boardConstraints = boardConstraints
     }
     
@@ -287,17 +353,22 @@ public struct PinValidator {
     }
 }
 
-// MARK: - Board Factory
+// MARK: - Board Constraints Usage
 
-/// Factory for creating board-specific constraints
-public enum BoardFactory {
-    public static func constraints(for boardName: String) -> BoardConstraints {
-        switch boardName.lowercased() {
-        case "esp32-c6-devkitc-1", "esp32c6", "esp32-c6":
-            return ESP32C6Constraints()
-        default:
-            // Default to ESP32-C6 for now, can be extended for other boards
-            return ESP32C6Constraints()
-        }
-    }
-}
+/// Recommended pattern for obtaining board-specific constraints
+/// 
+/// - Important: Use BoardCapabilities.boardDefinition(for:) for board-specific constraints.
+///   This provides a more comprehensive board management system with capabilities and features.
+/// 
+/// - Example:
+/// ```swift
+/// guard let boardDef = BoardCapabilities.boardDefinition(for: boardName) else {
+///     throw ComponentValidationError.invalidPropertyValue(
+///         component: "component",
+///         property: "board", 
+///         value: boardName,
+///         reason: "Unsupported board"
+///     )
+/// }
+/// let constraints = boardDef.pinConstraints
+/// ```

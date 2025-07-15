@@ -130,9 +130,12 @@ light:
 ```
 
 **RGBW Light (with white channel):**
+> **Note**: RGBW lights require a separate `platform: rgbw` component (planned for future release). The RGB platform only supports 3-channel RGB lights.
+
 ```yaml
+# Future RGBW implementation (not yet available)
 light:
-  - platform: rgb
+  - platform: rgbw
     red_pin:
       number: GPIO6
     green_pin:
@@ -205,15 +208,15 @@ ESPHome Swift uses a modern, type-safe component architecture following Swift Em
 - **Memory efficiency**: Value types (structs) and @frozen optimizations for embedded performance
 - **Zero-cost abstractions**: Type erasure allows heterogeneous collections without runtime overhead
 
-### Shared Utilities
-- **PinValidator**: Centralized pin validation with ESP32-C6 board constraints
-- **BoardConstraints**: Abstracted hardware limitations for different ESP32 variants
+### Board Capabilities
+- **BoardCapabilities**: Hardware constraints and features for ESP32-C3, C6, H2, P4 variants
+- **PinValidator**: Board-specific pin validation for component requirements
 - **PinRequirements**: Type-safe specification of pin capabilities (ADC, PWM, input/output)
 
 ### Security & Performance
 - **Secure code generation**: Protected against injection vulnerabilities
 - **Optimized for embedded**: Minimal binary footprint and efficient execution
-- **Board-specific validation**: Hardware constraints enforced at development time
+- **Board-aware validation**: Hardware constraints enforced for ESP32-C3, C6, H2, P4 variants
 
 ## Matter Protocol Components
 
@@ -403,22 +406,19 @@ public struct MySensorFactory: ComponentFactory {
     public let requiredProperties = ["pin", "type"]
     public let optionalProperties = ["name", "update_interval"]
     
-    private let pinValidator: PinValidator
-    
-    public init(pinValidator: PinValidator = PinValidator()) {
-        self.pinValidator = pinValidator
+    public init() {
+        // Component factories are stateless but perform board-aware validation
     }
     
-    public func validate(config: SensorConfig) throws {
-        // Validate required pin with shared validator
+    public func validate(config: SensorConfig, board: String) throws {
         guard let pin = config.pin else {
             throw ComponentValidationError.missingRequiredProperty(
-                component: platform,
-                property: "pin"
+                component: platform, property: "pin"
             )
         }
         
-        // Use shared pin validation with requirements
+        // Validate pin against board capabilities using shared helper
+        let pinValidator = try createPinValidator(for: board)
         try pinValidator.validatePin(pin, requirements: .input)
     }
     
@@ -426,6 +426,10 @@ public struct MySensorFactory: ComponentFactory {
         config: SensorConfig, 
         context: CodeGenerationContext
     ) throws -> ComponentCode {
+        // Use board-specific context for code generation
+        let boardDef = try getBoardDefinition(from: context)
+        
+        let pinValidator = PinValidator(boardConstraints: boardDef.pinConstraints)
         let pinNumber = try pinValidator.extractPinNumber(from: config.pin!)
         
         return ComponentCode(
@@ -448,7 +452,40 @@ private func registerBuiltInComponents() {
 }
 ```
 
-### 3. Add Tests
+### 3. Using Shared Helper Methods
+
+The ComponentFactory protocol provides shared helper methods to eliminate boilerplate code:
+
+**Board Validation Helper:**
+```swift
+public func validate(config: ConfigType, board: String) throws {
+    // ✅ Use shared helper - handles all error cases consistently
+    let pinValidator = try createPinValidator(for: board)
+    try pinValidator.validatePin(pin, requirements: .input)
+    
+    // ❌ Don't repeat boilerplate manually
+    // guard let boardDef = BoardCapabilities.boardDefinition(for: board) else { ... }
+}
+```
+
+**Code Generation Helper:**
+```swift
+public func generateCode(config: ConfigType, context: CodeGenerationContext) throws -> ComponentCode {
+    // ✅ Use shared helper for consistent error handling  
+    let boardDef = try getBoardDefinition(from: context)
+    let pinValidator = PinValidator(boardConstraints: boardDef.pinConstraints)
+    
+    // Component-specific code generation...
+}
+```
+
+**Available Helper Methods:**
+- `createPinValidator(for: String)` - Creates board-specific pin validator with proper error handling
+- `getBoardDefinition(from: CodeGenerationContext)` - Extracts board definition from generation context
+
+These helpers ensure consistent error messages and reduce code duplication across all component factories.
+
+### 4. Add Tests
 
 ```swift
 // Tests/ComponentLibraryTests/MySensorTests.swift
@@ -498,11 +535,11 @@ We welcome contributions! To add a new component:
 ## Component Best Practices
 
 1. **Type Safety** - Use struct ComponentFactory with associated types for compile-time guarantees
-2. **Shared Validation** - Leverage PinValidator for consistent pin validation across components
-3. **Value Types** - Use structs instead of classes for memory efficiency and performance
+2. **Board-Aware Validation** - Use BoardCapabilities for pin validation across all ESP32 variants
+3. **Value Types** - Use structs instead of classes for memory efficiency and performance  
 4. **Pin Requirements** - Specify exact pin capabilities (ADC, PWM, input/output) for validation
 5. **Error Handling** - Provide clear, actionable error messages with ComponentValidationError
-6. **Documentation** - Include wiring diagrams, examples, and ESP32-C6 specific notes
+6. **Documentation** - Include wiring diagrams, examples, and board-specific constraints
 7. **Testing** - Test on actual hardware with comprehensive unit tests
-8. **Board Constraints** - Respect ESP32-C6 hardware limitations (pins 0-30, input-only pins 18-19)
+8. **Multi-Board Support** - Validate against ESP32-C3, C6, H2, P4 hardware capabilities
 9. **Performance** - Consider power consumption, timing, and use @frozen for critical structs

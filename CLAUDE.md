@@ -16,6 +16,43 @@ YAML Config → Swift Parser → Code Generation → ESP-IDF/Embedded Swift → 
 - Swift developers interested in embedded systems  
 - Home Assistant users wanting type-safe device firmware
 
+## Core Project Principles
+
+These principles guide all development on ESPHome Swift and ensure we deliver a high-quality, user-friendly experience that honors the original ESPHome while leveraging Swift's strengths.
+
+### 1. Swift Excellence Through Best Practices
+- Leverage Swift's type safety, optionals, and error handling for robust firmware generation
+- Follow established Swift and Embedded Swift patterns and idioms
+- Use Swift's expressiveness to make the codebase maintainable and extensible
+- Prioritize compile-time safety over runtime flexibility
+
+### 2. ESPHome-Familiar Developer Experience
+- Maintain YAML configuration compatibility where sensible
+- Use the same component naming conventions (e.g., `platform: dht`, `pin: GPIO4`)
+- Provide clear, actionable error messages that guide users to solutions
+- Support the same modular, component-based architecture ESPHome users expect
+- Enable seamless Home Assistant integration
+
+### 3. Quality-First Development Workflow
+- All code must pass SwiftLint and SwiftFormat checks before commit
+- Every component requires comprehensive unit tests
+- Validate YAML configurations thoroughly at parse time
+- Run `swift test` successfully before any PR submission
+- Generate ESP-IDF code that compiles without warnings
+
+### 4. User-Centric Design Philosophy
+- "No C++ coding required" - users work only with YAML
+- Provide sensible defaults while allowing full customization
+- Support Over-The-Air (OTA) updates for deployed devices
+- Prioritize local control and privacy (no cloud dependencies)
+- Make error messages educational, not just diagnostic
+
+### 5. Hardware-Aware Implementation
+- Validate all pin assignments against actual board capabilities
+- Provide board-specific constraints and features dynamically
+- Generate efficient code appropriate for resource-constrained devices
+- Support the ESP32 RISC-V family (C3, C6, H2, P4) as first-class citizens
+
 ## Architecture Overview
 
 ### Module Structure
@@ -106,22 +143,44 @@ gpio_set_direction(sensor_pin, GPIO_MODE_INPUT);
 int value = gpio_get_level(sensor_pin);
 ```
 
-#### Pin Validation for ESP32-C6
+#### Board-Aware Pin Validation
 ```swift
-private func validatePin(_ pinNumber: String) throws {
-    guard let pin = extractGPIONumber(pinNumber) else {
-        throw ValidationError.invalidPin("Invalid GPIO format: \(pinNumber)")
+// IMPORTANT: Components should use board-specific validation (Core Principle #5)
+public func validate(config: ConfigType, board: String) throws {
+    // Validate required properties first
+    guard let pin = config.pin else {
+        throw ComponentValidationError.missingRequiredProperty(
+            component: platform,
+            property: "pin"
+        )
     }
     
-    // ESP32-C6 constraints
-    if pin < 0 || pin > 30 {
-        throw ValidationError.invalidPin("GPIO\(pin) not available on ESP32-C6")
-    }
+    // Use shared helper for consistent board validation (eliminates boilerplate)
+    // This will throw ComponentValidationError.invalidPropertyValue if board is unsupported
+    let pinValidator = try createPinValidator(for: board)
     
-    // Input-only pins
-    if [18, 19].contains(pin) && requiresOutput {
-        throw ValidationError.invalidPin("GPIO\(pin) is input-only")
+    // Board-specific pin validation with appropriate requirements
+    try pinValidator.validatePin(pin, requirements: .output)
+    
+    // Example: Additional board-specific validation
+    if board.contains("esp32-h2") && someH2SpecificFeature {
+        // Handle H2-specific constraints
+        throw ComponentValidationError.invalidPropertyValue(
+            component: platform,
+            property: "feature", 
+            value: "not_supported_on_h2",
+            reason: "This feature is not available on ESP32-H2 boards"
+        )
     }
+}
+
+// Example: Code generation with board context
+public func generateCode(config: ConfigType, context: CodeGenerationContext) throws -> ComponentCode {
+    // Use shared helper for board definition extraction
+    let boardDef = try getBoardDefinition(from: context)
+    let pinValidator = PinValidator(boardConstraints: boardDef.pinConstraints)
+    
+    // Component-specific code generation...
 }
 ```
 
@@ -179,11 +238,12 @@ func testDHTSensorValidation() throws {
 
 ### Common Pitfalls to Avoid
 
-1. **Pin Configuration**: Always validate against ESP32-C6 specific constraints
+1. **Pin Configuration**: Always validate against board-specific constraints (not hardcoded to one board)
 2. **String Interpolation**: Escape backslashes properly in generated code  
 3. **Optional Chaining**: Use safe unwrapping for optional configuration values
-4. **Error Messages**: Provide clear, actionable error messages for users
+4. **Error Messages**: Provide clear, actionable error messages for users (Core Principle #4)
 5. **Thread Safety**: ESP-IDF code should be thread-aware (FreeRTOS)
+6. **Board Assumptions**: Never hardcode board-specific behavior; use BoardCapabilities instead
 
 ### ESP32-C6 Hardware Constraints
 
@@ -248,6 +308,17 @@ ESPHome Swift uses a Git Flow inspired branching strategy following CONTRIBUTING
    - All tests pass
    - Cross-platform builds succeed
 
+6. **MANDATORY: Run all status checks before pushing**:
+   ```bash
+   # Always run these commands before git push
+   swift test                    # Ensure all tests pass
+   swiftlint                    # Check for linting violations  
+   swiftformat --lint .         # Check formatting compliance
+   swift build                  # Ensure clean build
+   ```
+   
+   **Critical**: Never push code that fails any of these checks. GitHub CI will fail and block the PR. Fix all issues locally first.
+
 ### Useful Development Commands
 
 ```bash
@@ -289,13 +360,17 @@ swift run esphome-swift validate Examples/basic-sensor.yaml
 
 **Take Time to Do Things Right**: This is a new project with no users yet. Prioritize code quality, architectural cleanliness, and following best practices over speed. This is the foundation that will support the project long-term.
 
-**Key Principles**:
+**Alignment with Core Principles**: All development work must align with the Core Project Principles defined above. When making decisions, refer back to these principles to ensure consistency across the codebase.
+
+**Key Implementation Guidelines**:
 1. **No Shortcuts**: Don't rush refactoring or take shortcuts that compromise code quality
-2. **Best Practices First**: Always follow Swift Embedded and general Swift best practices
+2. **Best Practices First**: Always follow Swift Embedded and general Swift best practices (see Core Principle #1)
 3. **Type Safety**: Prefer compile-time safety over runtime convenience
 4. **Clean Architecture**: Maintain clear separation of concerns and avoid tight coupling
 5. **Future-Proof**: Design with extensibility and maintainability in mind
-6. **Test-Driven**: Ensure all changes are covered by tests and don't break existing functionality
+6. **Test-Driven**: Ensure all changes are covered by tests and don't break existing functionality (see Core Principle #3)
+7. **ESPHome Compatibility**: Maintain familiar patterns and conventions for ESPHome users (see Core Principle #2)
+8. **CRITICAL: Pre-Push Validation**: Always run `swift test`, `swiftlint`, `swiftformat --lint .`, and `swift build` before pushing. Never push failing code.
 
 **When Refactoring**:
 - Complete each architectural change thoroughly before moving to the next

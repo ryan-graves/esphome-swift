@@ -105,29 +105,66 @@ public protocol ComponentFactory {
     /// Optional configuration properties  
     var optionalProperties: [String] { get }
     
-    /// Validate configuration with compile-time type safety
-    func validate(config: ConfigType) throws
+    /// Validate configuration with board-specific constraints
+    func validate(config: ConfigType, board: String) throws
     
     /// Generate code with compile-time type safety
     func generateCode(config: ConfigType, context: CodeGenerationContext) throws -> ComponentCode
     
-    /// Type-erased validate method for dynamic dispatch
-    func validateAny(config: ComponentConfig) throws
+    /// Type-erased board-aware validate method for dynamic dispatch
+    func validateAny(config: ComponentConfig, board: String) throws
     
     /// Type-erased generateCode method for dynamic dispatch  
     func generateCodeAny(config: ComponentConfig, context: CodeGenerationContext) throws -> ComponentCode
 }
 
-/// Default implementations for type-erased methods
+/// Default implementations for shared helper methods
 public extension ComponentFactory {
-    func validateAny(config: ComponentConfig) throws {
+    
+    // MARK: - Shared Board Validation Helpers
+    
+    /// Create a board-specific pin validator
+    /// - Parameters:
+    ///   - board: Board identifier
+    /// - Returns: PinValidator configured for the specified board
+    /// - Throws: ComponentValidationError if board is unsupported
+    func createPinValidator(for board: String) throws -> PinValidator {
+        guard let boardDef = BoardCapabilities.boardDefinition(for: board) else {
+            throw ComponentValidationError.invalidPropertyValue(
+                component: platform,
+                property: "board",
+                value: board,
+                reason: "Unsupported board. Use 'swift run esphome-swift boards' to see available boards."
+            )
+        }
+        return PinValidator(boardConstraints: boardDef.pinConstraints)
+    }
+    
+    /// Get board definition for code generation context
+    /// - Parameters:
+    ///   - context: Code generation context containing target board
+    /// - Returns: Board definition for the target board
+    /// - Throws: ComponentValidationError if board is unsupported
+    func getBoardDefinition(from context: CodeGenerationContext) throws -> BoardCapabilities.BoardDefinition {
+        guard let boardDef = BoardCapabilities.boardDefinition(for: context.targetBoard) else {
+            throw ComponentValidationError.invalidPropertyValue(
+                component: platform,
+                property: "board",
+                value: context.targetBoard,
+                reason: "Unsupported board"
+            )
+        }
+        return boardDef
+    }
+    
+    func validateAny(config: ComponentConfig, board: String) throws {
         guard let typedConfig = config as? ConfigType else {
             throw ComponentValidationError.incompatibleConfiguration(
                 component: platform,
                 reason: "Expected \(ConfigType.self) but got \(type(of: config))"
             )
         }
-        try validate(config: typedConfig)
+        try validate(config: typedConfig, board: board)
     }
     
     func generateCodeAny(config: ComponentConfig, context: CodeGenerationContext) throws -> ComponentCode {

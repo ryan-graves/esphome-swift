@@ -10,14 +10,9 @@ public struct GPIOBinarySensorFactory: ComponentFactory {
     public let requiredProperties = ["pin"]
     public let optionalProperties = ["name", "device_class", "inverted", "filters"]
     
-    private let pinValidator: PinValidator
+    public init() {}
     
-    public init(pinValidator: PinValidator = PinValidator()) {
-        self.pinValidator = pinValidator
-    }
-    
-    public func validate(config: BinarySensorConfig) throws {
-        // Validate required pin
+    public func validate(config: BinarySensorConfig, board: String) throws {
         guard let pin = config.pin else {
             throw ComponentValidationError.missingRequiredProperty(
                 component: platform,
@@ -25,10 +20,13 @@ public struct GPIOBinarySensorFactory: ComponentFactory {
             )
         }
         
+        let pinValidator = try createPinValidator(for: board)
         try pinValidator.validatePin(pin, requirements: .input)
     }
     
     public func generateCode(config: BinarySensorConfig, context: CodeGenerationContext) throws -> ComponentCode {
+        let boardDef = try getBoardDefinition(from: context)
+        let pinValidator = PinValidator(boardConstraints: boardDef.pinConstraints)
         let pinNumber = try pinValidator.extractPinNumber(from: config.pin!)
         let componentId = config.id ?? "binary_sensor_\(pinNumber)"
         let inverted = config.inverted ?? false

@@ -10,13 +10,9 @@ public struct GPIOSwitchFactory: ComponentFactory {
     public let requiredProperties = ["pin"]
     public let optionalProperties = ["name", "inverted", "restore_mode"]
     
-    private let pinValidator: PinValidator
+    public init() {}
     
-    public init(pinValidator: PinValidator = PinValidator()) {
-        self.pinValidator = pinValidator
-    }
-    
-    public func validate(config: SwitchConfig) throws {
+    public func validate(config: SwitchConfig, board: String) throws {
         // Validate required pin
         guard let pin = config.pin else {
             throw ComponentValidationError.missingRequiredProperty(
@@ -25,10 +21,13 @@ public struct GPIOSwitchFactory: ComponentFactory {
             )
         }
         
+        let pinValidator = try createPinValidator(for: board)
         try pinValidator.validatePin(pin, requirements: .output)
     }
     
     public func generateCode(config: SwitchConfig, context: CodeGenerationContext) throws -> ComponentCode {
+        let boardDef = try getBoardDefinition(from: context)
+        let pinValidator = PinValidator(boardConstraints: boardDef.pinConstraints)
         let pinNumber = try pinValidator.extractPinNumber(from: config.pin!)
         let componentId = config.id ?? "gpio_switch_\(pinNumber)"
         let inverted = config.inverted ?? false

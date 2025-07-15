@@ -10,13 +10,9 @@ public struct DHTSensorFactory: ComponentFactory {
     public let requiredProperties = ["pin", "model"]
     public let optionalProperties = ["update_interval", "temperature", "humidity"]
     
-    private let pinValidator: PinValidator
+    public init() {}
     
-    public init(pinValidator: PinValidator = PinValidator()) {
-        self.pinValidator = pinValidator
-    }
-    
-    public func validate(config: SensorConfig) throws {
+    public func validate(config: SensorConfig, board: String) throws {
         // Validate required pin
         guard let pin = config.pin else {
             throw ComponentValidationError.missingRequiredProperty(
@@ -33,10 +29,13 @@ public struct DHTSensorFactory: ComponentFactory {
             )
         }
         
+        let pinValidator = try createPinValidator(for: board)
         try pinValidator.validatePin(pin, requirements: .input)
     }
     
     public func generateCode(config: SensorConfig, context: CodeGenerationContext) throws -> ComponentCode {
+        let boardDef = try getBoardDefinition(from: context)
+        let pinValidator = PinValidator(boardConstraints: boardDef.pinConstraints)
         let pinNumber = try pinValidator.extractPinNumber(from: config.pin!)
         let model = config.model!
         let componentId = config.id ?? "dht_sensor"
