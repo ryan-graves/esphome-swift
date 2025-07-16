@@ -25,7 +25,7 @@ Sure, you could buy a smart sensor, but building your own means:
 - **Universal compatibility** - works with ANY smart home platform
 - You learn how smart home devices actually work
 - You can customize it exactly how you want
-- **No vendor lock-in** - switch platforms anytime with Matter
+- **Platform flexibility** - switch platforms if needed (requires factory reset)
 - It's more fun (trust us!)
 - You join a community of makers and tinkerers
 
@@ -291,7 +291,9 @@ sensor:
     update_interval: 60s
 ```
 
-**Building Multiple Devices?** If you plan to build more than one sensor, change the `hostname` in the Matter network section to something unique like `kitchen-sensor` or `bedroom-sensor` to avoid network conflicts.
+**Building Multiple Devices?** If you plan to build more than one sensor:
+- Change the `hostname` to something unique like `kitchen-sensor` or `bedroom-sensor`
+- **Important**: Also change the `discriminator` and `passcode` values to be unique for each device to prevent commissioning conflicts and ensure security. For example, use discriminator `3842` and passcode `20202023` for your second device.
 
 ### Step 2: Create a Secrets File
 
@@ -310,7 +312,11 @@ wifi:
   password: !secret wifi_password
 ```
 
-**What about the Matter credentials?** The discriminator and passcode in the Matter section are like your device's "phone number" - they're used for initial setup only and don't need to be secret. Think of them as public identifiers that help smart home platforms find and connect to your device.
+**What about the Matter credentials?** The discriminator and passcode serve different purposes:
+- **Discriminator**: Like your device's "phone number" - helps platforms find your device
+- **Passcode**: A security credential that should be randomized for each device to prevent unauthorized access
+
+**Security Note**: In production, both values should be unique per device. The values shown here are for tutorial purposes only.
 
 ### Step 3: Validate Your Configuration
 
@@ -397,6 +403,8 @@ Setup PIN: 20202022
 ===============================================
 ```
 
+**Note**: The manual pairing code shown above corresponds to the tutorial configuration. If you changed the discriminator or passcode values, your manual pairing code will be different.
+
 **Important**: Copy or screenshot this information - you'll need it for setup!
 
 ### Step 2: Choose Your Smart Home Platform
@@ -436,7 +444,7 @@ Pick your platform and follow the instructions:
 If QR scanning fails, use the manual pairing code:
 
 1. In your smart home app, look for **"Enter setup code manually"** or **"Can't scan?"**
-2. Enter the manual code: **15886-468001** (from your serial monitor)
+2. Enter the manual pairing code shown in your serial monitor output (e.g., **15886-468001**)
 3. Complete the setup process
 
 ### What You Can Do Now
@@ -447,7 +455,7 @@ If QR scanning fails, use the manual pairing code:
 - **Create automations** (turn on heat when temp drops)
 - **Get notifications** about readings
 - **Control from voice assistants** ("Hey Google, what's the temperature?")
-- **Add to multiple platforms** - Matter devices can join several ecosystems!
+- **Switch platforms later** - Matter devices can be reset and moved between ecosystems if needed
 
 ### Optional: Home Assistant Integration
 
