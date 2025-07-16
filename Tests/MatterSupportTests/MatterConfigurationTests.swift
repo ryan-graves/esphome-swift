@@ -170,8 +170,8 @@ final class MatterConfigurationTests: XCTestCase {
         XCTAssertNotEqual(qrCode, defaultQR)
     }
     
-    func testCommissioningConfigCodePopulation() {
-        // Test that a CommissioningConfig can be created with generated codes
+    func testCommissioningConfigManualCodeCreation() {
+        // Test that a CommissioningConfig can be manually created with generated codes
         let baseConfig = CommissioningConfig(discriminator: 1234, passcode: 87654321)
         
         // Generate codes manually using the methods
@@ -199,5 +199,34 @@ final class MatterConfigurationTests: XCTestCase {
         // Verify the generated codes match what we'd generate directly
         XCTAssertEqual(configWithCodes.qrCodePayload, qrCode)
         XCTAssertEqual(configWithCodes.manualPairingCode, manualCode)
+    }
+    
+    func testMatterConfigWithGeneratedCodes() {
+        // Test the static withGeneratedCodes helper method on MatterConfig
+        let commissioningConfig = MatterConfig.withGeneratedCodes(
+            discriminator: 1234,
+            passcode: 87654321,
+            vendorId: 0xFFF2,
+            productId: 0x8001
+        )
+        
+        // Verify basic properties are set correctly (returns CommissioningConfig)
+        XCTAssertEqual(commissioningConfig.discriminator, 1234)
+        XCTAssertEqual(commissioningConfig.passcode, 87654321)
+        
+        // Verify codes are automatically generated and populated
+        XCTAssertNotNil(commissioningConfig.qrCodePayload)
+        XCTAssertNotNil(commissioningConfig.manualPairingCode)
+        
+        // Verify format correctness
+        XCTAssertTrue(commissioningConfig.qrCodePayload!.hasPrefix("MT:"))
+        XCTAssertTrue(commissioningConfig.manualPairingCode!.contains("-"))
+        
+        // Test with default values
+        let defaultConfig = MatterConfig.withGeneratedCodes()
+        XCTAssertEqual(defaultConfig.discriminator, 3840)
+        XCTAssertEqual(defaultConfig.passcode, 20202021)
+        XCTAssertNotNil(defaultConfig.qrCodePayload)
+        XCTAssertNotNil(defaultConfig.manualPairingCode)
     }
 }
