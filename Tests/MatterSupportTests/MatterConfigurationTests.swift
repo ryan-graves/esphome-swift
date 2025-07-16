@@ -169,4 +169,35 @@ final class MatterConfigurationTests: XCTestCase {
         let defaultQR = defaultConfig.generateQRCode(vendorId: 0xFFF1, productId: 0x8000)
         XCTAssertNotEqual(qrCode, defaultQR)
     }
+    
+    func testCommissioningConfigCodePopulation() {
+        // Test that a CommissioningConfig can be created with generated codes
+        let baseConfig = CommissioningConfig(discriminator: 1234, passcode: 87654321)
+        
+        // Generate codes manually using the methods
+        let qrCode = baseConfig.generateQRCode(vendorId: 0xFFF2, productId: 0x8001)
+        let manualCode = baseConfig.generateManualPairingCode(vendorId: 0xFFF2, productId: 0x8001)
+        
+        // Create a new config with the generated codes populated
+        let configWithCodes = CommissioningConfig(
+            discriminator: 1234,
+            passcode: 87654321,
+            manualPairingCode: manualCode,
+            qrCodePayload: qrCode
+        )
+        
+        // Verify all properties are correctly set
+        XCTAssertEqual(configWithCodes.discriminator, 1234)
+        XCTAssertEqual(configWithCodes.passcode, 87654321)
+        XCTAssertNotNil(configWithCodes.qrCodePayload)
+        XCTAssertNotNil(configWithCodes.manualPairingCode)
+        
+        // Verify format correctness
+        XCTAssertTrue(configWithCodes.qrCodePayload!.hasPrefix("MT:"))
+        XCTAssertTrue(configWithCodes.manualPairingCode!.contains("-"))
+        
+        // Verify the generated codes match what we'd generate directly
+        XCTAssertEqual(configWithCodes.qrCodePayload, qrCode)
+        XCTAssertEqual(configWithCodes.manualPairingCode, manualCode)
+    }
 }

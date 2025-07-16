@@ -84,11 +84,11 @@ final class MatterSetupPayloadTests: XCTestCase {
         
         // First part should be 4 digits (discriminator)
         XCTAssertEqual(parts[0].count, 4, "First part should be 4 digits")
-        XCTAssertTrue(parts[0].allSatisfy { $0.isNumber }, "First part should be all digits")
+        XCTAssertTrue(parts[0].allSatisfy(\.isNumber), "First part should be all digits")
         
         // Second part should be 6 digits (passcode portion)
         XCTAssertEqual(parts[1].count, 6, "Second part should be 6 digits")
-        XCTAssertTrue(parts[1].allSatisfy { $0.isNumber }, "Second part should be all digits")
+        XCTAssertTrue(parts[1].allSatisfy(\.isNumber), "Second part should be all digits")
     }
     
     // MARK: - Base38 Encoding Tests

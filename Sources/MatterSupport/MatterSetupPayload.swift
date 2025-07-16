@@ -18,7 +18,7 @@ public struct MatterSetupPayload {
     private static let commissioningFlow: UInt8 = 0
     
     /// Discovery capabilities (BLE, WiFi, on network)
-    private static let discoveryCapabilities: UInt8 = 0x04  // On IP network
+    private static let discoveryCapabilities: UInt8 = 0x04 // On IP network
     
     // MARK: - Payload Components
     
@@ -64,11 +64,15 @@ public struct MatterSetupPayload {
     /// - Returns: Manual pairing code string (format: 11111-222222)
     public func generateManualPairingCode() -> String {
         // Manual pairing code combines discriminator (4 bits) and passcode
-        let shortDiscriminator = (discriminator >> 8) & 0x0F  // Upper 4 bits
+        // Per Matter Core Specification 5.1.4.1: Manual Pairing Code Format
+        // - Uses upper 4 bits of 12-bit discriminator (bits 11-8)
+        // - Combines with setup passcode using specific encoding algorithm
+        let shortDiscriminator = (discriminator >> 8) & 0x0F // Upper 4 bits (bits 11-8)
         
-        // Encode discriminator + passcode into 11-digit code
-        // This is a simplified implementation - real implementation would use
-        // the Matter specification's exact algorithm
+        // Simplified manual pairing code generation
+        // TODO: Implement full Matter spec algorithm from Section 5.1.4.1
+        // Current implementation uses basic format for compatibility
+        // Real implementation should include proper check digit calculation
         let code = String(format: "%04d-%06d", shortDiscriminator, passcode % 1000000)
         return code
     }
@@ -81,13 +85,13 @@ public struct MatterSetupPayload {
         let bits = BitPacker()
         
         // Pack fields according to Matter setup payload format
-        bits.pack(version, bits: 3)                    // 3 bits: version
-        bits.pack(vendorId, bits: 16)                  // 16 bits: vendor ID
-        bits.pack(productId, bits: 16)                 // 16 bits: product ID
-        bits.pack(commissioningFlow, bits: 2)          // 2 bits: commissioning flow
-        bits.pack(discoveryCapabilities, bits: 8)      // 8 bits: discovery capabilities
-        bits.pack(discriminator, bits: 12)             // 12 bits: discriminator
-        bits.pack(passcode, bits: 27)                  // 27 bits: passcode
+        bits.pack(version, bits: 3) // 3 bits: version
+        bits.pack(vendorId, bits: 16) // 16 bits: vendor ID
+        bits.pack(productId, bits: 16) // 16 bits: product ID
+        bits.pack(commissioningFlow, bits: 2) // 2 bits: commissioning flow
+        bits.pack(discoveryCapabilities, bits: 8) // 8 bits: discovery capabilities
+        bits.pack(discriminator, bits: 12) // 12 bits: discriminator
+        bits.pack(passcode, bits: 27) // 27 bits: passcode
         
         // Pad to byte boundary
         bits.padToByteBoundary()
@@ -105,20 +109,20 @@ public struct MatterSetupPayload {
         let bytes = Array(data)
         
         // Process 3 bytes (24 bits) at a time to 5 Base38 characters
-        var i = 0
-        while i < bytes.count {
+        var index = 0
+        while index < bytes.count {
             var value: UInt64 = 0
-            let bytesToProcess = min(3, bytes.count - i)
+            let bytesToProcess = min(3, bytes.count - index)
             
             // Pack up to 3 bytes into a 24-bit value
-            for j in 0..<bytesToProcess {
-                value |= UInt64(bytes[i + j]) << (8 * (2 - j))
+            for byteOffset in 0 ..< bytesToProcess {
+                value |= UInt64(bytes[index + byteOffset]) << (8 * (2 - byteOffset))
             }
             
             // Convert to 5 Base38 characters
             var chars = ""
             var tempValue = value
-            for _ in 0..<5 {
+            for _ in 0 ..< 5 {
                 let index = Int(tempValue % 38)
                 let char = Self.base38Alphabet[Self.base38Alphabet.index(Self.base38Alphabet.startIndex, offsetBy: index)]
                 chars = String(char) + chars
@@ -126,7 +130,7 @@ public struct MatterSetupPayload {
             }
             
             result += chars
-            i += 3
+            index += 3
         }
         
         return result
@@ -145,8 +149,8 @@ private class BitPacker {
     func pack<T: BinaryInteger>(_ value: T, bits: Int) {
         let intValue = UInt64(value)
         
-        for i in 0..<bits {
-            let bit = (intValue >> i) & 1
+        for bitIndex in 0 ..< bits {
+            let bit = (intValue >> bitIndex) & 1
             currentByte |= UInt8(bit) << bitsInCurrentByte
             bitsInCurrentByte += 1
             

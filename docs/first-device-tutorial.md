@@ -364,6 +364,8 @@ Example output:
 
 If you have Home Assistant running, your sensor can automatically appear!
 
+**Note**: This tutorial uses the Home Assistant API for simplicity. For universal smart home compatibility, consider using our [Matter-enabled examples](../Examples/matter-sensor.yaml) which work with Apple Home, Google Home, Alexa, and other platforms via QR code scanning.
+
 ### Option 1: Auto-Discovery
 
 If your sensor and Home Assistant are on the same network:

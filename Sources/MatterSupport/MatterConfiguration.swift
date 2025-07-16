@@ -149,14 +149,14 @@ public extension CommissioningConfig {
 /// Extended Matter configuration functionality for QR code generation
 public extension MatterConfig {
     /// Generate QR code payload from Matter configuration
-    /// - Returns: Matter QR code payload string
+    /// - Returns: Matter QR code payload string, or nil if no commissioning configuration is provided
     func generateQRCode() -> String? {
         guard let commissioning = self.commissioning else { return nil }
         return commissioning.generateQRCode(vendorId: self.vendorId, productId: self.productId)
     }
     
     /// Generate manual pairing code from Matter configuration
-    /// - Returns: Manual pairing code string
+    /// - Returns: Manual pairing code string, or nil if no commissioning configuration is provided
     func generateManualPairingCode() -> String? {
         guard let commissioning = self.commissioning else { return nil }
         return commissioning.generateManualPairingCode(vendorId: self.vendorId, productId: self.productId)
