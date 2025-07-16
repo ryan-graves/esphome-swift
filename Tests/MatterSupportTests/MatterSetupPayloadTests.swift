@@ -113,7 +113,7 @@ final class MatterSetupPayloadTests: XCTestCase {
             vendorId: 0xFFFF,
             productId: 0xFFFF,
             discriminator: 0x0FFF, // 12-bit max
-            passcode: 0x7FFFFFF // 27-bit max (134,217,727)
+            passcode: 134217727 // 27-bit max (0x7FFFFFF)
         )
         
         let qrCode = payload.generateQRCodePayload()

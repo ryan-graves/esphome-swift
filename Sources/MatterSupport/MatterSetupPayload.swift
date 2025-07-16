@@ -14,6 +14,9 @@ public struct MatterSetupPayload {
     /// Maximum passcode value (2^27) for manual pairing code constraint
     private static let maxPasscodeValue: UInt32 = 134217728 // 2^27
     
+    /// Maximum value for 10-digit representation (10^10)
+    private static let maxTenDigitValue: UInt64 = 10000000000 // 10^10
+    
     // MARK: - Payload Components
     
     public let version: UInt8
@@ -93,7 +96,7 @@ public struct MatterSetupPayload {
         let combinedValue = (UInt64(shortDiscriminator) << 20) | UInt64(passcodeConstrained >> 7)
         
         // Convert to 10-digit representation for check digit calculation
-        let digits = String(combinedValue % 10000000000).padding(toLength: 10, withPad: "0", startingAt: 0)
+        let digits = String(combinedValue % Self.maxTenDigitValue).padding(toLength: 10, withPad: "0", startingAt: 0)
         
         // Apply Verhoeff check digit algorithm (Matter specification requirement)
         let checkDigit = Self.calculateVerhoeffCheckDigit(digits)
@@ -141,7 +144,7 @@ public struct MatterSetupPayload {
         let inverse = [0, 4, 3, 2, 1, 5, 6, 7, 8, 9]
         
         var checksum = 0
-        let digitArray = digits.compactMap { Int(String($0)) }
+        let digitArray = digits.compactMap(\.wholeNumberValue)
         
         for (index, digit) in digitArray.enumerated() {
             let position = digitArray.count - index
