@@ -11,6 +11,9 @@ public struct MatterSetupPayload {
     /// Base38 alphabet (excludes $%*+/ :)
     private static let base38Alphabet = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-.?"
     
+    /// Maximum passcode value (2^27) for manual pairing code constraint
+    private static let maxPasscodeValue: UInt32 = 134217728 // 2^27
+    
     // MARK: - Payload Components
     
     public let version: UInt8
@@ -80,7 +83,13 @@ public struct MatterSetupPayload {
         
         // Combine short discriminator and passcode according to Matter spec algorithm
         // This creates a value that gets encoded into the manual code
-        let passcodeConstrained = passcode % 134217728 // Constrain to 27 bits max
+        let passcodeConstrained = passcode % Self.maxPasscodeValue // Constrain to 27 bits max
+        
+        // Matter Core Specification bit layout for manual pairing code:
+        // - Short discriminator (4 bits) is shifted left by 20 bits to occupy bits 23-20
+        // - Passcode is shifted right by 7 bits to remove the lower 7 bits (bits 6-0)
+        // This creates a 24-bit value where the upper 4 bits are the discriminator
+        // and the lower 20 bits are the upper portion of the passcode
         let combinedValue = (UInt64(shortDiscriminator) << 20) | UInt64(passcodeConstrained >> 7)
         
         // Convert to 10-digit representation for check digit calculation

@@ -150,18 +150,18 @@ final class MatterConfigurationTests: XCTestCase {
     }
     
     func testCommissioningConfigWithGeneratedCodes() {
-        let baseConfig = CommissioningConfig(
+        let customConfig = CommissioningConfig(
             discriminator: 1111,
             passcode: 12345678
         )
         
         // Test generating QR code
-        let qrCode = baseConfig.generateQRCode(vendorId: 0xFFF1, productId: 0x8000)
+        let qrCode = customConfig.generateQRCode(vendorId: 0xFFF1, productId: 0x8000)
         XCTAssertTrue(qrCode.hasPrefix("MT:"))
         XCTAssertGreaterThan(qrCode.count, 3)
         
         // Test generating manual pairing code
-        let manualCode = baseConfig.generateManualPairingCode()
+        let manualCode = customConfig.generateManualPairingCode()
         XCTAssertTrue(manualCode.contains("-"))
         
         // Test that codes are different from defaults
@@ -172,11 +172,11 @@ final class MatterConfigurationTests: XCTestCase {
     
     func testCommissioningConfigManualCodeCreation() {
         // Test that a CommissioningConfig can be manually created with generated codes
-        let baseConfig = CommissioningConfig(discriminator: 1234, passcode: 87654321)
+        let testConfig = CommissioningConfig(discriminator: 1234, passcode: 87654321)
         
         // Generate codes manually using the methods
-        let qrCode = baseConfig.generateQRCode(vendorId: 0xFFF2, productId: 0x8001)
-        let manualCode = baseConfig.generateManualPairingCode()
+        let qrCode = testConfig.generateQRCode(vendorId: 0xFFF2, productId: 0x8001)
+        let manualCode = testConfig.generateManualPairingCode()
         
         // Create a new config with the generated codes populated
         let configWithCodes = CommissioningConfig(
