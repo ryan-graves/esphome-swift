@@ -11,11 +11,17 @@ public struct MatterSetupPayload {
     /// Base38 alphabet (excludes $%*+/ :)
     private static let base38Alphabet = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-.?"
     
+    /// Base38 alphabet as Array for O(1) access performance
+    private static let base38AlphabetArray = Array(base38Alphabet)
+    
     /// Maximum passcode value (2^27) for manual pairing code constraint
     private static let maxPasscodeValue: UInt32 = 134217728 // 2^27
     
     /// Maximum value for 10-digit representation (10^10)
     private static let maxTenDigitValue: UInt64 = 10000000000 // 10^10
+    
+    /// Maximum combined value (24-bit) for manual pairing code before modulo
+    private static let maxCombinedValue: UInt64 = 16777216 // 2^24
     
     // MARK: - Payload Components
     
@@ -95,7 +101,12 @@ public struct MatterSetupPayload {
         // and the lower 20 bits are the upper portion of the passcode
         let combinedValue = (UInt64(shortDiscriminator) << 20) | UInt64(passcodeConstrained >> 7)
         
+        // Validate that combined value fits within expected 24-bit range
+        // The modulo operation is intentional per Matter spec to ensure 10-digit constraint
+        assert(combinedValue < Self.maxCombinedValue, "Combined value exceeds 24-bit range")
+        
         // Convert to 10-digit representation for check digit calculation
+        // Modulo operation constrains to 10 digits as required by Matter specification
         let digits = String(combinedValue % Self.maxTenDigitValue).padding(toLength: 10, withPad: "0", startingAt: 0)
         
         // Apply Verhoeff check digit algorithm (Matter specification requirement)
@@ -202,10 +213,7 @@ public struct MatterSetupPayload {
             var tempValue = value
             for _ in 0 ..< 5 {
                 let charIndex = Int(tempValue % 38)
-                let char = Self.base38Alphabet[Self.base38Alphabet.index(
-                    Self.base38Alphabet.startIndex,
-                    offsetBy: charIndex
-                )]
+                let char = Self.base38AlphabetArray[charIndex]
                 chars = String(char) + chars
                 tempValue /= 38
             }
