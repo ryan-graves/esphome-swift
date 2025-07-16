@@ -11,15 +11,6 @@ public struct MatterSetupPayload {
     /// Base38 alphabet (excludes $%*+/ :)
     private static let base38Alphabet = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-.?"
     
-    /// Standard payload version
-    private static let payloadVersion: UInt8 = 0
-    
-    /// Standard commissioning flow (basic)
-    private static let commissioningFlow: UInt8 = 0
-    
-    /// Discovery capabilities (BLE, WiFi, on network)
-    private static let discoveryCapabilities: UInt8 = 0x04 // On IP network
-    
     // MARK: - Payload Components
     
     public let version: UInt8
@@ -198,8 +189,8 @@ public struct MatterSetupPayload {
             var chars = ""
             var tempValue = value
             for _ in 0 ..< 5 {
-                let index = Int(tempValue % 38)
-                let char = Self.base38Alphabet[Self.base38Alphabet.index(Self.base38Alphabet.startIndex, offsetBy: index)]
+                let charIndex = Int(tempValue % 38)
+                let char = Self.base38Alphabet[Self.base38Alphabet.index(Self.base38Alphabet.startIndex, offsetBy: charIndex)]
                 chars = String(char) + chars
                 tempValue /= 38
             }
