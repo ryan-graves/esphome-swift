@@ -199,7 +199,10 @@ public struct MatterSetupPayload {
             var tempValue = value
             for _ in 0 ..< 5 {
                 let charIndex = Int(tempValue % 38)
-                let char = Self.base38Alphabet[Self.base38Alphabet.index(Self.base38Alphabet.startIndex, offsetBy: charIndex)]
+                let char = Self.base38Alphabet[Self.base38Alphabet.index(
+                    Self.base38Alphabet.startIndex,
+                    offsetBy: charIndex
+                )]
                 chars = String(char) + chars
                 tempValue /= 38
             }
