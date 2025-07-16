@@ -295,7 +295,7 @@ matter:
     ipv6_enabled: true
     mdns:
       enabled: true
-      hostname: temperature-sensor  # Change this if you have multiple devices
+      hostname: temperature-sensor  # Change this for multiple devices to avoid conflicts
 
 # Enable Over-The-Air updates
 ota:
@@ -319,8 +319,8 @@ sensor:
 ```
 
 **Building Multiple Devices?** If you plan to build more than one sensor:
-- Change the `hostname` to something unique like `kitchen-sensor` or `bedroom-sensor`
-- **Important**: Run `esphome-swift generate-credentials` again to get unique discriminator and passcode values for each device to prevent commissioning conflicts
+- **Important**: Run `esphome-swift generate-credentials` again to get unique discriminator and passcode values for each device - this prevents commissioning conflicts and ensures security
+- Change the `hostname` to something unique like `kitchen-sensor` or `bedroom-sensor` to avoid network conflicts
 
 ### Step 3: Create a Secrets File
 
@@ -340,10 +340,10 @@ wifi:
 ```
 
 **What about the Matter credentials?** The discriminator and passcode serve different purposes:
-- **Discriminator**: Like your device's "phone number" - helps platforms find your device during commissioning
-- **Passcode**: A security credential that authenticates your device to prevent unauthorized access
+- **Discriminator**: Like your device's "phone number" - helps platforms find your device during commissioning  
+- **Passcode**: A security credential used for secure commissioning authentication - this should be treated as sensitive information
 
-**Why generate them?** Each device needs unique credentials to prevent commissioning conflicts and ensure security. The credential generator uses cryptographically secure random number generation that complies with CSA Matter Core Specification requirements.
+**Why generate them?** Each device needs unique credentials to prevent commissioning conflicts and ensure security. The passcode must be randomized for each device to prevent unauthorized access. The credential generator uses cryptographically secure random number generation that complies with CSA Matter Core Specification requirements.
 
 **Need multiple devices?** Run `esphome-swift generate-credentials --count 5 --format yaml` to generate credentials for multiple devices at once!
 
@@ -426,7 +426,7 @@ When your device boots up, look for this in the serial monitor:
 ```
 ========== MATTER COMMISSIONING INFO ==========
 QR Code: MT:Y.K90HRX00KA0648G00
-Manual Pairing Code: 84739-264851
+Manual Pairing Code: 12111-128008
 Discriminator: 2847
 Setup PIN: 73829502
 ===============================================
@@ -473,7 +473,7 @@ Pick your platform and follow the instructions:
 If QR scanning fails, use the manual pairing code:
 
 1. In your smart home app, look for **"Enter setup code manually"** or **"Can't scan?"**
-2. Enter the manual pairing code shown in your serial monitor output (e.g., **84739-264851**)
+2. Enter the manual pairing code shown in your serial monitor output (e.g., **12111-128008**)
 3. Complete the setup process
 
 ### What You Can Do Now

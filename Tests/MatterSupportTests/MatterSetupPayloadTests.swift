@@ -253,4 +253,5 @@ final class MatterSetupPayloadTests: XCTestCase {
         let standardQR = standardPayload.generateQRCodePayload()
         XCTAssertNotEqual(qrCode, standardQR)
     }
+    
 }
