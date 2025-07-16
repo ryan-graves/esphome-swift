@@ -318,7 +318,7 @@ struct GenerateCredentialsCommand: ParsableCommand {
         
         let logger = Logger(label: "GenerateCredentialsCommand")
         
-        guard count > 0 else {
+        guard count > 0 else { // swiftlint:disable:this empty_count
             logger.error("Count must be greater than 0")
             throw ExitCode.failure
         }
@@ -326,12 +326,10 @@ struct GenerateCredentialsCommand: ParsableCommand {
         logger.info("Generating \(count) Matter credential set(s)...")
         
         do {
-            let credentials: [MatterCredentials]
-            
-            if count == 1 {
-                credentials = [try MatterCredentialGenerator.generateCredentials()]
+            let credentials: [MatterCredentials] = if count == 1 {
+                try [MatterCredentialGenerator.generateCredentials()]
             } else {
-                credentials = try MatterCredentialGenerator.generateCredentials(count: count)
+                try MatterCredentialGenerator.generateCredentials(count: count)
             }
             
             // Output credentials in requested format

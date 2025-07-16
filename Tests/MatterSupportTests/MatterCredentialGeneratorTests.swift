@@ -23,17 +23,17 @@ final class MatterCredentialGeneratorTests: XCTestCase {
         // Generate multiple credentials and verify they're unique
         var credentials: [MatterCredentials] = []
         
-        for _ in 0..<10 {
+        for _ in 0 ..< 10 {
             let credential = try MatterCredentialGenerator.generateCredentials()
             credentials.append(credential)
         }
         
         // Check discriminator uniqueness
-        let discriminators = credentials.map { $0.discriminator }
+        let discriminators = credentials.map(\.discriminator)
         let uniqueDiscriminators = Set(discriminators)
         
         // Check passcode uniqueness  
-        let passcodes = credentials.map { $0.passcode }
+        let passcodes = credentials.map(\.passcode)
         let uniquePasscodes = Set(passcodes)
         
         // Note: Due to random generation, we might occasionally get duplicates in small samples
@@ -62,11 +62,11 @@ final class MatterCredentialGeneratorTests: XCTestCase {
         }
         
         // Verify uniqueness within the batch
-        let discriminators = credentials.map { $0.discriminator }
+        let discriminators = credentials.map(\.discriminator)
         let uniqueDiscriminators = Set(discriminators)
         XCTAssertEqual(discriminators.count, uniqueDiscriminators.count, "All discriminators in batch should be unique")
         
-        let passcodes = credentials.map { $0.passcode }
+        let passcodes = credentials.map(\.passcode)
         let uniquePasscodes = Set(passcodes)
         XCTAssertEqual(passcodes.count, uniquePasscodes.count, "All passcodes in batch should be unique")
     }
@@ -97,11 +97,11 @@ final class MatterCredentialGeneratorTests: XCTestCase {
         XCTAssertEqual(credentials.count, count)
         
         // Verify uniqueness
-        let discriminators = credentials.map { $0.discriminator }
+        let discriminators = credentials.map(\.discriminator)
         let uniqueDiscriminators = Set(discriminators)
         XCTAssertEqual(discriminators.count, uniqueDiscriminators.count, "All discriminators should be unique")
         
-        let passcodes = credentials.map { $0.passcode }
+        let passcodes = credentials.map(\.passcode)
         let uniquePasscodes = Set(passcodes)
         XCTAssertEqual(passcodes.count, uniquePasscodes.count, "All passcodes should be unique")
         
@@ -263,18 +263,18 @@ final class MatterCredentialGeneratorTests: XCTestCase {
         // This is a basic test to catch obvious non-random patterns
         
         var credentials: [MatterCredentials] = []
-        for _ in 0..<20 {
-            credentials.append(try MatterCredentialGenerator.generateCredentials())
+        for _ in 0 ..< 20 {
+            try credentials.append(MatterCredentialGenerator.generateCredentials())
         }
         
         // Check that we don't have obvious patterns like sequential values
-        let discriminators = credentials.map { $0.discriminator }
-        let passcodes = credentials.map { $0.passcode }
+        let discriminators = credentials.map(\.discriminator)
+        let passcodes = credentials.map(\.passcode)
         
         // Verify we're not getting sequential discriminators
         var sequentialCount = 0
-        for i in 1..<discriminators.count {
-            if discriminators[i] == discriminators[i-1] + 1 {
+        for index in 1 ..< discriminators.count {
+            if discriminators[index] == discriminators[index - 1] + 1 {
                 sequentialCount += 1
             }
         }
@@ -284,8 +284,8 @@ final class MatterCredentialGeneratorTests: XCTestCase {
         
         // Verify we're not getting sequential passcodes
         sequentialCount = 0
-        for i in 1..<passcodes.count {
-            if passcodes[i] == passcodes[i-1] + 1 {
+        for index in 1 ..< passcodes.count {
+            if passcodes[index] == passcodes[index - 1] + 1 {
                 sequentialCount += 1
             }
         }
@@ -334,8 +334,8 @@ final class MatterCredentialGeneratorTests: XCTestCase {
         XCTAssertLessThan(duration, 10.0, "Should generate 1000 credentials in under 10 seconds")
         
         // Verify uniqueness even at scale
-        let discriminators = Set(credentials.map { $0.discriminator })
-        let passcodes = Set(credentials.map { $0.passcode })
+        let discriminators = Set(credentials.map(\.discriminator))
+        let passcodes = Set(credentials.map(\.passcode))
         
         XCTAssertEqual(discriminators.count, 1000, "All discriminators should be unique")
         XCTAssertEqual(passcodes.count, 1000, "All passcodes should be unique")

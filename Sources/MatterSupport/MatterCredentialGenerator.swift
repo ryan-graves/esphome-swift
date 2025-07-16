@@ -55,7 +55,7 @@ public struct MatterCredentialGenerator {
     /// Each generated set is guaranteed to have unique discriminator and passcode values
     /// to prevent commissioning conflicts in device families
     public static func generateCredentials(count: Int) throws -> [MatterCredentials] {
-        guard count > 0 else {
+        guard count > 0 else { // swiftlint:disable:this empty_count
             throw MatterCredentialGeneratorError.invalidCount(count)
         }
         
@@ -63,7 +63,7 @@ public struct MatterCredentialGenerator {
         var usedDiscriminators: Set<UInt16> = []
         var usedPasscodes: Set<UInt32> = []
         
-        for _ in 0..<count {
+        for _ in 0 ..< count {
             var discriminator: UInt16
             var passcode: UInt32
             
@@ -278,7 +278,7 @@ public extension MatterCredentials {
     }
 }
 
-public extension Array where Element == MatterCredentials {
+public extension [MatterCredentials] {
     /// Format multiple credentials as YAML array
     var yamlFormat: String {
         let credentialBlocks = self.enumerated().map { index, credential in
