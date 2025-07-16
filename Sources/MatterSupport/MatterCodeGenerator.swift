@@ -107,7 +107,7 @@ public struct MatterCodeGenerator {
         }
         
         // Set commissioning parameters
-        if let commissioning = config.commissioning {
+        if config.commissioning != nil {
             setupCode.append("esp_matter::set_custom_dac_provider(esp_matter_dac_provider_create());")
             setupCode.append("esp_matter::set_custom_commissionable_data_provider(esp_matter_commissionable_data_provider_create());")
         }
@@ -120,6 +120,22 @@ public struct MatterCodeGenerator {
         // Start Matter
         setupCode.append("esp_matter::start(app_event_cb);")
         setupCode.append("ESP_LOGI(TAG, \"Matter device started successfully\");")
+        
+        // Display QR code and pairing information
+        if let commissioning = config.commissioning {
+            let qrCode = config.generateQRCode() ?? "ERROR: Failed to generate QR code"
+            let manualCode = config.generateManualPairingCode() ?? "Error generating manual code"
+            
+            setupCode.append("")
+            setupCode.append("// Display commissioning information")
+            setupCode.append("ESP_LOGI(TAG, \"========== MATTER COMMISSIONING INFO ==========\\n\");")
+            setupCode.append("ESP_LOGI(TAG, \"QR Code: \(qrCode)\\n\");")
+            setupCode.append("ESP_LOGI(TAG, \"Manual Pairing Code: \(manualCode)\\n\");")
+            setupCode.append("ESP_LOGI(TAG, \"Discriminator: \(commissioning.discriminator)\\n\");")
+            setupCode.append("ESP_LOGI(TAG, \"Setup PIN: \(commissioning.passcode)\\n\");")
+            setupCode.append("ESP_LOGI(TAG, \"===============================================\\n\");")
+            setupCode.append("")
+        }
         
         return setupCode
     }

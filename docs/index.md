@@ -70,7 +70,8 @@ esphome-swift flash build/my-sensor
 
 ## Documentation
 
-- [Getting Started Guide](getting-started.html)
+- [Build Your First Smart Home Device](first-device-tutorial.html) - Complete beginner's guide
+- [Getting Started Guide](getting-started.html) - Technical installation and setup
 - [Configuration Reference](configuration.html)
 - [Component Library](components.html)
 - [API Reference](api.html)

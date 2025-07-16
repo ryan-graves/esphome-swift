@@ -136,27 +136,97 @@ final class MatterConfigurationTests: XCTestCase {
         XCTAssertEqual(config.matterDeviceType, .temperatureSensor)
     }
     
-    func testCommissioningConfigCodeGeneration() {
+    func testCommissioningConfigCodeGeneration() throws {
         let config = CommissioningConfig()
         
-        // Test QR code generation (placeholder implementation)
+        // Test QR code generation with default values
         let qrCode = config.generateQRCode()
-        XCTAssertEqual(qrCode, "MT:PLACEHOLDER_QR_CODE")
+        XCTAssertTrue(qrCode.hasPrefix("MT:"))
+        XCTAssertGreaterThan(qrCode.count, 3)
         
-        // Test manual pairing code generation (placeholder implementation)
-        let manualCode = config.generateManualPairingCode()
-        XCTAssertEqual(manualCode, "12345-67890")
+        // Test manual pairing code generation with default values
+        let manualCode = try config.generateManualPairingCode()
+        XCTAssertTrue(manualCode.contains("-"))
     }
     
-    func testCommissioningConfigWithGeneratedCodes() {
-        let config = CommissioningConfig.withGeneratedCodes(
+    func testCommissioningConfigWithGeneratedCodes() throws {
+        let customConfig = CommissioningConfig(
             discriminator: 1111,
             passcode: 12345678
         )
         
-        XCTAssertEqual(config.discriminator, 1111)
-        XCTAssertEqual(config.passcode, 12345678)
-        XCTAssertNotNil(config.manualPairingCode)
-        XCTAssertNotNil(config.qrCodePayload)
+        // Test generating QR code
+        let qrCode = customConfig.generateQRCode(vendorId: 0xFFF1, productId: 0x8000)
+        XCTAssertTrue(qrCode.hasPrefix("MT:"))
+        XCTAssertGreaterThan(qrCode.count, 3)
+        
+        // Test generating manual pairing code
+        let manualCode = try customConfig.generateManualPairingCode()
+        XCTAssertTrue(manualCode.contains("-"))
+        
+        // Test that codes are different from defaults
+        let defaultConfig = CommissioningConfig()
+        let defaultQR = defaultConfig.generateQRCode(vendorId: 0xFFF1, productId: 0x8000)
+        XCTAssertNotEqual(qrCode, defaultQR)
+    }
+    
+    func testCommissioningConfigManualCodeCreation() throws {
+        // Test that a CommissioningConfig can be manually created with generated codes
+        let testConfig = CommissioningConfig(discriminator: 1234, passcode: 87654321)
+        
+        // Generate codes manually using the methods
+        let qrCode = testConfig.generateQRCode(vendorId: 0xFFF2, productId: 0x8001)
+        let manualCode = try testConfig.generateManualPairingCode()
+        
+        // Create a new config with the generated codes populated
+        let configWithCodes = CommissioningConfig(
+            discriminator: 1234,
+            passcode: 87654321,
+            manualPairingCode: manualCode,
+            qrCodePayload: qrCode
+        )
+        
+        // Verify all properties are correctly set
+        XCTAssertEqual(configWithCodes.discriminator, 1234)
+        XCTAssertEqual(configWithCodes.passcode, 87654321)
+        XCTAssertNotNil(configWithCodes.qrCodePayload)
+        XCTAssertNotNil(configWithCodes.manualPairingCode)
+        
+        // Verify format correctness
+        XCTAssertTrue(configWithCodes.qrCodePayload!.hasPrefix("MT:"))
+        XCTAssertTrue(configWithCodes.manualPairingCode!.contains("-"))
+        
+        // Verify the generated codes match what we'd generate directly
+        XCTAssertEqual(configWithCodes.qrCodePayload, qrCode)
+        XCTAssertEqual(configWithCodes.manualPairingCode, manualCode)
+    }
+    
+    func testMatterConfigWithGeneratedCodes() {
+        // Test the static withGeneratedCodes helper method on MatterConfig
+        let commissioningConfig = MatterConfig.withGeneratedCodes(
+            discriminator: 1234,
+            passcode: 87654321,
+            vendorId: 0xFFF2,
+            productId: 0x8001
+        )
+        
+        // Verify basic properties are set correctly (returns CommissioningConfig)
+        XCTAssertEqual(commissioningConfig.discriminator, 1234)
+        XCTAssertEqual(commissioningConfig.passcode, 87654321)
+        
+        // Verify codes are automatically generated and populated
+        XCTAssertNotNil(commissioningConfig.qrCodePayload)
+        XCTAssertNotNil(commissioningConfig.manualPairingCode)
+        
+        // Verify format correctness
+        XCTAssertTrue(commissioningConfig.qrCodePayload!.hasPrefix("MT:"))
+        XCTAssertTrue(commissioningConfig.manualPairingCode!.contains("-"))
+        
+        // Test with default values
+        let defaultConfig = MatterConfig.withGeneratedCodes()
+        XCTAssertEqual(defaultConfig.discriminator, 3840)
+        XCTAssertEqual(defaultConfig.passcode, 20202021)
+        XCTAssertNotNil(defaultConfig.qrCodePayload)
+        XCTAssertNotNil(defaultConfig.manualPairingCode)
     }
 }

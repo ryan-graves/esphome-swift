@@ -315,9 +315,12 @@ ESPHome Swift uses a Git Flow inspired branching strategy following CONTRIBUTING
    swiftlint                    # Check for linting violations  
    swiftformat --lint .         # Check formatting compliance
    swift build                  # Ensure clean build
+   
+   # If swiftformat --lint finds issues, fix them with:
+   swiftformat .                # Auto-format all Swift files
    ```
    
-   **Critical**: Never push code that fails any of these checks. GitHub CI will fail and block the PR. Fix all issues locally first.
+   **Critical**: Never push code that fails any of these checks. GitHub CI will fail and block the PR. Fix all issues locally first. SwiftFormat is particularly strict and will cause CI failures if not run.
 
 ### Useful Development Commands
 
@@ -370,7 +373,7 @@ swift run esphome-swift validate Examples/basic-sensor.yaml
 5. **Future-Proof**: Design with extensibility and maintainability in mind
 6. **Test-Driven**: Ensure all changes are covered by tests and don't break existing functionality (see Core Principle #3)
 7. **ESPHome Compatibility**: Maintain familiar patterns and conventions for ESPHome users (see Core Principle #2)
-8. **CRITICAL: Pre-Push Validation**: Always run `swift test`, `swiftlint`, `swiftformat --lint .`, and `swift build` before pushing. Never push failing code.
+8. **CRITICAL: Pre-Push Validation**: Always run `swift test`, `swiftlint`, `swiftformat --lint .`, and `swift build` before pushing. Never push failing code. If SwiftFormat finds issues, run `swiftformat .` to fix them.
 
 **When Refactoring**:
 - Complete each architectural change thoroughly before moving to the next
