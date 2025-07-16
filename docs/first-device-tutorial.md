@@ -268,7 +268,7 @@ matter:
     ipv6_enabled: true
     mdns:
       enabled: true
-      hostname: ${name}
+      hostname: temperature-sensor  # Change this if you have multiple devices
 
 # Enable Over-The-Air updates
 ota:
@@ -290,6 +290,8 @@ sensor:
       # Available for future humidity sensor device types
     update_interval: 60s
 ```
+
+**Building Multiple Devices?** If you plan to build more than one sensor, change the `hostname` in the Matter network section to something unique like `kitchen-sensor` or `bedroom-sensor` to avoid network conflicts.
 
 ### Step 2: Create a Secrets File
 
