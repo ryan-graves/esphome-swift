@@ -26,7 +26,7 @@ public struct MatterSetupPayload {
     private static let maxTenDigitValue: UInt64 = 10000000000 // 10^10
     
     /// Maximum combined value (24-bit) for manual pairing code before modulo
-    static let maxCombinedValue: UInt64 = 16777216 // 2^24
+    private static let maxCombinedValue: UInt64 = 16777216 // 2^24
     
     // MARK: - Payload Components
     
@@ -279,7 +279,7 @@ public enum MatterSetupPayloadError: Error, LocalizedError {
     public var errorDescription: String? {
         switch self {
         case .combinedValueOutOfRange(let value):
-            return "Combined value \(value) exceeds 24-bit range (\(MatterSetupPayload.maxCombinedValue))"
+            return "Combined value \(value) exceeds 24-bit range (16777216)"
         }
     }
 }
