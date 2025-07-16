@@ -143,7 +143,7 @@ final class MatterSetupPayloadTests: XCTestCase {
             passcode: 20202021
         )
         
-        let manualCode = commissioning.generateManualPairingCode(vendorId: 0xFFF1, productId: 0x8000)
+        let manualCode = commissioning.generateManualPairingCode()
         
         XCTAssertTrue(manualCode.contains("-"))
         let parts = manualCode.split(separator: "-")

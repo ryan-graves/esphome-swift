@@ -131,18 +131,16 @@ public extension CommissioningConfig {
     }
     
     /// Generate manual pairing code from commissioning parameters
-    /// - Parameters:
-    ///   - vendorId: Vendor identifier (default: 0xFFF1 for test)
-    ///   - productId: Product identifier (default: 0x8000 for test)
     /// - Returns: Manual pairing code string
-    func generateManualPairingCode(vendorId: UInt16 = 0xFFF1, productId: UInt16 = 0x8000) -> String {
-        let payload = MatterSetupPayload(
-            vendorId: vendorId,
-            productId: productId,
+    /// 
+    /// Manual pairing codes are derived solely from the discriminator and passcode
+    /// according to Matter Core Specification 5.1.4.1. Vendor and product IDs 
+    /// are not used in the manual pairing code algorithm.
+    func generateManualPairingCode() -> String {
+        return MatterSetupPayload.generateManualPairingCode(
             discriminator: discriminator,
             passcode: passcode
         )
-        return payload.generateManualPairingCode()
     }
 }
 
@@ -159,7 +157,7 @@ public extension MatterConfig {
     /// - Returns: Manual pairing code string, or nil if no commissioning configuration is provided
     func generateManualPairingCode() -> String? {
         guard let commissioning = self.commissioning else { return nil }
-        return commissioning.generateManualPairingCode(vendorId: self.vendorId, productId: self.productId)
+        return commissioning.generateManualPairingCode()
     }
     
     /// Create commissioning configuration with generated codes

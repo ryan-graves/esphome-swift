@@ -115,18 +115,18 @@ The Matter protocol implementation in ESPHome Swift v0.1.0 is **production-ready
 ## Implementation Priority
 
 ### Phase 1 (Short Term - 3-6 months)
-1. **Extended Documentation**: Low complexity, immediate value
-2. **Additional Device Types**: Based on user demand
+- **Extended Documentation**: Low complexity, immediate value
+- **Additional Device Types**: Based on user demand
 
 ### Phase 2 (Medium Term - 6-12 months)
-1. **Advanced Security Features**: As ecosystem matures
-2. **Performance Optimizations**: Based on real-world usage
-3. **Development Tools**: As community grows
+- **Advanced Security Features**: As ecosystem matures
+- **Performance Optimizations**: Based on real-world usage
+- **Development Tools**: As community grows
 
 ### Phase 3 (Long Term - 12+ months)
-1. **Ethernet Transport**: When relevant hardware becomes available
-2. **Multi-Endpoint Devices**: For complex use cases
-3. **Custom Device Framework**: For advanced users
+- **Ethernet Transport**: When relevant hardware becomes available
+- **Multi-Endpoint Devices**: For complex use cases
+- **Custom Device Framework**: For advanced users
 
 ## Decision Criteria
 

@@ -161,7 +161,7 @@ final class MatterConfigurationTests: XCTestCase {
         XCTAssertGreaterThan(qrCode.count, 3)
         
         // Test generating manual pairing code
-        let manualCode = baseConfig.generateManualPairingCode(vendorId: 0xFFF1, productId: 0x8000)
+        let manualCode = baseConfig.generateManualPairingCode()
         XCTAssertTrue(manualCode.contains("-"))
         
         // Test that codes are different from defaults
@@ -176,7 +176,7 @@ final class MatterConfigurationTests: XCTestCase {
         
         // Generate codes manually using the methods
         let qrCode = baseConfig.generateQRCode(vendorId: 0xFFF2, productId: 0x8001)
-        let manualCode = baseConfig.generateManualPairingCode(vendorId: 0xFFF2, productId: 0x8001)
+        let manualCode = baseConfig.generateManualPairingCode()
         
         // Create a new config with the generated codes populated
         let configWithCodes = CommissioningConfig(

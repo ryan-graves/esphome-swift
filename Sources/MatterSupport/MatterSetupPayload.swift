@@ -68,6 +68,18 @@ public struct MatterSetupPayload {
     /// - Verhoeff check digit calculation for error detection
     /// - Compliant formatting for universal platform compatibility
     public func generateManualPairingCode() -> String {
+        return Self.generateManualPairingCode(discriminator: discriminator, passcode: passcode)
+    }
+    
+    /// Generate 11-digit manual pairing code from discriminator and passcode
+    /// - Parameters:
+    ///   - discriminator: 12-bit discriminator value
+    ///   - passcode: Setup passcode
+    /// - Returns: Manual pairing code string (format: XXXXX-XXXXXX)
+    /// 
+    /// Static method that generates manual pairing codes according to Matter Core
+    /// Specification 5.1.4.1 without requiring a full MatterSetupPayload instance.
+    public static func generateManualPairingCode(discriminator: UInt16, passcode: UInt32) -> String {
         // Matter Core Specification 5.1.4.1: Manual Pairing Code Format
         // The manual pairing code is derived from:
         // 1. Short discriminator (4 bits from bits 11-8 of full discriminator)
@@ -84,7 +96,7 @@ public struct MatterSetupPayload {
         let digits = String(combinedValue % 10000000000).padding(toLength: 10, withPad: "0", startingAt: 0)
         
         // Apply Verhoeff check digit algorithm (Matter specification requirement)
-        let checkDigit = calculateVerhoeffCheckDigit(digits)
+        let checkDigit = Self.calculateVerhoeffCheckDigit(digits)
         let fullCode = digits + String(checkDigit)
         
         // Format as XXXXX-XXXXXX (5 digits, hyphen, 6 digits)
@@ -100,7 +112,7 @@ public struct MatterSetupPayload {
     /// 
     /// The Verhoeff algorithm provides error detection for manual pairing codes,
     /// ensuring that single-digit errors and most transposition errors are detected.
-    private func calculateVerhoeffCheckDigit(_ digits: String) -> Int {
+    private static func calculateVerhoeffCheckDigit(_ digits: String) -> Int {
         // Verhoeff algorithm tables as specified in Matter Core Specification
         let multiplicationTable: [[Int]] = [
             [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
