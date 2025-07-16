@@ -82,11 +82,11 @@ final class MatterSetupPayloadTests: XCTestCase {
         let parts = manualCode.split(separator: "-")
         XCTAssertEqual(parts.count, 2, "Manual pairing code should have two parts separated by hyphen")
         
-        // First part should be 4 digits (discriminator)
-        XCTAssertEqual(parts[0].count, 4, "First part should be 4 digits")
+        // First part should be 5 digits (Matter spec format)
+        XCTAssertEqual(parts[0].count, 5, "First part should be 5 digits")
         XCTAssertTrue(parts[0].allSatisfy(\.isNumber), "First part should be all digits")
         
-        // Second part should be 6 digits (passcode portion)
+        // Second part should be 6 digits (includes check digit)
         XCTAssertEqual(parts[1].count, 6, "Second part should be 6 digits")
         XCTAssertTrue(parts[1].allSatisfy(\.isNumber), "Second part should be all digits")
     }
@@ -220,7 +220,12 @@ final class MatterSetupPayloadTests: XCTestCase {
         XCTAssertTrue(qrCode.hasPrefix("MT:"))
         
         let manualCode = payload.generateManualPairingCode()
-        XCTAssertTrue(manualCode.hasPrefix("0000-"))
+        // Verify format is correct (5 digits, hyphen, 6 digits)
+        XCTAssertTrue(manualCode.contains("-"), "Manual code should contain hyphen")
+        let parts = manualCode.split(separator: "-")
+        XCTAssertEqual(parts.count, 2, "Should have two parts")
+        XCTAssertEqual(parts[0].count, 5, "First part should be 5 digits")
+        XCTAssertEqual(parts[1].count, 6, "Second part should be 6 digits")
     }
     
     func testCustomVersionAndCapabilities() {

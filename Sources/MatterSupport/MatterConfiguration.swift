@@ -175,12 +175,19 @@ public extension MatterConfig {
         vendorId: UInt16 = 0xFFF1,
         productId: UInt16 = 0x8000
     ) -> CommissioningConfig {
-        let config = CommissioningConfig(discriminator: discriminator, passcode: passcode)
+        // Generate codes directly using MatterSetupPayload to avoid creating temporary config
+        let payload = MatterSetupPayload(
+            vendorId: vendorId,
+            productId: productId,
+            discriminator: discriminator,
+            passcode: passcode
+        )
+        
         return CommissioningConfig(
             discriminator: discriminator,
             passcode: passcode,
-            manualPairingCode: config.generateManualPairingCode(vendorId: vendorId, productId: productId),
-            qrCodePayload: config.generateQRCode(vendorId: vendorId, productId: productId)
+            manualPairingCode: payload.generateManualPairingCode(),
+            qrCodePayload: payload.generateQRCodePayload()
         )
     }
 }
