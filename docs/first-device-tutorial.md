@@ -12,7 +12,8 @@ Welcome! Today we're going to build something amazing together – your very fir
 We're creating a smart temperature and humidity sensor that:
 - Measures the temperature and humidity in any room
 - Connects to your WiFi network
-- Reports data to Home Assistant (or works standalone)
+- Works with **all major smart home platforms** (Apple Home, Google Home, Alexa, Samsung SmartThings, Home Assistant)
+- Uses Matter protocol for universal compatibility
 - Can be built in about an hour
 - Costs less than $25 total
 
@@ -21,11 +22,12 @@ The best part? No programming experience required! We'll walk through every sing
 ## Why Build Your Own?
 
 Sure, you could buy a smart sensor, but building your own means:
+- **Universal compatibility** - works with ANY smart home platform
 - You learn how smart home devices actually work
 - You can customize it exactly how you want
+- **No vendor lock-in** - switch platforms anytime with Matter
 - It's more fun (trust us!)
 - You join a community of makers and tinkerers
-- Your device supports Matter, the future of smart home compatibility
 
 ## Shopping List
 
@@ -248,10 +250,25 @@ wifi:
 logger:
   level: INFO
 
-# Enable Home Assistant API
-api:
-  encryption:
-    key: "your-32-character-encryption-key-here"
+# Matter configuration for universal smart home compatibility
+matter:
+  enabled: true
+  device_type: temperature_sensor
+  vendor_id: 0xFFF1
+  product_id: 0x8001
+  
+  # Commissioning setup - your device's "address" in Matter
+  commissioning:
+    discriminator: 3841
+    passcode: 20202022
+  
+  # Use WiFi transport for connectivity
+  network:
+    transport: wifi
+    ipv6_enabled: true
+    mdns:
+      enabled: true
+      hostname: temperature-sensor
 
 # Enable Over-The-Air updates
 ota:
@@ -266,9 +283,11 @@ sensor:
     temperature:
       name: "Room Temperature"
       id: room_temp
+      # Matter will automatically expose this as a temperature measurement
     humidity:
       name: "Room Humidity"
       id: room_humidity
+      # Available for future humidity sensor device types
     update_interval: 60s
 ```
 
@@ -279,7 +298,6 @@ For security, let's put sensitive info in a separate file. Create `secrets.yaml`
 ```yaml
 wifi_ssid: "YourWiFiName"
 wifi_password: "YourWiFiPassword"
-api_encryption_key: "abc123def456ghi789jkl012mno34567"
 ```
 
 Update your main configuration to use these secrets:
@@ -288,11 +306,9 @@ Update your main configuration to use these secrets:
 wifi:
   ssid: !secret wifi_ssid
   password: !secret wifi_password
-
-api:
-  encryption:
-    key: !secret api_encryption_key
 ```
+
+**What about the Matter credentials?** The discriminator and passcode in the Matter section are like your device's "phone number" - they're used for initial setup only and don't need to be secret. Think of them as public identifiers that help smart home platforms find and connect to your device.
 
 ### Step 3: Validate Your Configuration
 
@@ -362,29 +378,105 @@ Example output:
 
 **Tip**: Press Ctrl+C to stop monitoring.
 
-## Part 7: Connecting to Home Assistant
+## Part 7: Smart Home Integration
 
-If you have Home Assistant running, your sensor can automatically appear!
+Your sensor uses Matter, the universal smart home protocol! This means it works with **all major platforms** - Apple Home, Google Home, Amazon Alexa, Samsung SmartThings, and Home Assistant.
 
-**Note**: This tutorial uses the Home Assistant API for simplicity. For universal smart home compatibility, consider using our [Matter-enabled examples](https://github.com/ryan-graves/esphome-swift/blob/develop/Examples/matter-sensor.yaml) which work with Apple Home, Google Home, Alexa, and other platforms via QR code scanning.
+### Step 1: Find Your QR Code
 
-### Option 1: Auto-Discovery
+When your device boots up, look for this in the serial monitor:
 
-If your sensor and Home Assistant are on the same network:
-1. Open Home Assistant
-2. Go to Settings → Devices & Services
-3. Look for a notification about a new device
-4. Click "Configure" and enter your encryption key
+```
+========== MATTER COMMISSIONING INFO ==========
+QR Code: MT:Y.K90IRD00KA0648G00
+Manual Pairing Code: 34970-112233
+Discriminator: 3841
+Setup PIN: 20202022
+===============================================
+```
 
-### Option 2: Manual Addition
+**Important**: Copy or screenshot this information - you'll need it for setup!
 
-1. Go to Settings → Devices & Services
-2. Click "+ Add Integration"
-3. Search for "ESPHome"
-4. Enter your device's IP address (you saw this in the monitor output)
-5. Enter your encryption key
+### Step 2: Choose Your Smart Home Platform
 
-**Success Check**: You should see your temperature and humidity as entities in Home Assistant!
+Pick your platform and follow the instructions:
+
+#### Apple HomeKit (iPhone/iPad/Mac)
+1. Open the **Home** app on your iPhone
+2. Tap **+** → **Add or Scan Accessory**
+3. Point your camera at the QR code shown in the serial monitor
+4. Follow the setup prompts
+5. **Success**: Your sensor appears in Apple Home!
+
+#### Google Home
+1. Open the **Google Home** app
+2. Tap **+** → **Set up device** → **Works with Google**
+3. Look for **Matter** devices
+4. Tap **Scan QR code** and scan the code from serial monitor
+5. **Success**: "Temperature Sensor" appears in Google Home!
+
+#### Amazon Alexa
+1. Open the **Alexa** app
+2. Go to **Devices** → **+** → **Add Device**
+3. Select **Other** → **Matter**
+4. Choose **Scan QR code** and scan the code
+5. **Success**: Your sensor is now available via Alexa!
+
+#### Samsung SmartThings
+1. Open the **SmartThings** app
+2. Tap **+** → **Scan QR code**
+3. Scan the Matter QR code from serial monitor
+4. Follow setup prompts
+5. **Success**: Sensor added to SmartThings!
+
+### Step 3: Manual Setup (If QR Code Doesn't Work)
+
+If QR scanning fails, use the manual pairing code:
+
+1. In your smart home app, look for **"Enter setup code manually"** or **"Can't scan?"**
+2. Enter the manual code: **34970-112233** (from your serial monitor)
+3. Complete the setup process
+
+### What You Can Do Now
+
+🎉 **Congratulations!** Your sensor now works with your chosen platform. You can:
+
+- **View temperature/humidity** in your smart home app
+- **Create automations** (turn on heat when temp drops)
+- **Get notifications** about readings
+- **Control from voice assistants** ("Hey Google, what's the temperature?")
+- **Add to multiple platforms** - Matter devices can join several ecosystems!
+
+### Optional: Home Assistant Integration
+
+If you use Home Assistant, you can add your Matter device there too! Since your device uses Matter, it's **compatible with both Matter and Home Assistant APIs**.
+
+#### Method 1: Matter Integration (Recommended)
+1. In Home Assistant, go to **Settings** → **Devices & Services**
+2. Click **+ Add Integration**
+3. Search for **Matter (BETA)**
+4. Use the QR code or manual pairing code from your device
+5. Your sensor appears with full Matter compatibility!
+
+#### Method 2: Direct API (Advanced)
+If you prefer the ESPHome integration:
+
+1. Add this to your device configuration (after the Matter section):
+```yaml
+# Optional: Enable Home Assistant API (in addition to Matter)
+api:
+  encryption:
+    key: !secret api_encryption_key
+```
+
+2. Add the encryption key to your `secrets.yaml`:
+```yaml
+api_encryption_key: "abc123def456ghi789jkl012mno34567"
+```
+
+3. Flash the updated firmware and follow the ESPHome integration steps in Home Assistant.
+
+**Pro Tip**: We recommend the Matter integration as it's more future-proof and standardized!
 
 ## Optional Enhancement: Adding a Status LED
 
