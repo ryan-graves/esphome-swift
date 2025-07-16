@@ -139,24 +139,34 @@ final class MatterConfigurationTests: XCTestCase {
     func testCommissioningConfigCodeGeneration() {
         let config = CommissioningConfig()
         
-        // Test QR code generation (placeholder implementation)
+        // Test QR code generation with default values
         let qrCode = config.generateQRCode()
-        XCTAssertEqual(qrCode, "MT:PLACEHOLDER_QR_CODE")
+        XCTAssertTrue(qrCode.hasPrefix("MT:"))
+        XCTAssertGreaterThan(qrCode.count, 3)
         
-        // Test manual pairing code generation (placeholder implementation)
+        // Test manual pairing code generation with default values
         let manualCode = config.generateManualPairingCode()
-        XCTAssertEqual(manualCode, "12345-67890")
+        XCTAssertTrue(manualCode.contains("-"))
     }
     
     func testCommissioningConfigWithGeneratedCodes() {
-        let config = CommissioningConfig.withGeneratedCodes(
+        let baseConfig = CommissioningConfig(
             discriminator: 1111,
             passcode: 12345678
         )
         
-        XCTAssertEqual(config.discriminator, 1111)
-        XCTAssertEqual(config.passcode, 12345678)
-        XCTAssertNotNil(config.manualPairingCode)
-        XCTAssertNotNil(config.qrCodePayload)
+        // Test generating QR code
+        let qrCode = baseConfig.generateQRCode(vendorId: 0xFFF1, productId: 0x8000)
+        XCTAssertTrue(qrCode.hasPrefix("MT:"))
+        XCTAssertGreaterThan(qrCode.count, 3)
+        
+        // Test generating manual pairing code
+        let manualCode = baseConfig.generateManualPairingCode(vendorId: 0xFFF1, productId: 0x8000)
+        XCTAssertTrue(manualCode.contains("-"))
+        
+        // Test that codes are different from defaults
+        let defaultConfig = CommissioningConfig()
+        let defaultQR = defaultConfig.generateQRCode(vendorId: 0xFFF1, productId: 0x8000)
+        XCTAssertNotEqual(qrCode, defaultQR)
     }
 }

@@ -116,36 +116,71 @@ public extension ThreadConfig {
 /// Extended commissioning configuration functionality  
 public extension CommissioningConfig {
     /// Generate QR code payload from commissioning parameters
-    /// - Returns: QR code payload string (if implementable)
-    func generateQRCode() -> String {
-        // This would generate a Matter QR code payload
-        // For now, return placeholder - requires Matter SDK integration
-        return "MT:PLACEHOLDER_QR_CODE"
+    /// - Parameters:
+    ///   - vendorId: Vendor identifier (default: 0xFFF1 for test)
+    ///   - productId: Product identifier (default: 0x8000 for test)
+    /// - Returns: Matter QR code payload string
+    func generateQRCode(vendorId: UInt16 = 0xFFF1, productId: UInt16 = 0x8000) -> String {
+        let payload = MatterSetupPayload(
+            vendorId: vendorId,
+            productId: productId,
+            discriminator: discriminator,
+            passcode: passcode
+        )
+        return payload.generateQRCodePayload()
     }
     
     /// Generate manual pairing code from commissioning parameters
+    /// - Parameters:
+    ///   - vendorId: Vendor identifier (default: 0xFFF1 for test)
+    ///   - productId: Product identifier (default: 0x8000 for test)
     /// - Returns: Manual pairing code string
-    func generateManualPairingCode() -> String {
-        // This would generate an 11-digit manual pairing code
-        // For now, return placeholder - requires Matter SDK integration
-        return "12345-67890"
+    func generateManualPairingCode(vendorId: UInt16 = 0xFFF1, productId: UInt16 = 0x8000) -> String {
+        let payload = MatterSetupPayload(
+            vendorId: vendorId,
+            productId: productId,
+            discriminator: discriminator,
+            passcode: passcode
+        )
+        return payload.generateManualPairingCode()
+    }
+}
+
+/// Extended Matter configuration functionality for QR code generation
+public extension MatterConfig {
+    /// Generate QR code payload from Matter configuration
+    /// - Returns: Matter QR code payload string
+    func generateQRCode() -> String? {
+        guard let commissioning = self.commissioning else { return nil }
+        return commissioning.generateQRCode(vendorId: self.vendorId, productId: self.productId)
+    }
+    
+    /// Generate manual pairing code from Matter configuration
+    /// - Returns: Manual pairing code string
+    func generateManualPairingCode() -> String? {
+        guard let commissioning = self.commissioning else { return nil }
+        return commissioning.generateManualPairingCode(vendorId: self.vendorId, productId: self.productId)
     }
     
     /// Create commissioning configuration with generated codes
     /// - Parameters:
     ///   - discriminator: Commissioning discriminator
     ///   - passcode: Setup passcode
+    ///   - vendorId: Vendor identifier (default: 0xFFF1 for test)
+    ///   - productId: Product identifier (default: 0x8000 for test)
     /// - Returns: CommissioningConfig with generated codes
     static func withGeneratedCodes(
         discriminator: UInt16 = 3840,
-        passcode: UInt32 = 20202021
+        passcode: UInt32 = 20202021,
+        vendorId: UInt16 = 0xFFF1,
+        productId: UInt16 = 0x8000
     ) -> CommissioningConfig {
         let config = CommissioningConfig(discriminator: discriminator, passcode: passcode)
         return CommissioningConfig(
             discriminator: discriminator,
             passcode: passcode,
-            manualPairingCode: config.generateManualPairingCode(),
-            qrCodePayload: config.generateQRCode()
+            manualPairingCode: config.generateManualPairingCode(vendorId: vendorId, productId: productId),
+            qrCodePayload: config.generateQRCode(vendorId: vendorId, productId: productId)
         )
     }
 }
