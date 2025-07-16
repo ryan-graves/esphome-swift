@@ -103,7 +103,7 @@ public struct MatterSetupPayload {
         
         // Validate that combined value fits within expected 24-bit range
         // The modulo operation is intentional per Matter spec to ensure 10-digit constraint
-        assert(combinedValue < Self.maxCombinedValue, "Combined value exceeds 24-bit range")
+        precondition(combinedValue < Self.maxCombinedValue, "Combined value exceeds 24-bit range")
         
         // Convert to 10-digit representation for check digit calculation
         // Modulo operation constrains to 10 digits as required by Matter specification
