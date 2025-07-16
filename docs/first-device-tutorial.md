@@ -268,7 +268,7 @@ matter:
     ipv6_enabled: true
     mdns:
       enabled: true
-      hostname: temperature-sensor
+      hostname: ${name}
 
 # Enable Over-The-Air updates
 ota:
@@ -389,7 +389,7 @@ When your device boots up, look for this in the serial monitor:
 ```
 ========== MATTER COMMISSIONING INFO ==========
 QR Code: MT:Y.K90IRD00KA0648G00
-Manual Pairing Code: 34970-112233
+Manual Pairing Code: 15886-468001
 Discriminator: 3841
 Setup PIN: 20202022
 ===============================================
@@ -434,7 +434,7 @@ Pick your platform and follow the instructions:
 If QR scanning fails, use the manual pairing code:
 
 1. In your smart home app, look for **"Enter setup code manually"** or **"Can't scan?"**
-2. Enter the manual code: **34970-112233** (from your serial monitor)
+2. Enter the manual code: **15886-468001** (from your serial monitor)
 3. Complete the setup process
 
 ### What You Can Do Now
