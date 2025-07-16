@@ -293,7 +293,7 @@ sensor:
 
 **Building Multiple Devices?** If you plan to build more than one sensor:
 - Change the `hostname` to something unique like `kitchen-sensor` or `bedroom-sensor`
-- **Important**: Also change the `discriminator` and `passcode` values to be unique for each device to prevent commissioning conflicts and ensure security. For example, use discriminator `3842` and passcode `20202023` for your second device.
+- **Important**: Generate unique `discriminator` and `passcode` values for each device to prevent commissioning conflicts and ensure security. See the "Production Credential Generation" section below for the recommended approach.
 
 ### Step 2: Create a Secrets File
 
@@ -317,6 +317,44 @@ wifi:
 - **Passcode**: A security credential that should be randomized for each device to prevent unauthorized access
 
 **Security Note**: In production, both values should be unique per device. The values shown here are for tutorial purposes only.
+
+### Production Credential Generation
+
+**For Real Devices**: If you're building devices for actual use (not just following this tutorial), you should generate proper credentials:
+
+```bash
+# Generate credentials for a single device
+esphome-swift generate-credentials
+
+# Generate credentials for multiple devices  
+esphome-swift generate-credentials --count 5 --format yaml
+```
+
+This command uses cryptographically secure random number generation that complies with CSA Matter Core Specification requirements. Example output:
+
+```
+Matter Device Credentials
+========================
+Discriminator: 2847
+Passcode: 73829502
+Manual Pairing Code: 84739-264851
+QR Code: MT:Y.K90HRX00KA0648G00
+
+SECURITY WARNING: Store these credentials securely.
+Each device must have unique credentials.
+```
+
+**Why This Matters**: 
+- **Security**: Cryptographically secure generation prevents credential prediction
+- **Uniqueness**: Each device gets guaranteed unique values, preventing commissioning conflicts
+- **Compliance**: Meets CSA Matter specification requirements for production devices
+- **Convenience**: Generated codes are immediately ready for device commissioning
+
+**When to Use**:
+- ✅ Building devices for personal use
+- ✅ Production device manufacturing  
+- ✅ Multiple devices in same network
+- ❌ Just following this tutorial (the fixed values are fine for learning)
 
 ### Step 3: Validate Your Configuration
 
