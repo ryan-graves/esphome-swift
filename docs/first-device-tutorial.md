@@ -220,7 +220,33 @@ Your DHT22 sensor has 4 pins (from left to right when facing the grid):
 
 Time to tell ESPHome Swift what we've built!
 
-### Step 1: Create Your Configuration
+### Step 1: Generate Your Device Credentials
+
+Before writing the configuration, let's generate unique Matter credentials for your device. This ensures your device has its own secure "identity" on the Matter network:
+
+```bash
+esphome-swift generate-credentials
+```
+
+You'll see output like this:
+
+```
+Matter Device Credentials
+========================
+Discriminator: 2847
+Passcode: 73829502
+Manual Pairing Code: 84739-264851
+QR Code: MT:Y.K90HRX00KA0648G00
+
+SECURITY WARNING: Store these credentials securely.
+Each device must have unique credentials.
+```
+
+**Copy these values** - you'll need the discriminator and passcode for the next step!
+
+**Why do this?** These credentials are like your device's unique "phone number" and "password" on the Matter network. Using unique values prevents conflicts with other devices and ensures secure commissioning.
+
+### Step 2: Create Your Configuration
 
 Edit `my-first-device.yaml`:
 
@@ -258,9 +284,10 @@ matter:
   product_id: 0x8001
   
   # Commissioning setup - your device's "address" in Matter
+  # Use the values from your generated credentials above!
   commissioning:
-    discriminator: 3841
-    passcode: 20202022
+    discriminator: 2847  # Replace with YOUR generated discriminator
+    passcode: 73829502   # Replace with YOUR generated passcode
   
   # Use WiFi transport for connectivity
   network:
@@ -293,9 +320,9 @@ sensor:
 
 **Building Multiple Devices?** If you plan to build more than one sensor:
 - Change the `hostname` to something unique like `kitchen-sensor` or `bedroom-sensor`
-- **Important**: Generate unique `discriminator` and `passcode` values for each device to prevent commissioning conflicts and ensure security. See the "Production Credential Generation" section below for the recommended approach.
+- **Important**: Run `esphome-swift generate-credentials` again to get unique discriminator and passcode values for each device to prevent commissioning conflicts
 
-### Step 2: Create a Secrets File
+### Step 3: Create a Secrets File
 
 For security, let's put sensitive info in a separate file. Create `secrets.yaml`:
 
@@ -313,50 +340,14 @@ wifi:
 ```
 
 **What about the Matter credentials?** The discriminator and passcode serve different purposes:
-- **Discriminator**: Like your device's "phone number" - helps platforms find your device
-- **Passcode**: A security credential that should be randomized for each device to prevent unauthorized access
+- **Discriminator**: Like your device's "phone number" - helps platforms find your device during commissioning
+- **Passcode**: A security credential that authenticates your device to prevent unauthorized access
 
-**Security Note**: In production, both values should be unique per device. The values shown here are for tutorial purposes only.
+**Why generate them?** Each device needs unique credentials to prevent commissioning conflicts and ensure security. The credential generator uses cryptographically secure random number generation that complies with CSA Matter Core Specification requirements.
 
-### Production Credential Generation
+**Need multiple devices?** Run `esphome-swift generate-credentials --count 5 --format yaml` to generate credentials for multiple devices at once!
 
-**For Real Devices**: If you're building devices for actual use (not just following this tutorial), you should generate proper credentials:
-
-```bash
-# Generate credentials for a single device
-esphome-swift generate-credentials
-
-# Generate credentials for multiple devices  
-esphome-swift generate-credentials --count 5 --format yaml
-```
-
-This command uses cryptographically secure random number generation that complies with CSA Matter Core Specification requirements. Example output:
-
-```
-Matter Device Credentials
-========================
-Discriminator: 2847
-Passcode: 73829502
-Manual Pairing Code: 84739-264851
-QR Code: MT:Y.K90HRX00KA0648G00
-
-SECURITY WARNING: Store these credentials securely.
-Each device must have unique credentials.
-```
-
-**Why This Matters**: 
-- **Security**: Cryptographically secure generation prevents credential prediction
-- **Uniqueness**: Each device gets guaranteed unique values, preventing commissioning conflicts
-- **Compliance**: Meets CSA Matter specification requirements for production devices
-- **Convenience**: Generated codes are immediately ready for device commissioning
-
-**When to Use**:
-- ✅ Building devices for personal use
-- ✅ Production device manufacturing  
-- ✅ Multiple devices in same network
-- ❌ Just following this tutorial (the fixed values are fine for learning)
-
-### Step 3: Validate Your Configuration
+### Step 4: Validate Your Configuration
 
 Let's make sure everything looks good:
 
@@ -434,14 +425,14 @@ When your device boots up, look for this in the serial monitor:
 
 ```
 ========== MATTER COMMISSIONING INFO ==========
-QR Code: MT:Y.K90IRD00KA0648G00
-Manual Pairing Code: 15886-468001
-Discriminator: 3841
-Setup PIN: 20202022
+QR Code: MT:Y.K90HRX00KA0648G00
+Manual Pairing Code: 84739-264851
+Discriminator: 2847
+Setup PIN: 73829502
 ===============================================
 ```
 
-**How Manual Pairing Codes Work**: The manual pairing code is automatically generated based on your discriminator and passcode values. The code `15886-468001` shown above corresponds to discriminator `3841` and passcode `20202022`. If you changed these values in your configuration, ESPHome Swift will automatically generate a different manual pairing code that matches your settings.
+**Note**: Your output will show the **exact credentials you generated** in Step 1 of Part 4. The QR code and manual pairing code are automatically calculated from your unique discriminator and passcode values.
 
 **Important**: Copy or screenshot this information - you'll need it for setup!
 
@@ -482,7 +473,7 @@ Pick your platform and follow the instructions:
 If QR scanning fails, use the manual pairing code:
 
 1. In your smart home app, look for **"Enter setup code manually"** or **"Can't scan?"**
-2. Enter the manual pairing code shown in your serial monitor output (e.g., **15886-468001**)
+2. Enter the manual pairing code shown in your serial monitor output (e.g., **84739-264851**)
 3. Complete the setup process
 
 ### What You Can Do Now
