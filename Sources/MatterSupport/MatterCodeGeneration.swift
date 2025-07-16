@@ -107,7 +107,7 @@ public struct MatterCodeGenerator {
         }
         
         // Set commissioning parameters
-        if config.commissioning != nil {
+        if let _ = config.commissioning {
             setupCode.append("esp_matter::set_custom_dac_provider(esp_matter_dac_provider_create());")
             setupCode.append("esp_matter::set_custom_commissionable_data_provider(esp_matter_commissionable_data_provider_create());")
         }
