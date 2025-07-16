@@ -403,7 +403,7 @@ Setup PIN: 20202022
 ===============================================
 ```
 
-**Note**: The manual pairing code shown above corresponds to the tutorial configuration. If you changed the discriminator or passcode values, your manual pairing code will be different.
+**How Manual Pairing Codes Work**: The manual pairing code is automatically generated based on your discriminator and passcode values. The code `15886-468001` shown above corresponds to discriminator `3841` and passcode `20202022`. If you changed these values in your configuration, ESPHome Swift will automatically generate a different manual pairing code that matches your settings.
 
 **Important**: Copy or screenshot this information - you'll need it for setup!
 
