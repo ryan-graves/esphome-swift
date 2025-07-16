@@ -66,7 +66,7 @@ final class MatterSetupPayloadTests: XCTestCase {
         XCTAssertNotEqual(qrCode1, qrCode2, "Different configurations should generate different QR codes")
     }
     
-    func testManualPairingCodeGeneration() {
+    func testManualPairingCodeGeneration() throws {
         let payload = MatterSetupPayload(
             vendorId: 0xFFF1,
             productId: 0x8000,
@@ -74,7 +74,7 @@ final class MatterSetupPayloadTests: XCTestCase {
             passcode: 20202021
         )
         
-        let manualCode = payload.generateManualPairingCode()
+        let manualCode = try payload.generateManualPairingCode()
         
         // Manual code should have format: 11111-222222
         XCTAssertTrue(manualCode.contains("-"), "Manual pairing code should contain a hyphen")
@@ -137,13 +137,13 @@ final class MatterSetupPayloadTests: XCTestCase {
         XCTAssertGreaterThan(qrCode.count, 3)
     }
     
-    func testCommissioningConfigManualCodeGeneration() {
+    func testCommissioningConfigManualCodeGeneration() throws {
         let commissioning = CommissioningConfig(
             discriminator: 3840,
             passcode: 20202021
         )
         
-        let manualCode = commissioning.generateManualPairingCode()
+        let manualCode = try commissioning.generateManualPairingCode()
         
         XCTAssertTrue(manualCode.contains("-"))
         let parts = manualCode.split(separator: "-")
@@ -208,7 +208,7 @@ final class MatterSetupPayloadTests: XCTestCase {
     
     // MARK: - Edge Cases
     
-    func testZeroDiscriminator() {
+    func testZeroDiscriminator() throws {
         let payload = MatterSetupPayload(
             vendorId: 0xFFF1,
             productId: 0x8000,
@@ -219,7 +219,7 @@ final class MatterSetupPayloadTests: XCTestCase {
         let qrCode = payload.generateQRCodePayload()
         XCTAssertTrue(qrCode.hasPrefix("MT:"))
         
-        let manualCode = payload.generateManualPairingCode()
+        let manualCode = try payload.generateManualPairingCode()
         // Verify format is correct (5 digits, hyphen, 6 digits)
         XCTAssertTrue(manualCode.contains("-"), "Manual code should contain hyphen")
         let parts = manualCode.split(separator: "-")

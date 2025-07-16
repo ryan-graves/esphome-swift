@@ -136,7 +136,7 @@ final class MatterConfigurationTests: XCTestCase {
         XCTAssertEqual(config.matterDeviceType, .temperatureSensor)
     }
     
-    func testCommissioningConfigCodeGeneration() {
+    func testCommissioningConfigCodeGeneration() throws {
         let config = CommissioningConfig()
         
         // Test QR code generation with default values
@@ -145,11 +145,11 @@ final class MatterConfigurationTests: XCTestCase {
         XCTAssertGreaterThan(qrCode.count, 3)
         
         // Test manual pairing code generation with default values
-        let manualCode = config.generateManualPairingCode()
+        let manualCode = try config.generateManualPairingCode()
         XCTAssertTrue(manualCode.contains("-"))
     }
     
-    func testCommissioningConfigWithGeneratedCodes() {
+    func testCommissioningConfigWithGeneratedCodes() throws {
         let customConfig = CommissioningConfig(
             discriminator: 1111,
             passcode: 12345678
@@ -161,7 +161,7 @@ final class MatterConfigurationTests: XCTestCase {
         XCTAssertGreaterThan(qrCode.count, 3)
         
         // Test generating manual pairing code
-        let manualCode = customConfig.generateManualPairingCode()
+        let manualCode = try customConfig.generateManualPairingCode()
         XCTAssertTrue(manualCode.contains("-"))
         
         // Test that codes are different from defaults
@@ -170,13 +170,13 @@ final class MatterConfigurationTests: XCTestCase {
         XCTAssertNotEqual(qrCode, defaultQR)
     }
     
-    func testCommissioningConfigManualCodeCreation() {
+    func testCommissioningConfigManualCodeCreation() throws {
         // Test that a CommissioningConfig can be manually created with generated codes
         let testConfig = CommissioningConfig(discriminator: 1234, passcode: 87654321)
         
         // Generate codes manually using the methods
         let qrCode = testConfig.generateQRCode(vendorId: 0xFFF2, productId: 0x8001)
-        let manualCode = testConfig.generateManualPairingCode()
+        let manualCode = try testConfig.generateManualPairingCode()
         
         // Create a new config with the generated codes populated
         let configWithCodes = CommissioningConfig(

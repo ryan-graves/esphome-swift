@@ -31,6 +31,8 @@ Sure, you could buy a smart sensor, but building your own means:
 
 Here's everything you'll need. We've included links to make shopping easy:
 
+**⚠️ Note**: External shopping links may become outdated over time. Please verify product availability and specifications before purchasing.
+
 ### Required Items (Total: ~$20-25)
 
 **1. ESP32-C6-DevKitC-1 Development Board** ($10-15)
@@ -364,7 +366,7 @@ Example output:
 
 If you have Home Assistant running, your sensor can automatically appear!
 
-**Note**: This tutorial uses the Home Assistant API for simplicity. For universal smart home compatibility, consider using our [Matter-enabled examples](../Examples/matter-sensor.yaml) which work with Apple Home, Google Home, Alexa, and other platforms via QR code scanning.
+**Note**: This tutorial uses the Home Assistant API for simplicity. For universal smart home compatibility, consider using our [Matter-enabled examples](https://github.com/ryan-graves/esphome-swift/blob/develop/Examples/matter-sensor.yaml) which work with Apple Home, Google Home, Alexa, and other platforms via QR code scanning.
 
 ### Option 1: Auto-Discovery
 

@@ -11,8 +11,13 @@ public struct MatterSetupPayload {
     /// Base38 alphabet (excludes $%*+/ :)
     private static let base38Alphabet = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-.?"
     
-    /// Base38 alphabet as Array for O(1) access performance
-    private static let base38AlphabetArray = Array(base38Alphabet)
+    /// Base38 alphabet as Array for O(1) access performance - compile-time constant
+    private static let base38AlphabetArray: [Character] = [
+        "0", "1", "2", "3", "4", "5", "6", "7", "8", "9",
+        "A", "B", "C", "D", "E", "F", "G", "H", "I", "J",
+        "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T",
+        "U", "V", "W", "X", "Y", "Z", "-", ".", "?"
+    ]
     
     /// Maximum passcode value (2^27) for manual pairing code constraint
     private static let maxPasscodeValue: UInt32 = 134217728 // 2^27
@@ -21,7 +26,7 @@ public struct MatterSetupPayload {
     private static let maxTenDigitValue: UInt64 = 10000000000 // 10^10
     
     /// Maximum combined value (24-bit) for manual pairing code before modulo
-    private static let maxCombinedValue: UInt64 = 16777216 // 2^24
+    static let maxCombinedValue: UInt64 = 16777216 // 2^24
     
     // MARK: - Payload Components
     
@@ -65,13 +70,14 @@ public struct MatterSetupPayload {
     
     /// Generate 11-digit manual pairing code according to Matter Core Specification 5.1.4.1
     /// - Returns: Manual pairing code string (format: XXXXX-XXXXXX)
+    /// - Throws: MatterSetupPayloadError.combinedValueOutOfRange if input values exceed specification limits
     /// 
     /// Implements the complete Matter specification algorithm including:
     /// - Proper discriminator and passcode encoding
     /// - Verhoeff check digit calculation for error detection
     /// - Compliant formatting for universal platform compatibility
-    public func generateManualPairingCode() -> String {
-        return Self.generateManualPairingCode(discriminator: discriminator, passcode: passcode)
+    public func generateManualPairingCode() throws -> String {
+        return try Self.generateManualPairingCode(discriminator: discriminator, passcode: passcode)
     }
     
     /// Generate 11-digit manual pairing code from discriminator and passcode
@@ -79,10 +85,11 @@ public struct MatterSetupPayload {
     ///   - discriminator: 12-bit discriminator value
     ///   - passcode: Setup passcode
     /// - Returns: Manual pairing code string (format: XXXXX-XXXXXX)
+    /// - Throws: MatterSetupPayloadError.combinedValueOutOfRange if input values exceed specification limits
     /// 
     /// Static method that generates manual pairing codes according to Matter Core
     /// Specification 5.1.4.1 without requiring a full MatterSetupPayload instance.
-    public static func generateManualPairingCode(discriminator: UInt16, passcode: UInt32) -> String {
+    public static func generateManualPairingCode(discriminator: UInt16, passcode: UInt32) throws -> String {
         // Matter Core Specification 5.1.4.1: Manual Pairing Code Format
         // The manual pairing code is derived from:
         // 1. Short discriminator (4 bits from bits 11-8 of full discriminator)
@@ -103,7 +110,9 @@ public struct MatterSetupPayload {
         
         // Validate that combined value fits within expected 24-bit range
         // The modulo operation is intentional per Matter spec to ensure 10-digit constraint
-        precondition(combinedValue < Self.maxCombinedValue, "Combined value exceeds 24-bit range")
+        guard combinedValue < Self.maxCombinedValue else {
+            throw MatterSetupPayloadError.combinedValueOutOfRange(combinedValue)
+        }
         
         // Convert to 10-digit representation for check digit calculation
         // Modulo operation constrains to 10 digits as required by Matter specification
@@ -257,6 +266,20 @@ private class BitPacker {
             data.append(currentByte)
             currentByte = 0
             bitsInCurrentByte = 0
+        }
+    }
+}
+
+// MARK: - Error Types
+
+/// Errors that can occur during Matter setup payload generation
+public enum MatterSetupPayloadError: Error, LocalizedError {
+    case combinedValueOutOfRange(UInt64)
+    
+    public var errorDescription: String? {
+        switch self {
+        case .combinedValueOutOfRange(let value):
+            return "Combined value \(value) exceeds 24-bit range (\(MatterSetupPayload.maxCombinedValue))"
         }
     }
 }

@@ -123,7 +123,7 @@ public struct MatterCodeGenerator {
         
         // Display QR code and pairing information
         if let commissioning = config.commissioning {
-            let qrCode = config.generateQRCode() ?? "MT:ERROR_GENERATING_QR"
+            let qrCode = config.generateQRCode() ?? "ERROR: Failed to generate QR code"
             let manualCode = config.generateManualPairingCode() ?? "Error generating manual code"
             
             setupCode.append("")

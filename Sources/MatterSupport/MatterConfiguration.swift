@@ -132,12 +132,13 @@ public extension CommissioningConfig {
     
     /// Generate manual pairing code from commissioning parameters
     /// - Returns: Manual pairing code string
+    /// - Throws: MatterSetupPayloadError.combinedValueOutOfRange if input values exceed specification limits
     /// 
     /// Manual pairing codes are derived solely from the discriminator and passcode
     /// according to Matter Core Specification 5.1.4.1. Vendor and product IDs 
     /// are not used in the manual pairing code algorithm.
-    func generateManualPairingCode() -> String {
-        return MatterSetupPayload.generateManualPairingCode(
+    func generateManualPairingCode() throws -> String {
+        return try MatterSetupPayload.generateManualPairingCode(
             discriminator: discriminator,
             passcode: passcode
         )
@@ -154,10 +155,11 @@ public extension MatterConfig {
     }
     
     /// Generate manual pairing code from Matter configuration
-    /// - Returns: Manual pairing code string, or nil if no commissioning configuration is provided
+    /// - Returns: Manual pairing code string, or nil if no commissioning configuration is provided or values exceed
+    ///            specification limits
     func generateManualPairingCode() -> String? {
         guard let commissioning = self.commissioning else { return nil }
-        return commissioning.generateManualPairingCode()
+        return try? commissioning.generateManualPairingCode()
     }
     
     /// Create commissioning configuration with generated codes
@@ -181,11 +183,22 @@ public extension MatterConfig {
             passcode: passcode
         )
         
-        return CommissioningConfig(
-            discriminator: discriminator,
-            passcode: passcode,
-            manualPairingCode: payload.generateManualPairingCode(),
-            qrCodePayload: payload.generateQRCodePayload()
-        )
+        do {
+            let manualPairingCode = try payload.generateManualPairingCode()
+            return CommissioningConfig(
+                discriminator: discriminator,
+                passcode: passcode,
+                manualPairingCode: manualPairingCode,
+                qrCodePayload: payload.generateQRCodePayload()
+            )
+        } catch {
+            // If manual pairing code generation fails, return config with nil manual code
+            return CommissioningConfig(
+                discriminator: discriminator,
+                passcode: passcode,
+                manualPairingCode: nil,
+                qrCodePayload: payload.generateQRCodePayload()
+            )
+        }
     }
 }
