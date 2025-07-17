@@ -1,5 +1,4 @@
 import Foundation
-import Security
 
 /// Generator for cryptographically secure Matter device credentials
 /// Complies with CSA Matter Core Specification requirements for production devices
@@ -33,13 +32,13 @@ public struct MatterCredentialGenerator {
     /// - Throws: MatterCredentialGeneratorError if secure random generation fails
     ///
     /// Implementation follows CSA Matter Core Specification requirements:
-    /// - Uses cryptographically secure random number generator (SecRandomCopyBytes)
+    /// - Uses cryptographically secure random number generator (Swift's SystemRandomNumberGenerator)
     /// - Ensures discriminator uniqueness for improved setup experience
     /// - Validates passcode against specification constraints and invalid values
     /// - Suitable for production device provisioning
     public static func generateCredentials() throws -> MatterCredentials {
-        let discriminator = try generateSecureDiscriminator()
-        let passcode = try generateSecurePasscode()
+        let discriminator = generateSecureDiscriminator()
+        let passcode = generateSecurePasscode()
         
         return MatterCredentials(
             discriminator: discriminator,
@@ -69,12 +68,12 @@ public struct MatterCredentialGenerator {
             
             // Generate unique discriminator
             repeat {
-                discriminator = try generateSecureDiscriminator()
+                discriminator = generateSecureDiscriminator()
             } while usedDiscriminators.contains(discriminator)
             
             // Generate unique passcode
             repeat {
-                passcode = try generateSecurePasscode()
+                passcode = generateSecurePasscode()
             } while usedPasscodes.contains(passcode)
             
             usedDiscriminators.insert(discriminator)
@@ -92,55 +91,25 @@ public struct MatterCredentialGenerator {
     
     // MARK: - Secure Random Generation
     
-    /// Generate cryptographically secure discriminator using SecRandomCopyBytes
+    /// Generate cryptographically secure discriminator using Swift's SystemRandomNumberGenerator
     /// - Returns: Random discriminator value (0-4095)
-    /// - Throws: MatterCredentialGeneratorError.secureRandomFailed if generation fails
-    private static func generateSecureDiscriminator() throws -> UInt16 {
-        var bytes = [UInt8](repeating: 0, count: 2)
-        let status = SecRandomCopyBytes(kSecRandomDefault, bytes.count, &bytes)
-        
-        guard status == errSecSuccess else {
-            throw MatterCredentialGeneratorError.secureRandomFailed(status)
-        }
-        
-        // Convert bytes to UInt16 and constrain to 12-bit range (0-4095)
-        let value = UInt16(bytes[0]) | (UInt16(bytes[1]) << 8)
-        return value & 0x0FFF // Mask to 12 bits
+    private static func generateSecureDiscriminator() -> UInt16 {
+        // Swift's random(in:) uses SystemRandomNumberGenerator by default,
+        // which is cryptographically secure on all major platforms
+        return UInt16.random(in: 0 ... 4095)
     }
     
-    /// Generate cryptographically secure passcode using SecRandomCopyBytes with rejection sampling
+    /// Generate cryptographically secure passcode using Swift's SystemRandomNumberGenerator with rejection sampling
     /// - Returns: Random passcode value (1-99999998, excluding invalid codes)
-    /// - Throws: MatterCredentialGeneratorError.secureRandomFailed if generation fails
     ///
     /// Uses rejection sampling to avoid cryptographic bias that would be introduced by modulo operation
-    private static func generateSecurePasscode() throws -> UInt32 {
-        let range = passcodeMax - passcodeMin + 1
-        let maxValidValue = UInt32.max - (UInt32.max % range) // Largest value that divides evenly
-        
+    private static func generateSecurePasscode() -> UInt32 {
         var passcode: UInt32
         
+        // Use Swift's built-in random(in:) which handles rejection sampling internally
+        // to ensure uniform distribution without bias
         repeat {
-            // Generate uniformly distributed random value using rejection sampling
-            var randomValue: UInt32
-            repeat {
-                var bytes = [UInt8](repeating: 0, count: 4)
-                let status = SecRandomCopyBytes(kSecRandomDefault, bytes.count, &bytes)
-                
-                guard status == errSecSuccess else {
-                    throw MatterCredentialGeneratorError.secureRandomFailed(status)
-                }
-                
-                // Convert bytes to UInt32
-                randomValue = UInt32(bytes[0]) |
-                             (UInt32(bytes[1]) << 8) |
-                             (UInt32(bytes[2]) << 16) |
-                             (UInt32(bytes[3]) << 24)
-                             
-            } while randomValue >= maxValidValue // Reject values that would cause bias
-            
-            // Now we can safely use modulo without bias
-            passcode = (randomValue % range) + passcodeMin
-            
+            passcode = UInt32.random(in: passcodeMin ... passcodeMax)
         } while invalidPasscodes.contains(passcode)
         
         return passcode
@@ -221,13 +190,10 @@ public struct MatterCredentials {
 
 /// Errors that can occur during Matter credential generation
 public enum MatterCredentialGeneratorError: Error, LocalizedError {
-    case secureRandomFailed(OSStatus)
     case invalidCount(Int)
     
     public var errorDescription: String? {
         switch self {
-        case .secureRandomFailed(let status):
-            return "Secure random number generation failed with status: \(status)"
         case .invalidCount(let count):
             return "Invalid credential count: \(count). Must be greater than 0"
         }
