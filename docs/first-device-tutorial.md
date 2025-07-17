@@ -233,10 +233,10 @@ You'll see output like this:
 ```
 Matter Device Credentials
 ========================
-Discriminator: 2847
-Passcode: 73829502
-Manual Pairing Code: 84739-264851
-QR Code: MT:Y.K90HRX00KA0648G00
+Discriminator: 3841
+Passcode: 20202022
+Manual Pairing Code: 34970-112233
+QR Code: MT:Y.K90IRD00KA0648G00
 
 SECURITY WARNING: Store these credentials securely.
 Each device must have unique credentials.
@@ -295,7 +295,7 @@ matter:
     ipv6_enabled: true
     mdns:
       enabled: true
-      hostname: temperature-sensor  # Change this for multiple devices to avoid conflicts
+      hostname: ${name}  # Uses device name, change to something unique for multiple devices
 
 # Enable Over-The-Air updates
 ota:
@@ -343,7 +343,7 @@ wifi:
 
 **What about the Matter credentials?** The discriminator and passcode serve different purposes:
 - **Discriminator**: Like your device's "phone number" - helps platforms find your device during commissioning  
-- **Passcode**: A security credential used for secure commissioning authentication - this should be treated as sensitive information
+- **Passcode**: A secret credential used for secure commissioning authentication - this must be treated as sensitive information and should be randomized for each device to ensure security and prevent unauthorized access
 
 **Why generate them?** Each device needs unique credentials to prevent commissioning conflicts and ensure security. Here's why this matters:
 
@@ -431,10 +431,10 @@ When your device boots up, look for this in the serial monitor:
 
 ```
 ========== MATTER COMMISSIONING INFO ==========
-QR Code: MT:Y.K90HRX00KA0648G00
-Manual Pairing Code: 12111-128008
-Discriminator: 2847
-Setup PIN: 73829502
+QR Code: MT:Y.K90IRD00KA0648G00
+Manual Pairing Code: 34970-112233
+Discriminator: 3841
+Setup PIN: 20202022
 ===============================================
 ```
 
@@ -479,7 +479,7 @@ Pick your platform and follow the instructions:
 If QR scanning fails, use the manual pairing code:
 
 1. In your smart home app, look for **"Enter setup code manually"** or **"Can't scan?"**
-2. Enter the manual pairing code shown in your serial monitor output (e.g., **12111-128008**)
+2. Enter the manual pairing code shown in your serial monitor output (e.g., **34970-112233**)
 3. Complete the setup process
 
 ### What You Can Do Now
