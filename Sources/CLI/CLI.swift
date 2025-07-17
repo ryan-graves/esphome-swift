@@ -336,8 +336,8 @@ struct GenerateCredentialsCommand: ParsableCommand {
             // Security warning for production use
             if verbose {
                 logger.info("✅ Generated \(credentials.count) credential set(s)")
-                logger.warning("🔒 Store these credentials securely - each device must have unique values")
             }
+            logger.warning("🔒 Store these credentials securely - each device must have unique values")
             
         } catch {
             logger.error("❌ Credential generation failed: \(error)")

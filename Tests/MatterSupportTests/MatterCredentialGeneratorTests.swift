@@ -89,6 +89,21 @@ final class MatterCredentialGeneratorTests: XCTestCase {
         }
     }
     
+    func testGenerateCredentialsWithTooManyRequested() {
+        // Test bounds checking for discriminator limits (0-4095 = 4096 total)
+        let maxAvailable = 4096
+        let tooMany = maxAvailable + 1
+        
+        XCTAssertThrowsError(try MatterCredentialGenerator.generateCredentials(count: tooMany)) { error in
+            guard case MatterCredentialGeneratorError.tooManyCredentialsRequested(let count, let maxAvailable) = error else {
+                XCTFail("Expected tooManyCredentialsRequested error, got \(error)")
+                return
+            }
+            XCTAssertEqual(count, tooMany)
+            XCTAssertEqual(maxAvailable, 4096)
+        }
+    }
+    
     func testGenerateLargeBatchCredentials() throws {
         // Test generating a larger batch to verify performance and uniqueness at scale
         let count = 100

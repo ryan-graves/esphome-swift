@@ -20,7 +20,7 @@ public struct MatterCredentialGenerator {
     
     /// Invalid passcode values that must be avoided per Matter specification
     public static let invalidPasscodes: Set<UInt32> = [
-        00000000, 11111111, 22222222, 33333333, 44444444,
+        0, 11111111, 22222222, 33333333, 44444444,
         55555555, 66666666, 77777777, 88888888, 99999999,
         12345678, 87654321
     ]
@@ -56,6 +56,15 @@ public struct MatterCredentialGenerator {
     public static func generateCredentials(count: Int) throws -> [MatterCredentials] {
         guard count >= 1 else {
             throw MatterCredentialGeneratorError.invalidCount(count)
+        }
+        
+        // Prevent infinite loops by checking if we can generate enough unique discriminators
+        let maxAvailableDiscriminators = Int(discriminatorMax - discriminatorMin + 1)
+        guard count <= maxAvailableDiscriminators else {
+            throw MatterCredentialGeneratorError.tooManyCredentialsRequested(
+                count,
+                maxAvailable: maxAvailableDiscriminators
+            )
         }
         
         var credentials: [MatterCredentials] = []
@@ -96,7 +105,7 @@ public struct MatterCredentialGenerator {
     private static func generateSecureDiscriminator() -> UInt16 {
         // Swift's random(in:) uses SystemRandomNumberGenerator by default,
         // which is cryptographically secure on all major platforms
-        return UInt16.random(in: 0 ... 4095)
+        return UInt16.random(in: discriminatorMin ... discriminatorMax)
     }
     
     /// Generate cryptographically secure passcode using Swift's SystemRandomNumberGenerator with rejection sampling
@@ -191,11 +200,14 @@ public struct MatterCredentials {
 /// Errors that can occur during Matter credential generation
 public enum MatterCredentialGeneratorError: Error, LocalizedError {
     case invalidCount(Int)
+    case tooManyCredentialsRequested(Int, maxAvailable: Int)
     
     public var errorDescription: String? {
         switch self {
         case .invalidCount(let count):
             return "Invalid credential count: \(count). Must be greater than 0"
+        case .tooManyCredentialsRequested(let count, let maxAvailable):
+            return "Too many credentials requested: \(count). Maximum available unique discriminators: \(maxAvailable)"
         }
     }
 }
