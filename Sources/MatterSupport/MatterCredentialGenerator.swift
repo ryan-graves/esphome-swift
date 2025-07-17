@@ -55,7 +55,7 @@ public struct MatterCredentialGenerator {
     /// Each generated set is guaranteed to have unique discriminator and passcode values
     /// to prevent commissioning conflicts in device families
     public static func generateCredentials(count: Int) throws -> [MatterCredentials] {
-        guard count > 0 else { // swiftlint:disable:this empty_count
+        guard count >= 1 else {
             throw MatterCredentialGeneratorError.invalidCount(count)
         }
         

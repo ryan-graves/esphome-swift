@@ -279,15 +279,15 @@ logger:
 # Matter configuration for universal smart home compatibility
 matter:
   enabled: true
-  device_type: temperature_sensor
+  device_type: temperature_sensor  # Standard Matter device type - see Matter specification
   vendor_id: 0xFFF1
   product_id: 0x8001
   
   # Commissioning setup - your device's "address" in Matter
   # Use the values from your generated credentials above!
   commissioning:
-    discriminator: 2847  # Replace with YOUR generated discriminator
-    passcode: 73829502   # Replace with YOUR generated passcode
+    discriminator: XXXX  # Replace with YOUR generated discriminator
+    passcode: XXXXXXXX   # Replace with YOUR generated passcode
   
   # Use WiFi transport for connectivity
   network:
@@ -345,7 +345,7 @@ wifi:
 
 **Why generate them?** Each device needs unique credentials to prevent commissioning conflicts and ensure security. The passcode must be randomized for each device to prevent unauthorized access. The credential generator uses cryptographically secure random number generation that complies with CSA Matter Core Specification requirements.
 
-**Need multiple devices?** Run `esphome-swift generate-credentials --count 5 --format yaml` to generate credentials for multiple devices at once!
+**Need multiple devices?** If you're deploying sensors in multiple rooms or creating a batch of devices, you can generate credentials for all of them at once. Run `esphome-swift generate-credentials --count 5 --format yaml` to generate credentials for multiple devices. This ensures each device has unique, secure credentials preventing commissioning conflicts.
 
 ### Step 4: Validate Your Configuration
 
