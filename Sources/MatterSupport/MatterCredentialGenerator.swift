@@ -108,28 +108,38 @@ public struct MatterCredentialGenerator {
         return value & 0x0FFF // Mask to 12 bits
     }
     
-    /// Generate cryptographically secure passcode using SecRandomCopyBytes
+    /// Generate cryptographically secure passcode using SecRandomCopyBytes with rejection sampling
     /// - Returns: Random passcode value (1-99999998, excluding invalid codes)
     /// - Throws: MatterCredentialGeneratorError.secureRandomFailed if generation fails
+    ///
+    /// Uses rejection sampling to avoid cryptographic bias that would be introduced by modulo operation
     private static func generateSecurePasscode() throws -> UInt32 {
+        let range = passcodeMax - passcodeMin + 1
+        let maxValidValue = UInt32.max - (UInt32.max % range) // Largest value that divides evenly
+        
         var passcode: UInt32
         
         repeat {
-            var bytes = [UInt8](repeating: 0, count: 4)
-            let status = SecRandomCopyBytes(kSecRandomDefault, bytes.count, &bytes)
+            // Generate uniformly distributed random value using rejection sampling
+            var randomValue: UInt32
+            repeat {
+                var bytes = [UInt8](repeating: 0, count: 4)
+                let status = SecRandomCopyBytes(kSecRandomDefault, bytes.count, &bytes)
+                
+                guard status == errSecSuccess else {
+                    throw MatterCredentialGeneratorError.secureRandomFailed(status)
+                }
+                
+                // Convert bytes to UInt32
+                randomValue = UInt32(bytes[0]) |
+                             (UInt32(bytes[1]) << 8) |
+                             (UInt32(bytes[2]) << 16) |
+                             (UInt32(bytes[3]) << 24)
+                             
+            } while randomValue >= maxValidValue // Reject values that would cause bias
             
-            guard status == errSecSuccess else {
-                throw MatterCredentialGeneratorError.secureRandomFailed(status)
-            }
-            
-            // Convert bytes to UInt32
-            passcode = UInt32(bytes[0]) |
-                      (UInt32(bytes[1]) << 8) |
-                      (UInt32(bytes[2]) << 16) |
-                      (UInt32(bytes[3]) << 24)
-            
-            // Constrain to valid range (1-99999998)
-            passcode = (passcode % (passcodeMax - passcodeMin + 1)) + passcodeMin
+            // Now we can safely use modulo without bias
+            passcode = (randomValue % range) + passcodeMin
             
         } while invalidPasscodes.contains(passcode)
         

@@ -331,6 +331,8 @@ wifi_ssid: "YourWiFiName"
 wifi_password: "YourWiFiPassword"
 ```
 
+**Security Note**: Use a strong WiFi password and ensure the `secrets.yaml` file has appropriate permissions (readable only by you). Never commit this file to version control.
+
 Update your main configuration to use these secrets:
 
 ```yaml
@@ -343,7 +345,11 @@ wifi:
 - **Discriminator**: Like your device's "phone number" - helps platforms find your device during commissioning  
 - **Passcode**: A security credential used for secure commissioning authentication - this should be treated as sensitive information
 
-**Why generate them?** Each device needs unique credentials to prevent commissioning conflicts and ensure security. The passcode must be randomized for each device to prevent unauthorized access. The credential generator uses cryptographically secure random number generation that complies with CSA Matter Core Specification requirements.
+**Why generate them?** Each device needs unique credentials to prevent commissioning conflicts and ensure security. Here's why this matters:
+
+- **Prevents conflicts**: Unique discriminators help smart home platforms find the right device
+- **Ensures security**: Randomized passcodes prevent unauthorized access during commissioning  
+- **Meets standards**: Our generator uses cryptographically secure random number generation that complies with CSA Matter Core Specification requirements
 
 **Need multiple devices?** If you're deploying sensors in multiple rooms or creating a batch of devices, you can generate credentials for all of them at once. Run `esphome-swift generate-credentials --count 5 --format yaml` to generate credentials for multiple devices. This ensures each device has unique, secure credentials preventing commissioning conflicts.
 
