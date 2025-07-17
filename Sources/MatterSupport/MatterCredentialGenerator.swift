@@ -20,7 +20,7 @@ public struct MatterCredentialGenerator {
     private static let passcodeMax: UInt32 = 99999998
     
     /// Invalid passcode values that must be avoided per Matter specification
-    private static let invalidPasscodes: Set<UInt32> = [
+    public static let invalidPasscodes: Set<UInt32> = [
         00000000, 11111111, 22222222, 33333333, 44444444,
         55555555, 66666666, 77777777, 88888888, 99999999,
         12345678, 87654321
