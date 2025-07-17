@@ -340,7 +340,8 @@ final class MatterCredentialGeneratorTests: XCTestCase {
         let duration = endTime - startTime
         
         XCTAssertEqual(credentials.count, 1000)
-        XCTAssertLessThan(duration, 10.0, "Should generate 1000 credentials in under 10 seconds")
+        XCTAssertLessThan(duration, 5.0, "Performance regression detected: Generating 1000 credentials took \(duration) seconds, exceeding the 5-second threshold.")
+        print("Performance: Generating 1000 credentials took \(duration) seconds.")
         
         // Verify uniqueness even at scale
         let discriminators = Set(credentials.map(\.discriminator))
