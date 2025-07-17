@@ -351,7 +351,14 @@ wifi:
 - **Ensures security**: Randomized passcodes prevent unauthorized access during commissioning  
 - **Meets standards**: Our generator uses cryptographically secure random number generation that complies with CSA Matter Core Specification requirements
 
-**Need multiple devices?** If you're deploying sensors in multiple rooms or creating a batch of devices, you can generate credentials for all of them at once. Run `esphome-swift generate-credentials --count 5 --format yaml` to generate credentials for multiple devices. This ensures each device has unique, secure credentials preventing commissioning conflicts.
+**Need multiple devices?** If you're deploying sensors in multiple rooms or creating a batch of devices, here's what you can do:
+
+- Generate credentials for all devices at once using the following command:
+  ```bash
+  esphome-swift generate-credentials --count 5 --format yaml
+  ```
+- Ensure each device has unique, secure credentials to prevent commissioning conflicts.
+- Use this approach to streamline the setup process for multiple devices.
 
 ### Step 4: Validate Your Configuration
 
