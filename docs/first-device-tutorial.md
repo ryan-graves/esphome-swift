@@ -233,10 +233,10 @@ You'll see output like this:
 ```
 Matter Device Credentials
 ========================
-Discriminator: 3841
-Passcode: 20202022
-Manual Pairing Code: 34970-112233
-QR Code: MT:Y.K90IRD00KA0648G00
+Discriminator: XXXX
+Passcode: XXXXXXXX
+Manual Pairing Code: XXXXX-XXXXXX
+QR Code: MT:XXXXXXXXXXXXXXX
 
 SECURITY WARNING: Store these credentials securely.
 Each device must have unique credentials.
@@ -431,10 +431,10 @@ When your device boots up, look for this in the serial monitor:
 
 ```
 ========== MATTER COMMISSIONING INFO ==========
-QR Code: MT:Y.K90IRD00KA0648G00
-Manual Pairing Code: 34970-112233
-Discriminator: 3841
-Setup PIN: 20202022
+QR Code: MT:XXXXXXXXXXXXXXX
+Manual Pairing Code: XXXXX-XXXXXX
+Discriminator: XXXX
+Setup PIN: XXXXXXXX
 ===============================================
 ```
 
