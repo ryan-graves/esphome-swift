@@ -317,11 +317,11 @@ final class MatterCredentialGeneratorTests: XCTestCase {
     
     func testLargeScaleCredentialGeneration() throws {
         // Test generating credentials at scale to verify performance doesn't degrade
-        let startTime = CFAbsoluteTimeGetCurrent()
+        let startTime = Date().timeIntervalSince1970
         
         let credentials = try MatterCredentialGenerator.generateCredentials(count: 1000)
         
-        let endTime = CFAbsoluteTimeGetCurrent()
+        let endTime = Date().timeIntervalSince1970
         let duration = endTime - startTime
         
         XCTAssertEqual(credentials.count, 1000)
