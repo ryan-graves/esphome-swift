@@ -320,14 +320,9 @@ struct GenerateCredentialsCommand: ParsableCommand {
         logger.info("Generating \(count) Matter credential set(s)...")
         
         do {
-            // swiftformat:disable conditionalAssignment
-            let credentials: [MatterCredentials]
-            if count == 1 {
-                credentials = try [MatterCredentialGenerator.generateCredentials()]
-            } else {
-                credentials = try MatterCredentialGenerator.generateCredentials(count: count)
-            }
-            // swiftformat:enable conditionalAssignment
+            let credentials: [MatterCredentials] = try count == 1 
+                ? [MatterCredentialGenerator.generateCredentials()]
+                : MatterCredentialGenerator.generateCredentials(count: count)
             
             // Output credentials in requested format
             let output = formatCredentials(credentials, format: format)
