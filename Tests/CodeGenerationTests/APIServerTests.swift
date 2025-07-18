@@ -55,6 +55,11 @@ final class APIServerTests: XCTestCase {
         XCTAssertTrue(generatedCode.contains("password_len"))
         XCTAssertTrue(generatedCode.contains("Invalid password provided"))
         XCTAssertTrue(generatedCode.contains("Client authenticated successfully"))
+        
+        // Verify security validations are present
+        XCTAssertTrue(generatedCode.contains("Password length too large"))
+        XCTAssertTrue(generatedCode.contains("Insufficient data for password"))
+        XCTAssertTrue(generatedCode.contains("password_len > 1024"))
     }
     
     func testAPIServerWithoutPassword() throws {
@@ -79,6 +84,9 @@ final class APIServerTests: XCTestCase {
         XCTAssertTrue(generatedCode.contains("No password required"))
         XCTAssertFalse(generatedCode.contains("password_len"))
         XCTAssertFalse(generatedCode.contains("Invalid password provided"))
+        
+        // Verify API_PASSWORD is still defined (with empty value) to prevent compilation errors
+        XCTAssertTrue(generatedCode.contains("#define API_PASSWORD \"\""))
     }
     
     func testComponentAPICodeGeneration() throws {

@@ -9,7 +9,6 @@ public struct ESPHomeAPIServer {
     public static func generateAPIServerCode(config: APIConfig, deviceName: String, boardModel: String) -> String {
         let port = config.port ?? 6053
         let hasPassword = config.password != nil
-        let hasEncryption = config.encryption != nil
         let apiPassword = config.encryption?.key ?? ""
         
         return """
@@ -39,7 +38,7 @@ public struct ESPHomeAPIServer {
         #define API_TASK_PRIORITY 5
         #define CONFIG_DEVICE_NAME "\(deviceName)"
         #define CONFIG_BOARD_MODEL "\(boardModel)"
-        \(hasPassword ? "#define API_PASSWORD \"\(apiPassword)\"" : "")
+        #define API_PASSWORD "\(apiPassword)"
         
         static const char *TAG = "ESPHome-API";
         
@@ -223,13 +222,31 @@ public struct ESPHomeAPIServer {
             
             // Extract password length (first 4 bytes, little-endian)
             uint32_t password_len = data[0] | (data[1] << 8) | (data[2] << 16) | (data[3] << 24);
+            uint32_t expected_password_len = strlen(API_PASSWORD);
             
-            if (password_len != strlen(API_PASSWORD) || 
-                len < 4 + password_len ||
-                memcmp(data + 4, API_PASSWORD, password_len) != 0) {
+            // Validate password length to prevent integer overflow and DoS attacks
+            if (password_len > 1024) {  // Reasonable upper bound for password length
+                ESP_LOGE(TAG, "Password length too large: %d", password_len);
+                api_client.authenticated = false;
+                uint8_t error_response[] = {1}; // Generic error
+                api_send_message(MESSAGE_TYPE_CONNECT_RESPONSE, error_response, 1);
+                return;
+            }
+            
+            // Check if we have enough data for the claimed password length (prevent buffer overflow)
+            if (len < 4 || len - 4 < password_len) {
+                ESP_LOGE(TAG, "Insufficient data for password (claimed: %d, available: %d)", password_len, len - 4);
+                api_client.authenticated = false;
+                uint8_t error_response[] = {1}; // Generic error
+                api_send_message(MESSAGE_TYPE_CONNECT_RESPONSE, error_response, 1);
+                return;
+            }
+            
+            // Verify password matches expected value
+            if (password_len != expected_password_len || 
+                (expected_password_len > 0 && memcmp(data + 4, API_PASSWORD, password_len) != 0)) {
                 ESP_LOGE(TAG, "Invalid password provided");
                 api_client.authenticated = false;
-                // Send error response
                 uint8_t error_response[] = {1}; // Generic error
                 api_send_message(MESSAGE_TYPE_CONNECT_RESPONSE, error_response, 1);
                 return;
