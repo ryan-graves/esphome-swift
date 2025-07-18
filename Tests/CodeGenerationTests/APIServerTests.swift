@@ -60,6 +60,12 @@ final class APIServerTests: XCTestCase {
         XCTAssertTrue(generatedCode.contains("Password length too large"))
         XCTAssertTrue(generatedCode.contains("Insufficient data for password"))
         XCTAssertTrue(generatedCode.contains("password_len > 1024"))
+        
+        // Verify Copilot suggestions implemented
+        XCTAssertTrue(generatedCode.contains("WARNING: Password authentication is enabled, and passwords are transmitted in plaintext"))
+        XCTAssertTrue(generatedCode.contains("API_MIN_MESSAGE_SIZE"))
+        XCTAssertTrue(generatedCode.contains("Message too small"))
+        XCTAssertTrue(generatedCode.contains("snprintf"))
     }
     
     func testAPIServerWithoutPassword() throws {
@@ -124,6 +130,7 @@ final class APIServerTests: XCTestCase {
         // Verify buffer size constants
         XCTAssertTrue(generatedCode.contains("#define API_BUFFER_SIZE 1024"))
         XCTAssertTrue(generatedCode.contains("#define API_MESSAGE_OVERHEAD 10"))
+        XCTAssertTrue(generatedCode.contains("#define API_MIN_MESSAGE_SIZE 3"))
         XCTAssertTrue(generatedCode.contains("#define API_MAX_MESSAGE_SIZE"))
         XCTAssertTrue(generatedCode.contains("API_MAX_MESSAGE_SIZE"))
         XCTAssertFalse(generatedCode.contains("API_BUFFER_SIZE - 10")) // Should use named constant

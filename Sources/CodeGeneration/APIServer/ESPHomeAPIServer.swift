@@ -33,6 +33,7 @@ public struct ESPHomeAPIServer {
         #define API_MAX_CLIENTS 1
         #define API_BUFFER_SIZE 1024
         #define API_MESSAGE_OVERHEAD 10  // Overhead for message headers and length encoding
+        #define API_MIN_MESSAGE_SIZE 3   // Minimum message size (type + minimal data)
         #define API_MAX_MESSAGE_SIZE (API_BUFFER_SIZE - API_MESSAGE_OVERHEAD)
         #define API_TASK_STACK_SIZE 4096
         #define API_TASK_PRIORITY 5
@@ -253,6 +254,7 @@ public struct ESPHomeAPIServer {
             }
             
             ESP_LOGI(TAG, "Client authenticated successfully");
+            ESP_LOGW(TAG, "WARNING: Password authentication is enabled, and passwords are transmitted in plaintext.");
             """ : "// No password required")
             
             api_client.authenticated = true;
@@ -279,8 +281,15 @@ public struct ESPHomeAPIServer {
             esp_wifi_get_mac(ESP_IF_WIFI_STA, mac);
             response[offset++] = 0x12; // Field 2, string
             response[offset++] = 17; // "XX:XX:XX:XX:XX:XX"
-            offset += sprintf((char *)&response[offset], "%02X:%02X:%02X:%02X:%02X:%02X",
-                            mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+            int mac_written = snprintf((char *)&response[offset], sizeof(response) - offset, 
+                                     "%02X:%02X:%02X:%02X:%02X:%02X",
+                                     mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+            if (mac_written > 0 && mac_written < (int)(sizeof(response) - offset)) {
+                offset += mac_written;
+            } else {
+                ESP_LOGE(TAG, "Failed to format MAC address");
+                return; // Exit function safely if MAC formatting fails
+            }
             
             // Add ESPHome version
             response[offset++] = 0x1A; // Field 3, string
@@ -402,6 +411,11 @@ public struct ESPHomeAPIServer {
                 }
                 
                 varint_len = decode_varint(api_client.rx_buffer, &msg_length);
+                
+                if (msg_length < API_MIN_MESSAGE_SIZE) {
+                    ESP_LOGE(TAG, "Message too small: %d (min: %d)", msg_length, API_MIN_MESSAGE_SIZE);
+                    break;
+                }
                 
                 if (msg_length > API_MAX_MESSAGE_SIZE) {
                     ESP_LOGE(TAG, "Message too large: %d (max: %d)", msg_length, API_MAX_MESSAGE_SIZE);

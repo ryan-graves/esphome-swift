@@ -155,15 +155,6 @@ public struct DHTSensorFactory: ComponentFactory {
     
     /// Generate unique component key based on name and type using FNV-1a hash
     private func generateComponentKey(name: String, type: String) -> UInt32 {
-        // FNV-1a hash algorithm for better collision resistance
-        let combined = "\(name)_\(type)"
-        var hash: UInt32 = 2166136261 // FNV offset basis for 32-bit
-        for char in combined.utf8 {
-            hash ^= UInt32(char)
-            hash = hash &* 16777619 // FNV prime for 32-bit
-        }
-        
-        // Ensure key is never 0 (reserved for invalid keys)
-        return hash == 0 ? 1 : hash
+        return HashUtils.generateComponentKey(name: name, type: type)
     }
 }
