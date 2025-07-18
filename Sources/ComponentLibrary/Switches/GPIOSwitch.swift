@@ -6,7 +6,7 @@ public struct GPIOSwitchFactory: ComponentFactory {
     public typealias ConfigType = SwitchConfig
     
     public let platform = "gpio"
-    public let componentType = ComponentType.switch_
+    public let componentType = ComponentType.`switch`
     public let requiredProperties = ["pin"]
     public let optionalProperties = ["name", "inverted", "restore_mode"]
     

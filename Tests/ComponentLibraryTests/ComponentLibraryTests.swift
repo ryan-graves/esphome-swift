@@ -42,7 +42,7 @@ final class ComponentLibraryTests: XCTestCase {
         let factory = GPIOSwitchFactory()
         
         XCTAssertEqual(factory.platform, "gpio")
-        XCTAssertEqual(factory.componentType, .switch_)
+        XCTAssertEqual(factory.componentType, .`switch`)
         XCTAssertTrue(factory.requiredProperties.contains("pin"))
     }
     
