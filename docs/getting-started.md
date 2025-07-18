@@ -238,6 +238,50 @@ You should see:
 - WiFi connection status
 - Sensor readings every 60 seconds
 
+### 8. Web Dashboard
+
+ESPHome Swift includes a built-in web dashboard for monitoring and controlling your devices:
+
+```bash
+# Start the dashboard server
+esphome-swift dashboard
+
+# Or specify a custom port
+esphome-swift dashboard --port 8080
+```
+
+Open http://localhost:8080 in your browser to access the dashboard.
+
+#### Dashboard Features
+
+- **Real-time Device Discovery**: Automatically finds ESPHome Swift devices on your network
+- **Live Status Monitoring**: Shows device status, sensor readings, and entity states
+- **Device Control**: Toggle switches and lights directly from the web interface
+- **Manual Device Management**: Add devices by IP address if auto-discovery doesn't work
+- **Auto-refresh**: Updates every 30 seconds to keep data current
+
+#### Adding Devices Manually
+
+If your device doesn't appear automatically:
+
+1. Click the "Add Device" button in the dashboard
+2. Enter your device's IP address (check your router or use `ping device-name.local`)
+3. Use port 6053 (default ESPHome native API port)
+4. Click "Add Device"
+
+The dashboard will attempt to connect and retrieve device information including:
+- Device name and board type
+- All configured entities (sensors, switches, lights)
+- Current states and values
+- Last seen timestamp
+
+#### Device Controls
+
+- **Sensors**: View current readings and unit measurements
+- **Switches**: Click ON/OFF buttons to toggle relay states
+- **Lights**: Control power state and brightness (if supported)
+- **Real-time Updates**: Changes are reflected immediately across all connected clients
+
 ## Home Assistant Integration
 
 ### 1. Auto-Discovery
