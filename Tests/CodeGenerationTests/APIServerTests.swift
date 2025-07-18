@@ -96,7 +96,6 @@ final class APIServerTests: XCTestCase {
         XCTAssertTrue(componentCode.contains("component limit reached"))
         XCTAssertTrue(componentCode.contains("register_component_state(key"))
         XCTAssertTrue(componentCode.contains("< 0)"))
-        
     }
     
     func testAPIBufferConstants() throws {
