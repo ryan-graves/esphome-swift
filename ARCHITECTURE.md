@@ -1,6 +1,56 @@
-# ESPHome Swift Component Factory Architecture
+# ESPHome Swift Architecture
 
-## Architecture Overview
+## High-Level Architecture
+
+ESPHome Swift uses a **hybrid architecture** combining Swift's type safety for development with C/C++ reliability for embedded execution.
+
+### Development vs Runtime Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                     DEVELOPMENT TIME (Swift)                    │
+├─────────────────────────────────────────────────────────────────┤
+│ YAML Config → Swift Parser → Validation → Code Generation      │
+│                                                                 │
+│ • Type-safe configuration parsing                               │
+│ • Board-aware validation                                        │
+│ • Component factory system                                      │
+│ • C/C++ code generation                                         │
+└─────────────────────────────────────────────────────────────────┘
+                               │
+                               ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                     RUNTIME (C/C++ on ESP32)                   │
+├─────────────────────────────────────────────────────────────────┤
+│ Generated C++ → ESP-IDF Build → ESP32 Firmware                 │
+│                                                                 │
+│ • Native ESP32 performance                                      │
+│ • Direct hardware access                                        │
+│ • Home Assistant API server                                     │
+│ • Matter protocol support                                       │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Why This Hybrid Approach?
+
+1. **Development Benefits (Swift)**:
+   - Type safety prevents configuration errors
+   - Rich error messages and debugging
+   - Modern tooling and IDE support
+   - Powerful code generation capabilities
+
+2. **Runtime Benefits (C/C++)**:
+   - Native ESP32 performance
+   - Minimal memory footprint
+   - Proven ESP-IDF ecosystem
+   - Direct hardware peripheral access
+
+3. **Future Compatibility**:
+   - Ready for Swift Embedded when ESP32 support matures
+   - Can offer both approaches simultaneously
+   - Maintains ESPHome ecosystem compatibility
+
+## Component Factory Architecture
 
 ESPHome Swift uses a type-safe component factory system with compile-time guarantees and centralized validation utilities.
 

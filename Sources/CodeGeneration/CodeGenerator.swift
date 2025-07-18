@@ -93,6 +93,7 @@ public class CodeGenerator {
         let mainCpp = try generateMainCpp(
             configuration: configuration,
             componentCode: combinedCode,
+            allComponentCodes: allComponentCode,
             context: context
         )
         
@@ -123,6 +124,7 @@ public class CodeGenerator {
         var allSetupCode: [String] = []
         var allLoopCode: [String] = []
         var allClassDefinitions: [String] = []
+        var allApiCode: [String] = []
         
         for code in componentCodes {
             allHeaderIncludes.formUnion(code.headerIncludes)
@@ -130,6 +132,7 @@ public class CodeGenerator {
             allSetupCode.append(contentsOf: code.setupCode)
             allLoopCode.append(contentsOf: code.loopCode)
             allClassDefinitions.append(contentsOf: code.classDefinitions)
+            allApiCode.append(contentsOf: code.apiCode)
         }
         
         return ComponentCode(
@@ -137,7 +140,8 @@ public class CodeGenerator {
             globalDeclarations: allGlobalDeclarations,
             setupCode: allSetupCode,
             loopCode: allLoopCode,
-            classDefinitions: allClassDefinitions
+            classDefinitions: allClassDefinitions,
+            apiCode: allApiCode
         )
     }
     
@@ -145,6 +149,7 @@ public class CodeGenerator {
     private func generateMainCpp(
         configuration: ESPHomeConfiguration,
         componentCode: ComponentCode,
+        allComponentCodes: [ComponentCode],
         context: CodeGenerationContext
     ) throws -> String {
         var cpp = ""
@@ -179,6 +184,14 @@ public class CodeGenerator {
         cpp += "// Component function definitions\n"
         for definition in componentCode.classDefinitions {
             cpp += "\(definition)\n\n"
+        }
+        
+        // Component API integration code
+        if configuration.api != nil && !componentCode.apiCode.isEmpty {
+            cpp += "// Component API integration\n"
+            for apiCode in componentCode.apiCode {
+                cpp += "\(apiCode)\n\n"
+            }
         }
         
         // WiFi setup function (if WiFi is configured)
@@ -227,6 +240,31 @@ public class CodeGenerator {
         if configuration.api != nil {
             cpp += "\n    // API setup\n"
             cpp += "    api_setup();\n"
+            
+            // Add component API registration calls
+            if !componentCode.apiCode.isEmpty {
+                cpp += "\n    // Component API registration\n"
+                // Generate registration calls for each component
+                for componentCodeItem in allComponentCodes {
+                    if let config = componentCodeItem.config {
+                        let name = config.name ?? config.id ?? "unknown"
+                        let safeName = name.replacingOccurrences(of: " ", with: "_")
+                        
+                        // Check if this component has temperature/humidity sensors (DHT case)
+                        if componentCodeItem.apiCode.contains(where: { $0.contains("\(safeName)_temperature_register_api") }) {
+                            cpp += "    \(safeName)_temperature_register_api();\n"
+                        }
+                        if componentCodeItem.apiCode.contains(where: { $0.contains("\(safeName)_humidity_register_api") }) {
+                            cpp += "    \(safeName)_humidity_register_api();\n"
+                        }
+                        
+                        // Generic component registration
+                        if componentCodeItem.apiCode.contains(where: { $0.contains("\(safeName)_register_api") }) {
+                            cpp += "    \(safeName)_register_api();\n"
+                        }
+                    }
+                }
+            }
         }
         
         cpp += """
@@ -315,15 +353,25 @@ public class CodeGenerator {
     
     /// Generate API setup code
     private func generateAPISetup(configuration: ESPHomeConfiguration) throws -> String {
-        guard configuration.api != nil else {
+        guard let apiConfig = configuration.api else {
             return ""
         }
         
+        // Generate the full API server implementation
+        let deviceName = configuration.esphomeSwift.name
+        let boardModel = configuration.esp32.board
+        let apiServerCode = ESPHomeAPIServer.generateAPIServerCode(
+            config: apiConfig,
+            deviceName: deviceName,
+            boardModel: boardModel
+        )
+        let componentAPICode = ESPHomeAPIServer.generateComponentAPICode()
+        
         return """
-        void api_setup() {
-            // TODO: Implement native API server
-            printf("API setup completed\\n");
-        }
+        // ===== ESPHome Native API Server =====
+        \(componentAPICode)
+        
+        \(apiServerCode)
         
         """
     }
