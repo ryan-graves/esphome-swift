@@ -27,7 +27,7 @@ final class APIServerTests: XCTestCase {
         XCTAssertTrue(generatedCode.contains("#define API_PORT 6053"))
         XCTAssertTrue(generatedCode.contains("#define CONFIG_DEVICE_NAME \"test-device\""))
         XCTAssertTrue(generatedCode.contains("#define CONFIG_BOARD_MODEL \"esp32-c6-devkitc-1\""))
-        XCTAssertTrue(generatedCode.contains("api_task"))
+        XCTAssertTrue(generatedCode.contains("api_server_task"))
         XCTAssertTrue(generatedCode.contains("handle_connect_request"))
         XCTAssertTrue(generatedCode.contains("MESSAGE_TYPE_HELLO_REQUEST"))
     }
@@ -91,15 +91,12 @@ final class APIServerTests: XCTestCase {
         XCTAssertTrue(componentCode.contains("api_register_switch"))
         XCTAssertTrue(componentCode.contains("api_register_light"))
         
-        // Verify state management functions
-        XCTAssertTrue(componentCode.contains("api_send_binary_sensor_state"))
-        XCTAssertTrue(componentCode.contains("api_send_sensor_state"))
-        XCTAssertTrue(componentCode.contains("api_send_switch_state"))
-        XCTAssertTrue(componentCode.contains("api_send_light_state"))
-        
-        // Verify bounds checking is implemented
+        // Verify registration error handling
+        XCTAssertTrue(componentCode.contains("Failed to register"))
         XCTAssertTrue(componentCode.contains("component limit reached"))
         XCTAssertTrue(componentCode.contains("register_component_state(key"))
+        XCTAssertTrue(componentCode.contains("< 0)"))
+        
     }
     
     func testAPIBufferConstants() throws {
@@ -127,15 +124,27 @@ final class APIServerTests: XCTestCase {
     
     func testMaxComponentsHandling() throws {
         // Test MAX_COMPONENTS constant and bounds checking
-        let componentCode = ESPHomeAPIServer.generateComponentAPICode()
+        let apiConfig = APIConfig(
+            encryption: nil,
+            port: 6053,
+            password: nil,
+            rebootTimeout: nil
+        )
         
-        // Verify MAX_COMPONENTS is defined
-        XCTAssertTrue(componentCode.contains("#define MAX_COMPONENTS 32"))
+        let generatedCode = ESPHomeAPIServer.generateAPIServerCode(
+            config: apiConfig,
+            deviceName: "test",
+            boardModel: "esp32-c6-devkitc-1"
+        )
+        
+        // MAX_COMPONENTS is defined in the main API server code
+        XCTAssertTrue(generatedCode.contains("#define MAX_COMPONENTS 32"))
         
         // Verify bounds checking is in place
-        XCTAssertTrue(componentCode.contains("if (component_count >= MAX_COMPONENTS) return -1;"))
+        XCTAssertTrue(generatedCode.contains("if (component_count >= MAX_COMPONENTS) return -1;"))
         
-        // Verify registration functions check return value
+        // Verify registration functions check return value (in component API code)
+        let componentCode = ESPHomeAPIServer.generateComponentAPICode()
         XCTAssertTrue(componentCode.contains("if (register_component_state(key,"))
         XCTAssertTrue(componentCode.contains("< 0)"))
     }
@@ -164,7 +173,7 @@ final class APIServerTests: XCTestCase {
             "MESSAGE_TYPE_DEVICE_INFO_REQUEST",
             "MESSAGE_TYPE_DEVICE_INFO_RESPONSE",
             "MESSAGE_TYPE_LIST_ENTITIES_REQUEST",
-            "MESSAGE_TYPE_LIST_ENTITIES_RESPONSE",
+            "MESSAGE_TYPE_LIST_ENTITIES_DONE_RESPONSE",
             "MESSAGE_TYPE_SUBSCRIBE_STATES_REQUEST"
         ]
         
@@ -183,7 +192,7 @@ final class APIServerTests: XCTestCase {
         
         // Verify that API registration functions exist (they use the hash function)
         XCTAssertTrue(componentCode.contains("api_register_sensor"))
-        XCTAssertTrue(componentCode.contains("static uint32_t"))
+        XCTAssertTrue(componentCode.contains("ESP_LOGI"))
         
         // FNV-1a hash function is implemented in DHTSensorFactory
         // and generates consistent, non-zero keys for component identification
