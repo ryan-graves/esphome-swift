@@ -202,14 +202,34 @@ async def connect_to_device():
     await api.subscribe_states(on_state_update)
 ```
 
+## Security Considerations
+
+The ESPHome Native API protocol currently uses plaintext TCP communication for compatibility with the original ESPHome implementation. For production deployments, consider these security measures:
+
+### Network Security
+- **Trusted Networks**: Deploy devices only on trusted local networks
+- **VPN Access**: Use VPN for remote access instead of port forwarding
+- **TLS Termination**: Use stunnel, nginx proxy, or similar for TLS encryption
+- **Firewall Rules**: Restrict API port (6053) access to authorized clients only
+
+### Password Protection
+- **Strong Passwords**: Use long, random passwords for the API encryption key
+- **Regular Rotation**: Change passwords periodically, especially after device access
+- **Home Assistant Integration**: Home Assistant securely stores the encryption key
+
+### Future Security Enhancements
+- **TLS Support**: Native TLS encryption (planned for Phase 3)
+- **Certificate Authentication**: Device certificates for mutual authentication
+- **Token-based Auth**: JWT or similar for session management
+- **Rate Limiting**: Protection against brute force attacks
+
 ## Future API Enhancements
 
-Planned improvements include:
+Additional planned improvements include:
 
 - **WebSocket support** for web dashboard integration
 - **REST API endpoints** for simple HTTP access  
 - **Bluetooth API** for local mobile access
-- **Advanced encryption** with certificate support
 - **API rate limiting** and access controls
 
 The native API provides a solid foundation for all current and future communication needs with ESPHome Swift devices.

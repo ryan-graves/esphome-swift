@@ -212,6 +212,9 @@ public struct ESPHomeAPIServer {
         static void handle_connect_request(const uint8_t *data, size_t len) {
             \(hasPassword ? """
             // Verify password if configured
+            // NOTE: Password is transmitted in plaintext over TCP for ESPHome protocol compatibility.
+            // This matches the original ESPHome implementation. For production deployments on untrusted
+            // networks, consider using TLS termination (e.g., stunnel, nginx proxy) or VPN.
             if (len < 4) {
                 ESP_LOGE(TAG, "Connect request too short");
                 api_client.authenticated = false;
