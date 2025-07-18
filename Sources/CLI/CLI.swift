@@ -3,6 +3,7 @@ import ArgumentParser
 import ESPHomeSwiftCore
 import CodeGeneration
 import ComponentLibrary
+import MatterSupport
 import Logging
 
 /// Main CLI entry point for ESPHome Swift
@@ -18,7 +19,8 @@ struct ESPHomeSwiftCLI: ParsableCommand {
             MonitorCommand.self,
             ValidateCommand.self,
             ListComponentsCommand.self,
-            NewProjectCommand.self
+            NewProjectCommand.self,
+            GenerateCredentialsCommand.self
         ]
     )
 }
@@ -291,6 +293,77 @@ struct NewProjectCommand: ParsableCommand {
         print("  1. Edit \(configPath) to configure your device")
         print("  2. Run: esphome-swift build \(configPath)")
         print("  3. Run: esphome-swift flash \(projectPath)")
+    }
+}
+
+// MARK: - Generate Credentials Command
+
+struct GenerateCredentialsCommand: ParsableCommand {
+    static let configuration = CommandConfiguration(
+        commandName: "generate-credentials",
+        abstract: "Generate cryptographically secure Matter device credentials"
+    )
+    
+    @Option(name: .shortAndLong, help: "Number of credential sets to generate")
+    var count: Int = 1
+    
+    @Option(name: .shortAndLong, help: "Output format: yaml, json, or text")
+    var format: OutputFormat = .text
+    
+    @Flag(name: .shortAndLong, help: "Enable verbose logging")
+    var verbose: Bool = false
+    
+    func run() throws {
+        setupLogging(verbose: verbose)
+        
+        let logger = Logger(label: "GenerateCredentialsCommand")
+        logger.info("Generating \(count) Matter credential set(s)...")
+        
+        do {
+            let credentials: [MatterCredentials] = try count == 1 
+                ? [MatterCredentialGenerator.generateCredentials()]
+                : MatterCredentialGenerator.generateCredentials(count: count)
+            
+            // Output credentials in requested format
+            let output = formatCredentials(credentials, format: format)
+            print(output)
+            
+            // Security warning for production use
+            if verbose {
+                logger.info("✅ Generated \(credentials.count) credential set(s)")
+            }
+            logger.warning("🔒 Store these credentials securely - each device must have unique values")
+            
+        } catch {
+            logger.error("❌ Credential generation failed: \(error)")
+            print("Error: \(error.localizedDescription)")
+            throw ExitCode.failure
+        }
+    }
+    
+    private func formatCredentials(_ credentials: [MatterCredentials], format: OutputFormat) -> String {
+        switch format {
+        case .yaml:
+            return credentials.count == 1 ? credentials[0].yamlFormat : credentials.yamlFormat
+        case .json:
+            return credentials.count == 1 ? credentials[0].jsonFormat : credentials.jsonFormat
+        case .text:
+            return credentials.count == 1 ? credentials[0].textFormat : credentials.textFormat
+        }
+    }
+}
+
+// MARK: - Output Format Enum
+
+extension GenerateCredentialsCommand {
+    enum OutputFormat: String, ExpressibleByArgument, CaseIterable {
+        case yaml = "yaml"
+        case json = "json"
+        case text = "text"
+        
+        var defaultValueDescription: String {
+            return "text"
+        }
     }
 }
 

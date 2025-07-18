@@ -12,7 +12,8 @@ Welcome! Today we're going to build something amazing together – your very fir
 We're creating a smart temperature and humidity sensor that:
 - Measures the temperature and humidity in any room
 - Connects to your WiFi network
-- Reports data to Home Assistant (or works standalone)
+- Works with **all major smart home platforms** (Apple Home, Google Home, Alexa, Samsung SmartThings, Home Assistant)
+- Uses Matter protocol for universal compatibility
 - Can be built in about an hour
 - Costs less than $25 total
 
@@ -21,11 +22,12 @@ The best part? No programming experience required! We'll walk through every sing
 ## Why Build Your Own?
 
 Sure, you could buy a smart sensor, but building your own means:
+- **Universal compatibility** - works with ANY smart home platform
 - You learn how smart home devices actually work
 - You can customize it exactly how you want
+- **Platform flexibility** - switch platforms if needed (requires factory reset)
 - It's more fun (trust us!)
 - You join a community of makers and tinkerers
-- Your device supports Matter, the future of smart home compatibility
 
 ## Shopping List
 
@@ -218,7 +220,33 @@ Your DHT22 sensor has 4 pins (from left to right when facing the grid):
 
 Time to tell ESPHome Swift what we've built!
 
-### Step 1: Create Your Configuration
+### Step 1: Generate Your Device Credentials
+
+Before writing the configuration, let's generate unique Matter credentials for your device. This ensures your device has its own secure "identity" on the Matter network:
+
+```bash
+esphome-swift generate-credentials
+```
+
+You'll see output like this:
+
+```
+Matter Device Credentials
+========================
+Discriminator: XXXX
+Passcode: XXXXXXXX
+Manual Pairing Code: XXXXX-XXXXXX
+QR Code: MT:XXXXXXXXXXXXXXX
+
+SECURITY WARNING: Store these credentials securely.
+Each device must have unique credentials.
+```
+
+**Copy these values** - you'll need the discriminator and passcode for the next step!
+
+**Why do this?** These credentials are like your device's unique "phone number" and "password" on the Matter network. Using unique values prevents conflicts with other devices and ensures secure commissioning.
+
+### Step 2: Create Your Configuration
 
 Edit `my-first-device.yaml`:
 
@@ -248,10 +276,26 @@ wifi:
 logger:
   level: INFO
 
-# Enable Home Assistant API
-api:
-  encryption:
-    key: "your-32-character-encryption-key-here"
+# Matter configuration for universal smart home compatibility
+matter:
+  enabled: true
+  device_type: temperature_sensor  # Standard Matter device type - see Matter specification
+  vendor_id: 0xFFF1
+  product_id: 0x8001
+  
+  # Commissioning setup - your device's "address" in Matter
+  # Use the values from your generated credentials above!
+  commissioning:
+    discriminator: XXXX  # Replace with YOUR generated discriminator
+    passcode: XXXXXXXX   # Replace with YOUR generated passcode
+  
+  # Use WiFi transport for connectivity
+  network:
+    transport: wifi
+    ipv6_enabled: true
+    mdns:
+      enabled: true
+      hostname: ${name}  # Uses device name, change to something unique for multiple devices
 
 # Enable Over-The-Air updates
 ota:
@@ -266,21 +310,28 @@ sensor:
     temperature:
       name: "Room Temperature"
       id: room_temp
+      # Matter will automatically expose this as a temperature measurement
     humidity:
       name: "Room Humidity"
       id: room_humidity
+      # Available for future humidity sensor device types
     update_interval: 60s
 ```
 
-### Step 2: Create a Secrets File
+**Building Multiple Devices?** If you plan to build more than one sensor:
+- **Important**: Run `esphome-swift generate-credentials` again to get unique discriminator and passcode values for each device - this prevents commissioning conflicts and ensures security
+- Change the `hostname` to something unique like `kitchen-sensor` or `bedroom-sensor` to avoid network conflicts
+
+### Step 3: Create a Secrets File
 
 For security, let's put sensitive info in a separate file. Create `secrets.yaml`:
 
 ```yaml
 wifi_ssid: "YourWiFiName"
 wifi_password: "YourWiFiPassword"
-api_encryption_key: "abc123def456ghi789jkl012mno34567"
 ```
+
+**Security Note**: Use a strong WiFi password and ensure the `secrets.yaml` file has appropriate permissions (readable only by you). Never commit this file to version control.
 
 Update your main configuration to use these secrets:
 
@@ -288,13 +339,28 @@ Update your main configuration to use these secrets:
 wifi:
   ssid: !secret wifi_ssid
   password: !secret wifi_password
-
-api:
-  encryption:
-    key: !secret api_encryption_key
 ```
 
-### Step 3: Validate Your Configuration
+**What about the Matter credentials?** The discriminator and passcode serve different purposes:
+- **Discriminator**: Like your device's "phone number" - helps platforms find your device during commissioning  
+- **Passcode**: A secret credential used for secure commissioning authentication - this must be treated as sensitive information and should be randomized for each device to ensure security and prevent unauthorized access
+
+**Why generate them?** Each device needs unique credentials to prevent commissioning conflicts and ensure security. Here's why this matters:
+
+- **Prevents conflicts**: Unique discriminators help smart home platforms find the right device
+- **Ensures security**: Randomized passcodes prevent unauthorized access during commissioning  
+- **Meets standards**: Our generator uses cryptographically secure random number generation that complies with CSA Matter Core Specification requirements
+
+**Need multiple devices?** If you're deploying sensors in multiple rooms or creating a batch of devices, here's what you can do:
+
+- Generate credentials for all devices at once using the following command:
+  ```bash
+  esphome-swift generate-credentials --count 5 --format yaml
+  ```
+- Ensure each device has unique, secure credentials to prevent commissioning conflicts.
+- Use this approach to streamline the setup process for multiple devices.
+
+### Step 4: Validate Your Configuration
 
 Let's make sure everything looks good:
 
@@ -362,29 +428,107 @@ Example output:
 
 **Tip**: Press Ctrl+C to stop monitoring.
 
-## Part 7: Connecting to Home Assistant
+## Part 7: Smart Home Integration
 
-If you have Home Assistant running, your sensor can automatically appear!
+Your sensor uses Matter, the universal smart home protocol! This means it works with **all major platforms** - Apple Home, Google Home, Amazon Alexa, Samsung SmartThings, and Home Assistant.
 
-**Note**: This tutorial uses the Home Assistant API for simplicity. For universal smart home compatibility, consider using our [Matter-enabled examples](https://github.com/ryan-graves/esphome-swift/blob/develop/Examples/matter-sensor.yaml) which work with Apple Home, Google Home, Alexa, and other platforms via QR code scanning.
+### Step 1: Find Your QR Code
 
-### Option 1: Auto-Discovery
+When your device boots up, look for this in the serial monitor:
 
-If your sensor and Home Assistant are on the same network:
-1. Open Home Assistant
-2. Go to Settings → Devices & Services
-3. Look for a notification about a new device
-4. Click "Configure" and enter your encryption key
+```
+========== MATTER COMMISSIONING INFO ==========
+QR Code: MT:XXXXXXXXXXXXXXX
+Manual Pairing Code: XXXXX-XXXXXX
+Discriminator: XXXX
+Setup PIN: XXXXXXXX
+===============================================
+```
 
-### Option 2: Manual Addition
+**Note**: Your output will show the **exact credentials you generated** in Step 1 of Part 4. The QR code and manual pairing code are automatically calculated from your unique discriminator and passcode values.
 
-1. Go to Settings → Devices & Services
-2. Click "+ Add Integration"
-3. Search for "ESPHome"
-4. Enter your device's IP address (you saw this in the monitor output)
-5. Enter your encryption key
+**Important**: Copy or screenshot this information - you'll need it for setup!
 
-**Success Check**: You should see your temperature and humidity as entities in Home Assistant!
+### Step 2: Choose Your Smart Home Platform
+
+Pick your platform and follow the instructions:
+
+#### Apple HomeKit (iPhone/iPad/Mac)
+1. Open the **Home** app on your iPhone
+2. Tap **+** → **Add or Scan Accessory**
+3. Point your camera at the QR code shown in the serial monitor
+4. Follow the setup prompts
+5. **Success**: Your sensor appears in Apple Home!
+
+#### Google Home
+1. Open the **Google Home** app
+2. Tap **+** → **Set up device** → **Works with Google**
+3. Look for **Matter** devices
+4. Tap **Scan QR code** and scan the code from serial monitor
+5. **Success**: "Temperature Sensor" appears in Google Home!
+
+#### Amazon Alexa
+1. Open the **Alexa** app
+2. Go to **Devices** → **+** → **Add Device**
+3. Select **Other** → **Matter**
+4. Choose **Scan QR code** and scan the code
+5. **Success**: Your sensor is now available via Alexa!
+
+#### Samsung SmartThings
+1. Open the **SmartThings** app
+2. Tap **+** → **Scan QR code**
+3. Scan the Matter QR code from serial monitor
+4. Follow setup prompts
+5. **Success**: Sensor added to SmartThings!
+
+### Step 3: Manual Setup (If QR Code Doesn't Work)
+
+If QR scanning fails, use the manual pairing code:
+
+1. In your smart home app, look for **"Enter setup code manually"** or **"Can't scan?"**
+2. Enter the manual pairing code shown in your serial monitor output (e.g., **34970-112233**)
+3. Complete the setup process
+
+### What You Can Do Now
+
+🎉 **Congratulations!** Your sensor now works with your chosen platform. You can:
+
+- **View temperature/humidity** in your smart home app
+- **Create automations** (turn on heat when temp drops)
+- **Get notifications** about readings
+- **Control from voice assistants** ("Hey Google, what's the temperature?")
+- **Switch platforms later** - Matter devices can be reset and moved between ecosystems if needed
+
+### Optional: Home Assistant Integration
+
+If you use Home Assistant, you can add your Matter device there too! Since your device uses Matter, it's **compatible with both Matter and Home Assistant APIs**.
+
+#### Method 1: Matter Integration (Recommended)
+1. In Home Assistant, go to **Settings** → **Devices & Services**
+2. Click **+ Add Integration**
+3. Search for **Matter (BETA)**
+4. Use the QR code or manual pairing code from your device
+5. Your sensor appears with full Matter compatibility!
+
+#### Method 2: Direct API (Advanced)
+If you prefer the ESPHome integration:
+
+1. Add this to your device configuration (after the Matter section):
+```yaml
+# Optional: Enable Home Assistant API (in addition to Matter)
+api:
+  encryption:
+    key: !secret api_encryption_key
+```
+
+2. Add the encryption key to your `secrets.yaml`:
+```yaml
+api_encryption_key: "abc123def456ghi789jkl012mno34567"
+```
+
+3. Flash the updated firmware and follow the ESPHome integration steps in Home Assistant.
+
+**Pro Tip**: We recommend the Matter integration as it's more future-proof and standardized!
 
 ## Optional Enhancement: Adding a Status LED
 
