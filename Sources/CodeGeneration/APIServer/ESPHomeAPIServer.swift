@@ -10,6 +10,7 @@ public struct ESPHomeAPIServer {
         let port = config.port ?? 6053
         let hasPassword = config.password != nil
         let hasEncryption = config.encryption != nil
+        let apiPassword = config.encryption?.key ?? ""
         
         return """
         #include <stdio.h>
@@ -32,10 +33,13 @@ public struct ESPHomeAPIServer {
         #define API_PORT \(port)
         #define API_MAX_CLIENTS 1
         #define API_BUFFER_SIZE 1024
+        #define API_MESSAGE_OVERHEAD 10  // Overhead for message headers and length encoding
+        #define API_MAX_MESSAGE_SIZE (API_BUFFER_SIZE - API_MESSAGE_OVERHEAD)
         #define API_TASK_STACK_SIZE 4096
         #define API_TASK_PRIORITY 5
         #define CONFIG_DEVICE_NAME "\(deviceName)"
         #define CONFIG_BOARD_MODEL "\(boardModel)"
+        \(hasPassword ? "#define API_PASSWORD \"\(apiPassword)\"" : "")
         
         static const char *TAG = "ESPHome-API";
         
@@ -207,8 +211,28 @@ public struct ESPHomeAPIServer {
         // Handle Connect Request
         static void handle_connect_request(const uint8_t *data, size_t len) {
             \(hasPassword ? """
-            // TODO: Implement password verification
-            // For now, accept all connections
+            // Verify password if configured
+            if (len < 4) {
+                ESP_LOGE(TAG, "Connect request too short");
+                api_client.authenticated = false;
+                return;
+            }
+            
+            // Extract password length (first 4 bytes, little-endian)
+            uint32_t password_len = data[0] | (data[1] << 8) | (data[2] << 16) | (data[3] << 24);
+            
+            if (password_len != strlen(API_PASSWORD) || 
+                len < 4 + password_len ||
+                memcmp(data + 4, API_PASSWORD, password_len) != 0) {
+                ESP_LOGE(TAG, "Invalid password provided");
+                api_client.authenticated = false;
+                // Send error response
+                uint8_t error_response[] = {1}; // Generic error
+                api_send_message(MESSAGE_TYPE_CONNECT_RESPONSE, error_response, 1);
+                return;
+            }
+            
+            ESP_LOGI(TAG, "Client authenticated successfully");
             """ : "// No password required")
             
             api_client.authenticated = true;
@@ -359,8 +383,8 @@ public struct ESPHomeAPIServer {
                 
                 varint_len = decode_varint(api_client.rx_buffer, &msg_length);
                 
-                if (msg_length > API_BUFFER_SIZE - 10) {
-                    ESP_LOGE(TAG, "Message too large: %d", msg_length);
+                if (msg_length > API_MAX_MESSAGE_SIZE) {
+                    ESP_LOGE(TAG, "Message too large: %d (max: %d)", msg_length, API_MAX_MESSAGE_SIZE);
                     break;
                 }
                 
@@ -672,7 +696,10 @@ public struct ESPHomeAPIServer {
         // Component registration functions with state management
         void api_register_binary_sensor(uint32_t key, const char *name,
                                        const char *unique_id, const char *device_class) {
-            register_component_state(key, 0); // 0 = binary_sensor
+            if (register_component_state(key, 0) < 0) { // 0 = binary_sensor
+                ESP_LOGE(TAG, "Failed to register binary sensor: %s (key: %d) - component limit reached", name, key);
+                return;
+            }
             ESP_LOGI(TAG, "Registered binary sensor: %s (key: %d)", name, key);
         }
         
@@ -680,14 +707,20 @@ public struct ESPHomeAPIServer {
         void api_register_sensor(uint32_t key, const char *name,
                                 const char *unique_id, const char *device_class,
                                 const char *unit_of_measurement) {
-            register_component_state(key, 1); // 1 = sensor
+            if (register_component_state(key, 1) < 0) { // 1 = sensor
+                ESP_LOGE(TAG, "Failed to register sensor: %s (key: %d) - component limit reached", name, key);
+                return;
+            }
             ESP_LOGI(TAG, "Registered sensor: %s (key: %d)", name, key);
         }
         
         // Switch registration
         void api_register_switch(uint32_t key, const char *name,
                                 const char *unique_id, const char *icon) {
-            register_component_state(key, 2); // 2 = switch
+            if (register_component_state(key, 2) < 0) { // 2 = switch
+                ESP_LOGE(TAG, "Failed to register switch: %s (key: %d) - component limit reached", name, key);
+                return;
+            }
             ESP_LOGI(TAG, "Registered switch: %s (key: %d)", name, key);
         }
         
@@ -695,7 +728,10 @@ public struct ESPHomeAPIServer {
         void api_register_light(uint32_t key, const char *name,
                                const char *unique_id, bool supports_brightness,
                                bool supports_rgb) {
-            register_component_state(key, 3); // 3 = light
+            if (register_component_state(key, 3) < 0) { // 3 = light
+                ESP_LOGE(TAG, "Failed to register light: %s (key: %d) - component limit reached", name, key);
+                return;
+            }
             ESP_LOGI(TAG, "Registered light: %s (key: %d)", name, key);
         }
         """
