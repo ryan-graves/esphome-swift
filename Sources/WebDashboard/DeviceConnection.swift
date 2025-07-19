@@ -1,5 +1,7 @@
 import Foundation
+#if canImport(Network)
 import Network
+#endif
 import Logging
 import ESPHomeSwiftCore
 

@@ -1,5 +1,7 @@
 import XCTest
+#if canImport(Network)
 import Network
+#endif
 @testable import WebDashboard
 @testable import ESPHomeSwiftCore
 

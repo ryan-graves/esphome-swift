@@ -1,5 +1,7 @@
 import Foundation
+#if canImport(Network)
 import Network
+#endif
 import Logging
 import ESPHomeSwiftCore
 
@@ -8,7 +10,9 @@ public class DeviceManager: ObservableObject {
     private let logger = Logger(label: "DeviceManager")
     private var devices: [String: ManagedDevice] = [:]
     private var discoveryTimer: Timer?
+    #if canImport(Network)
     private var mdnsListener: NWListener?
+    #endif
     
     // Thread safety
     private let deviceAccessQueue = DispatchQueue(label: "DeviceManager.devices", qos: .userInitiated)
@@ -38,6 +42,7 @@ public class DeviceManager: ObservableObject {
     private func startDeviceDiscovery() {
         logger.info("Starting device discovery via mDNS")
         
+        #if canImport(Network)
         // Set up mDNS listener for _esphomelib._tcp services
         let parameters = NWParameters()
         parameters.includePeerToPeer = true
@@ -53,14 +58,17 @@ public class DeviceManager: ObservableObject {
             
             mdnsListener?.start(queue: .main)
             
-            // Start periodic discovery refresh
-            let refreshInterval = DevelopmentConfiguration.mockRefreshInterval
-            discoveryTimer = Timer.scheduledTimer(withTimeInterval: refreshInterval, repeats: true) { [weak self] _ in
-                self?.refreshDevices()
-            }
-            
         } catch {
             logger.error("Failed to start mDNS discovery: \\(error)")
+        }
+        #else
+        logger.info("mDNS discovery not available on this platform")
+        #endif
+        
+        // Start periodic discovery refresh
+        let refreshInterval = DevelopmentConfiguration.mockRefreshInterval
+        discoveryTimer = Timer.scheduledTimer(withTimeInterval: refreshInterval, repeats: true) { [weak self] _ in
+            self?.refreshDevices()
         }
     }
     
@@ -69,12 +77,15 @@ public class DeviceManager: ObservableObject {
         discoveryTimer?.invalidate()
         discoveryTimer = nil
         
+        #if canImport(Network)
         mdnsListener?.cancel()
         mdnsListener = nil
+        #endif
         
         logger.info("Device discovery stopped")
     }
     
+    #if canImport(Network)
     /// Handle new mDNS connection
     private func handleNewConnection(_ connection: NWConnection) {
         let endpoint = connection.endpoint
@@ -102,6 +113,7 @@ public class DeviceManager: ObservableObject {
             logger.warning("Failed to connect to device at \\(hostString): \\(error)")
         }
     }
+    #endif
     
     /// Connect to a device and retrieve its information
     private func connectToDevice(host: String, port: Int) async throws -> ManagedDevice {

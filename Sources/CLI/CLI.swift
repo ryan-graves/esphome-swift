@@ -238,7 +238,6 @@ struct ListComponentsCommand: ParsableCommand {
     
     func run() throws {
         let registry = ComponentRegistry.shared
-        let platforms = registry.availablePlatforms
         
         print("Available Component Platforms:\n")
         
@@ -390,15 +389,15 @@ struct DashboardCommand: ParsableCommand {
             private var _result: Result<Void, Error>?
             
             func setResult(_ result: Result<Void, Error>) {
-                lock.withLock {
-                    _result = result
-                }
+                lock.lock()
+                defer { lock.unlock() }
+                _result = result
             }
             
             func getResult() -> Result<Void, Error>? {
-                lock.withLock {
-                    return _result
-                }
+                lock.lock()
+                defer { lock.unlock() }
+                return _result
             }
         }
         

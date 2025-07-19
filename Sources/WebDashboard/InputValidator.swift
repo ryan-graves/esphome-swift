@@ -1,5 +1,7 @@
 import Foundation
+#if canImport(Network)
 import Network
+#endif
 
 /// Input validation utilities for WebDashboard API endpoints
 public struct InputValidator {
@@ -49,8 +51,15 @@ public struct InputValidator {
     }
     
     private static func isValidIPv6(_ host: String) -> Bool {
-        // Use Network framework for IPv6 validation
+        #if canImport(Network)
+        // Use Network framework for IPv6 validation on Apple platforms
         return IPv6Address(host) != nil
+        #else
+        // Basic IPv6 validation for Linux - simplified regex approach
+        let ipv6Regex = "^(?:[0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$|^::1$|^::$"
+        let predicate = NSPredicate(format: "SELF MATCHES %@", ipv6Regex)
+        return predicate.evaluate(with: host)
+        #endif
     }
     
     private static func isValidHostname(_ host: String) -> Bool {
