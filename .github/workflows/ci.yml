@@ -131,5 +131,5 @@ jobs:
       run: |
         for example in Examples/*.yaml; do
           echo "Validating $example"
-          .build/debug/esphome-swift validate-command "$example"
+          .build/debug/esphome-swift validate "$example"
         done

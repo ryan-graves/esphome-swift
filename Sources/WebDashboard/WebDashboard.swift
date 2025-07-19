@@ -6,18 +6,22 @@ import ESPHomeSwiftCore
 public class WebDashboard {
     private let app: Application
     private let logger = Logger(label: "WebDashboard")
+    private let deviceManager = DeviceManager()
+    private let rateLimiter = RateLimiter(maxRequests: 100, timeWindow: 3600) // 100 requests per hour
     
-    public init() throws {
-        var env = try Environment.detect()
-        try LoggingSystem.bootstrap(from: &env)
+    public init() async throws {
+        // Create environment with minimal command line parsing
+        var env = Environment.development
+        env.commandInput = .init(arguments: ["esphome-swift"])
         
-        app = Application(env)
+        // Use modern async Application initialization
+        app = try await Application.make(env)
         try configure(app)
     }
     
     deinit {
-        // Synchronous shutdown for deinit
-        app.shutdown()
+        // Don't call shutdown in deinit - it should be handled properly by stop()
+        // Vapor will handle cleanup automatically
     }
     
     /// Start the web server
@@ -25,11 +29,16 @@ public class WebDashboard {
         app.http.server.configuration.port = port
         logger.info("Web dashboard starting on port \(port)")
         
-        try await app.startup()
-        
-        if let running = app.running {
-            try await running.onStop.get()
+        // Use the proper Vapor serve approach
+        defer { 
+            Task {
+                try? await app.asyncShutdown()
+            }
         }
+        
+        // Start the server and wait for shutdown signal
+        try await app.startup()
+        try await app.running?.onStop.get()
     }
     
     /// Stop the web server
@@ -44,7 +53,7 @@ public class WebDashboard {
         
         // Configure routes
         app.get { req in
-            return """
+            let html = """
             <!DOCTYPE html>
             <html>
             <head>
@@ -59,9 +68,24 @@ public class WebDashboard {
                     .status { display: inline-block; padding: 4px 8px; border-radius: 4px; color: white; font-size: 12px; font-weight: bold; }
                     .status.online { background: #28a745; }
                     .status.offline { background: #dc3545; }
+                    .status.updating { background: #ffc107; color: #000; }
                     h1 { margin: 0; color: #333; }
                     h2 { color: #666; margin-top: 0; }
-                    .device-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+                    .device-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 20px; }
+                    .device-card { border: 1px solid #ddd; padding: 15px; border-radius: 8px; }
+                    .device-header { display: flex; justify-content: between; align-items: center; margin-bottom: 10px; }
+                    .device-name { font-weight: bold; color: #333; }
+                    .entity-grid { display: grid; gap: 10px; margin-top: 10px; }
+                    .entity { display: flex; justify-content: between; align-items: center; padding: 8px; background: #f8f9fa; border-radius: 4px; }
+                    .entity-name { font-weight: 500; }
+                    .entity-value { color: #666; }
+                    .control-btn { background: #007bff; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; }
+                    .control-btn:hover { background: #0056b3; }
+                    .control-btn.on { background: #28a745; }
+                    .add-device { margin-bottom: 20px; }
+                    .add-device input { padding: 8px; margin-right: 10px; border: 1px solid #ddd; border-radius: 4px; }
+                    .add-device button { padding: 8px 16px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+                    .loading { color: #666; font-style: italic; }
                 </style>
             </head>
             <body>
@@ -75,39 +99,463 @@ public class WebDashboard {
                         <h2>📊 System Status</h2>
                         <p><span class="status online">RUNNING</span> Dashboard is operational</p>
                         <p>Version: 0.1.0</p>
+                        <p id="device-stats" class="loading">Loading device statistics...</p>
                     </div>
                     
                     <div class="card">
                         <h2>📱 Connected Devices</h2>
-                        <div class="device-grid">
-                            <div class="card">
-                                <h3>Example Device</h3>
-                                <p><span class="status offline">OFFLINE</span></p>
-                                <p>No devices connected yet</p>
-                            </div>
+                        <div class="add-device">
+                            <input type="text" id="device-host" placeholder="Device IP address (e.g., 192.168.1.100)" style="width: 250px;">
+                            <input type="number" id="device-port" placeholder="Port (6053)" value="6053" style="width: 80px;">
+                            <button onclick="addDevice()">Add Device</button>
+                        </div>
+                        <div id="devices-container" class="device-grid">
+                            <div class="loading">Discovering devices...</div>
                         </div>
                     </div>
                     
                     <div class="card">
                         <h2>🛠️ Quick Actions</h2>
-                        <p>• <a href="/api/devices">View API</a></p>
+                        <p>• <a href="/api/devices" target="_blank">View Devices API</a></p>
                         <p>• <a href="/logs">View Logs</a></p>
                         <p>• <a href="/config">Configuration</a></p>
+                        <p>• <button onclick="refreshDevices()" class="control-btn">Refresh Devices</button></p>
                     </div>
                 </div>
+                
+                <script>
+                    let devices = [];
+                    
+                    // HTML escaping function to prevent XSS attacks
+                    function escapeHtml(unsafe) {
+                        if (typeof unsafe !== 'string') return unsafe;
+                        return unsafe
+                            .replace(/&/g, "&amp;")
+                            .replace(/</g, "&lt;")
+                            .replace(/>/g, "&gt;")
+                            .replace(/"/g, "&quot;")
+                            .replace(/'/g, "&#039;");
+                    }
+                    
+                    // Load devices on page load
+                    window.onload = function() {
+                        loadDevices();
+                        // Refresh every 30 seconds
+                        setInterval(loadDevices, 30000);
+                    };
+                    
+                    async function loadDevices() {
+                        try {
+                            const response = await fetch('/api/devices');
+                            const data = await response.json();
+                            devices = data.devices;
+                            
+                            updateDeviceStats(data);
+                            renderDevices(data.devices);
+                        } catch (error) {
+                            console.error('Failed to load devices:', error);
+                            document.getElementById('devices-container').innerHTML = '<div class="loading">Failed to load devices. Check console for details.</div>';
+                        }
+                    }
+                    
+                    function updateDeviceStats(data) {
+                        const statsElement = document.getElementById('device-stats');
+                        statsElement.innerHTML = `Total: ${data.total} | Online: ${data.online} | Offline: ${data.total - data.online}`;
+                        statsElement.className = '';
+                    }
+                    
+                    function renderDevices(devices) {
+                        const container = document.getElementById('devices-container');
+                        
+                        if (devices.length === 0) {
+                            container.innerHTML = '<div class="device-card"><p>No devices discovered yet. Use the "Add Device" form above to manually add devices.</p></div>';
+                            return;
+                        }
+                        
+                        container.innerHTML = devices.map(device => `
+                            <div class="device-card">
+                                <div class="device-header">
+                                    <div>
+                                        <div class="device-name">${escapeHtml(device.friendlyName || device.name)}</div>
+                                        <div style="font-size: 12px; color: #666;">${escapeHtml(device.ipAddress)} • ${escapeHtml(device.board)}</div>
+                                    </div>
+                                    <span class="status ${escapeHtml(device.status)}">${escapeHtml(device.status.toUpperCase())}</span>
+                                </div>
+                                <div style="font-size: 12px; color: #666; margin-bottom: 10px;">
+                                    Version: ${escapeHtml(device.version)} | Last seen: ${new Date(device.lastSeen).toLocaleTimeString()}
+                                </div>
+                                <div id="entities-${escapeHtml(device.name)}" class="entity-grid">
+                                    <div class="loading">Loading entities...</div>
+                                </div>
+                                <div style="margin-top: 10px;">
+                                    <button onclick="loadDeviceDetails('${escapeHtml(device.name)}')" class="control-btn">Refresh</button>
+                                    <button onclick="removeDevice('${escapeHtml(device.name)}')" class="control-btn" style="background: #dc3545; margin-left: 5px;">Remove</button>
+                                </div>
+                            </div>
+                        `).join('');
+                        
+                        // Load details for each device
+                        devices.forEach(device => loadDeviceDetails(device.name));
+                    }
+                    
+                    async function loadDeviceDetails(deviceId) {
+                        try {
+                            const response = await fetch(`/api/devices/${deviceId}`);
+                            const data = await response.json();
+                            renderDeviceEntities(deviceId, data.entities);
+                        } catch (error) {
+                            console.error(`Failed to load details for ${deviceId}:`, error);
+                            document.getElementById(`entities-${escapeHtml(deviceId)}`).innerHTML = '<div style="color: #dc3545;">Failed to load entities</div>';
+                        }
+                    }
+                    
+                    function renderDeviceEntities(deviceId, entities) {
+                        const container = document.getElementById(`entities-${escapeHtml(deviceId)}`);
+                        
+                        if (entities.length === 0) {
+                            container.innerHTML = '<div style="color: #666;">No entities found</div>';
+                            return;
+                        }
+                        
+                        container.innerHTML = entities.map(entity => {
+                            const isControllable = entity.type === 'switch' || entity.type === 'light';
+                            const stateDisplay = entity.state ? entity.state.displayValue || 'N/A' : 'N/A';
+                            
+                            let controlHtml = '';
+                            if (isControllable) {
+                                const isOn = entity.state && (entity.state.switch?.value || entity.state.light?.isOn);
+                                controlHtml = `<button onclick="toggleEntity('${escapeHtml(deviceId)}', '${escapeHtml(entity.id)}', '${escapeHtml(entity.type)}', ${!isOn})" 
+                                                     class="control-btn ${isOn ? 'on' : ''}">${isOn ? 'ON' : 'OFF'}</button>`;
+                            }
+                            
+                            return `
+                                <div class="entity">
+                                    <div>
+                                        <div class="entity-name">${escapeHtml(entity.name)}</div>
+                                        <div style="font-size: 11px; color: #999;">${escapeHtml(entity.type)}${entity.deviceClass ? ' • ' + escapeHtml(entity.deviceClass) : ''}</div>
+                                    </div>
+                                    <div style="display: flex; align-items: center; gap: 10px;">
+                                        <span class="entity-value">${escapeHtml(stateDisplay)}${entity.unitOfMeasurement ? escapeHtml(entity.unitOfMeasurement) : ''}</span>
+                                        ${controlHtml}
+                                    </div>
+                                </div>
+                            `;
+                        }).join('');
+                    }
+                    
+                    async function toggleEntity(deviceId, entityId, entityType, newState) {
+                        try {
+                            const response = await fetch(`/api/control/${deviceId}/${entityType}/${entityId}`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(entityType === 'switch' ? { state: newState } : { isOn: newState })
+                            });
+                            
+                            if (response.ok) {
+                                // Refresh device details after a short delay
+                                setTimeout(() => loadDeviceDetails(deviceId), 500);
+                            } else {
+                                console.error('Failed to control entity:', await response.text());
+                            }
+                        } catch (error) {
+                            console.error('Failed to control entity:', error);
+                        }
+                    }
+                    
+                    async function addDevice() {
+                        const host = document.getElementById('device-host').value.trim();
+                        const port = parseInt(document.getElementById('device-port').value) || 6053;
+                        
+                        if (!host) {
+                            alert('Please enter a device IP address');
+                            return;
+                        }
+                        
+                        try {
+                            const response = await fetch('/api/devices/add', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ host, port })
+                            });
+                            
+                            if (response.ok) {
+                                document.getElementById('device-host').value = '';
+                                document.getElementById('device-port').value = '6053';
+                                loadDevices(); // Refresh the list
+                            } else {
+                                const error = await response.text();
+                                alert(`Failed to add device: ${error}`);
+                            }
+                        } catch (error) {
+                            alert(`Failed to add device: ${error.message}`);
+                        }
+                    }
+                    
+                    async function removeDevice(deviceId) {
+                        if (!confirm(`Remove device "${deviceId}"?`)) return;
+                        
+                        try {
+                            const response = await fetch(`/api/devices/${deviceId}`, { method: 'DELETE' });
+                            if (response.ok) {
+                                loadDevices(); // Refresh the list
+                            } else {
+                                alert('Failed to remove device');
+                            }
+                        } catch (error) {
+                            alert(`Failed to remove device: ${error.message}`);
+                        }
+                    }
+                    
+                    function refreshDevices() {
+                        loadDevices();
+                    }
+                </script>
             </body>
             </html>
             """
+            
+            return Response(
+                status: .ok,
+                headers: HTTPHeaders([("Content-Type", "text/html; charset=utf-8")]),
+                body: .init(string: html)
+            )
         }
         
         // API routes
         app.grouped("api").group("devices") { devices in
-            devices.get { req in
+            // Get all devices
+            devices.get { [weak self] req in
+                guard let self = self else {
+                    throw Abort(.internalServerError, reason: "Dashboard not available")
+                }
+                
+                let stats = self.deviceManager.deviceStats
+                let deviceInfos = self.deviceManager.discoveredDevices.map { device in
+                    WebDashboardDeviceInfo(
+                        name: device.name,
+                        friendlyName: device.friendlyName,
+                        board: device.board,
+                        ipAddress: device.host,
+                        status: device.status,
+                        lastSeen: device.lastSeen,
+                        version: device.version
+                    )
+                }
+                
                 return DeviceListResponse(
-                    devices: [],
-                    total: 0,
-                    online: 0
+                    devices: deviceInfos,
+                    total: stats.total,
+                    online: stats.online
                 )
+            }
+            
+            // Get specific device details
+            devices.get(":deviceId") { [weak self] req in
+                guard let self = self else {
+                    throw Abort(.internalServerError, reason: "Dashboard not available")
+                }
+                
+                guard let deviceId = req.parameters.get("deviceId") else {
+                    throw Abort(.badRequest, reason: "Device ID required")
+                }
+                
+                // Validate device ID
+                guard InputValidator.isValidDeviceId(deviceId) else {
+                    throw Abort(.badRequest, reason: "Invalid device ID format")
+                }
+                
+                guard let device = self.deviceManager.getDevice(deviceId) else {
+                    throw Abort(.notFound, reason: "Device not found")
+                }
+                
+                return DeviceDetailResponse(
+                    device: WebDashboardDeviceInfo(
+                        name: device.name,
+                        friendlyName: device.friendlyName,
+                        board: device.board,
+                        ipAddress: device.host,
+                        status: device.status,
+                        lastSeen: device.lastSeen,
+                        version: device.version
+                    ),
+                    entities: device.entities
+                )
+            }
+            
+            // Add device manually
+            devices.post("add") { [weak self] req in
+                guard let self = self else {
+                    throw Abort(.internalServerError, reason: "Dashboard not available")
+                }
+                
+                // Get client IP for rate limiting
+                let clientIP = req.remoteAddress?.ipAddress ?? "unknown"
+                
+                // Check rate limit
+                guard self.rateLimiter.isAllowed(for: clientIP) else {
+                    throw Abort(.tooManyRequests, reason: "Rate limit exceeded. Please try again later.")
+                }
+                
+                let addRequest = try req.content.decode(AddDeviceRequest.self)
+                
+                // Validate host
+                guard !addRequest.host.isEmpty else {
+                    throw Abort(.badRequest, reason: "Host cannot be empty")
+                }
+                
+                guard InputValidator.isValidHost(addRequest.host) else {
+                    throw Abort(.badRequest, reason: "Invalid host address: \(addRequest.host)")
+                }
+                
+                guard InputValidator.isSafeHost(addRequest.host) else {
+                    throw Abort(
+                        .badRequest,
+                        reason: "Unsafe host address. Only private IP addresses and local hostnames are allowed"
+                    )
+                }
+                
+                // Validate port
+                let port = addRequest.port ?? 6053
+                guard InputValidator.isValidPort(port) else {
+                    throw Abort(.badRequest, reason: "Invalid port number: \(port). Must be between 1 and 65535")
+                }
+                
+                try await self.deviceManager.addDevice(host: addRequest.host, port: port)
+                
+                return AddDeviceResponse(success: true, message: "Device added successfully")
+            }
+            
+            // Remove device
+            devices.delete(":deviceId") { [weak self] req in
+                guard let self = self else {
+                    throw Abort(.internalServerError, reason: "Dashboard not available")
+                }
+                
+                // Get client IP for rate limiting
+                let clientIP = req.remoteAddress?.ipAddress ?? "unknown"
+                
+                // Check rate limit
+                guard self.rateLimiter.isAllowed(for: clientIP) else {
+                    throw Abort(.tooManyRequests, reason: "Rate limit exceeded. Please try again later.")
+                }
+                
+                guard let deviceId = req.parameters.get("deviceId") else {
+                    throw Abort(.badRequest, reason: "Device ID required")
+                }
+                
+                // Validate device ID
+                guard InputValidator.isValidDeviceId(deviceId) else {
+                    throw Abort(.badRequest, reason: "Invalid device ID format")
+                }
+                
+                self.deviceManager.removeDevice(deviceId)
+                
+                return RemoveDeviceResponse(success: true, message: "Device removed")
+            }
+        }
+        
+        // Device control API
+        app.grouped("api", "control").group(":deviceId") { control in
+            // Control switch
+            control.post("switch", ":entityId") { [weak self] req in
+                guard let self = self else {
+                    throw Abort(.internalServerError, reason: "Dashboard not available")
+                }
+                
+                // Get client IP for rate limiting
+                let clientIP = req.remoteAddress?.ipAddress ?? "unknown"
+                
+                // Check rate limit (more generous for control commands)
+                guard self.rateLimiter.isAllowed(for: clientIP) else {
+                    throw Abort(.tooManyRequests, reason: "Rate limit exceeded. Please try again later.")
+                }
+                
+                guard let deviceId = req.parameters.get("deviceId"),
+                      let entityId = req.parameters.get("entityId") else {
+                    throw Abort(.badRequest, reason: "Device ID and Entity ID required")
+                }
+                
+                // Validate IDs
+                guard InputValidator.isValidDeviceId(deviceId) else {
+                    throw Abort(.badRequest, reason: "Invalid device ID format")
+                }
+                
+                guard InputValidator.isValidEntityId(entityId) else {
+                    throw Abort(.badRequest, reason: "Invalid entity ID format")
+                }
+                
+                let controlRequest = try req.content.decode(SwitchControlRequest.self)
+                
+                guard let device = self.deviceManager.getDevice(deviceId),
+                      let entity = device.entities.first(where: { $0.id == entityId }),
+                      entity.type == .switch else {
+                    throw Abort(.notFound, reason: "Switch entity not found")
+                }
+                
+                try await device.connection?.sendSwitchCommand(key: entity.key, state: controlRequest.state)
+                
+                return ControlResponse(success: true, message: "Switch command sent")
+            }
+            
+            // Control light
+            control.post("light", ":entityId") { [weak self] req in
+                guard let self = self else {
+                    throw Abort(.internalServerError, reason: "Dashboard not available")
+                }
+                
+                // Get client IP for rate limiting
+                let clientIP = req.remoteAddress?.ipAddress ?? "unknown"
+                
+                // Check rate limit
+                guard self.rateLimiter.isAllowed(for: clientIP) else {
+                    throw Abort(.tooManyRequests, reason: "Rate limit exceeded. Please try again later.")
+                }
+                
+                guard let deviceId = req.parameters.get("deviceId"),
+                      let entityId = req.parameters.get("entityId") else {
+                    throw Abort(.badRequest, reason: "Device ID and Entity ID required")
+                }
+                
+                // Validate IDs
+                guard InputValidator.isValidDeviceId(deviceId) else {
+                    throw Abort(.badRequest, reason: "Invalid device ID format")
+                }
+                
+                guard InputValidator.isValidEntityId(entityId) else {
+                    throw Abort(.badRequest, reason: "Invalid entity ID format")
+                }
+                
+                let controlRequest = try req.content.decode(LightControlRequest.self)
+                
+                // Validate light control values
+                if let brightness = controlRequest.brightness {
+                    guard brightness >= 0.0 && brightness <= 1.0 else {
+                        throw Abort(.badRequest, reason: "Brightness must be between 0.0 and 1.0")
+                    }
+                }
+                
+                if let red = controlRequest.red, let green = controlRequest.green, let blue = controlRequest.blue {
+                    guard red >= 0.0 && red <= 1.0 && green >= 0.0 && green <= 1.0 && blue >= 0.0 && blue <= 1.0 else {
+                        throw Abort(.badRequest, reason: "RGB values must be between 0.0 and 1.0")
+                    }
+                }
+                
+                guard let device = self.deviceManager.getDevice(deviceId),
+                      let entity = device.entities.first(where: { $0.id == entityId }),
+                      entity.type == .light else {
+                    throw Abort(.notFound, reason: "Light entity not found")
+                }
+                
+                try await device.connection?.sendLightCommand(
+                    key: entity.key,
+                    isOn: controlRequest.isOn,
+                    brightness: controlRequest.brightness,
+                    red: controlRequest.red,
+                    green: controlRequest.green,
+                    blue: controlRequest.blue
+                )
+                
+                return ControlResponse(success: true, message: "Light command sent")
             }
         }
         
@@ -122,7 +570,7 @@ public class WebDashboard {
 }
 
 /// Device information for API responses
-struct DeviceInfo: Content {
+struct WebDashboardDeviceInfo: Content {
     let name: String
     let friendlyName: String
     let board: String
@@ -133,7 +581,7 @@ struct DeviceInfo: Content {
 }
 
 /// Device status enumeration
-enum DeviceStatus: String, Content {
+public enum DeviceStatus: String, Content {
     case online = "online"
     case offline = "offline"
     case updating = "updating"
@@ -142,7 +590,51 @@ enum DeviceStatus: String, Content {
 
 /// API response for device list
 struct DeviceListResponse: Content {
-    let devices: [DeviceInfo]
+    let devices: [WebDashboardDeviceInfo]
     let total: Int
     let online: Int
+}
+
+/// API response for device details
+struct DeviceDetailResponse: Content {
+    let device: WebDashboardDeviceInfo
+    let entities: [DeviceEntity]
+}
+
+/// Request to add a device manually
+struct AddDeviceRequest: Content {
+    let host: String
+    let port: Int?
+}
+
+/// Response for add device request
+struct AddDeviceResponse: Content {
+    let success: Bool
+    let message: String
+}
+
+/// Response for remove device request
+struct RemoveDeviceResponse: Content {
+    let success: Bool
+    let message: String
+}
+
+/// Request to control a switch
+struct SwitchControlRequest: Content {
+    let state: Bool
+}
+
+/// Request to control a light
+struct LightControlRequest: Content {
+    let isOn: Bool
+    let brightness: Float?
+    let red: Float?
+    let green: Float?
+    let blue: Float?
+}
+
+/// Generic control response
+struct ControlResponse: Content {
+    let success: Bool
+    let message: String
 }

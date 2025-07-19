@@ -12,6 +12,7 @@ A Swift-based replacement for ESPHome that generates Embedded Swift firmware for
 - 🚀 **Native Swift Implementation** - Type-safe configuration and code generation
 - 📱 **ESP32 RISC-V Support** - Targets ESP32-C3, C6, H2, and P4 boards
 - 🌐 **Matter Protocol Support** - WiFi and Thread networking for ESP32-C6/H2 boards
+- 🖥️ **Web Dashboard** - Real-time device monitoring and control interface
 - 🔧 **Extensible Component System** - Easy to add new sensors and actuators
 - 🏠 **Home Assistant Compatible** - Native API integration
 - 📦 **Simple YAML Configuration** - Familiar ESPHome-style syntax
@@ -68,13 +69,21 @@ esphome-swift build my-sensor.yaml
 esphome-swift flash build/my-sensor
 ```
 
+4. Monitor your device:
+```bash
+# Start the web dashboard
+esphome-swift dashboard
+# Open http://localhost:8080 in your browser
+```
+
 ## Documentation
 
 - [Build Your First Smart Home Device](first-device-tutorial.html) - Complete beginner's guide
 - [Getting Started Guide](getting-started.html) - Technical installation and setup
+- [Web Dashboard](web-dashboard.html) - Device monitoring and control interface
 - [Configuration Reference](configuration.html)
 - [Component Library](components.html)
-- [API Reference](api.html)
+- [API Reference](web-dashboard.html#api-integration)
 - [Contributing Guide](https://github.com/ryan-graves/esphome-swift/blob/main/CONTRIBUTING.md)
 
 ## Supported Components

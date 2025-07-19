@@ -135,10 +135,10 @@ public enum MatterDeviceType: String, Codable, CaseIterable {
              (.extendedColorLight, .light):
             return true
             
-        case (.onOffSwitch, .switch_),
-             (.dimmerSwitch, .switch_),
-             (.colorDimmerSwitch, .switch_),
-             (.genericSwitch, .switch_):
+        case (.onOffSwitch, .`switch`),
+             (.dimmerSwitch, .`switch`),
+             (.colorDimmerSwitch, .`switch`),
+             (.genericSwitch, .`switch`):
             return true
             
         case (.temperatureSensor, .sensor),

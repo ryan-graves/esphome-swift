@@ -92,12 +92,15 @@ ESPHomeSwift/
 - [x] Board capabilities system with multi-board validation
 - [x] WiFi and API integration framework
 - [x] OTA update system support
-- [x] Web dashboard foundation (monitoring interface)
+- [x] **Web dashboard with real-time device management**
+- [x] **Device discovery and registry system**
+- [x] **ESPHome native API protocol client**
+- [x] **Live device monitoring and control interface**
 - [x] GitHub Actions CI/CD with cross-platform testing (macOS, Linux)
 - [x] SwiftLint and SwiftFormat code quality tools
 - [x] Documentation site with GitHub Pages
 
-### 🚧 Phase 3: Advanced Features - IN PROGRESS
+### 🚧 Phase 3: Advanced Features - PENDING
 - [x] Home Assistant API compatibility framework
 - [x] **Matter protocol support** (ESP32-C6/H2 with Thread networking)
 - [x] **25+ Matter device types** (lights, sensors, switches, locks)
@@ -157,6 +160,10 @@ cd my-sensor
 # Build and flash
 esphome-swift build my-sensor.yaml
 esphome-swift flash my-sensor
+
+# Start the web dashboard to monitor your devices
+esphome-swift dashboard
+# Open http://localhost:8080 in your browser
 ```
 
 ## Documentation

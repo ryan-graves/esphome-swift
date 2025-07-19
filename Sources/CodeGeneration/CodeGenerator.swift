@@ -43,7 +43,7 @@ public class CodeGenerator {
         // Generate switch code
         if let switches = configuration.`switch` {
             for switchConfig in switches {
-                if let factory = componentRegistry.factory(for: switchConfig.platform, componentType: .switch_) {
+                if let factory = componentRegistry.factory(for: switchConfig.platform, componentType: .`switch`) {
                     let code = try factory.generateCodeAny(config: switchConfig, context: context)
                     allComponentCode.append(code)
                 } else {
@@ -305,7 +305,7 @@ public class CodeGenerator {
     
     /// Generate WiFi setup code
     private func generateWiFiSetup(configuration: ESPHomeConfiguration) throws -> String {
-        guard let wifi = configuration.wifi else {
+        guard configuration.wifi != nil else {
             return ""
         }
         

@@ -181,7 +181,7 @@ public extension ComponentFactory {
 /// Component types
 public enum ComponentType: String, CaseIterable {
     case sensor
-    case switch_
+    case `switch`
     case light
     case binarySensor = "binary_sensor"
     case climate
