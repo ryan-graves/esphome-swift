@@ -127,6 +127,10 @@ let package = Package(
         .testTarget(
             name: "MatterSupportTests",
             dependencies: ["MatterSupport", "ESPHomeSwiftCore", "ComponentLibrary"]
+        ),
+        .testTarget(
+            name: "WebDashboardTests",
+            dependencies: ["WebDashboard", "ESPHomeSwiftCore"]
         )
     ]
 )

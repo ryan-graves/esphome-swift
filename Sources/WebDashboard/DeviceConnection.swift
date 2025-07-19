@@ -3,6 +3,60 @@ import Network
 import Logging
 import ESPHomeSwiftCore
 
+/// ESPHome native API message types
+private enum MessageType: UInt8, CaseIterable {
+    // Request messages
+    case helloRequest = 1
+    case connectRequest = 3
+    case disconnectRequest = 5
+    case pingRequest = 7
+    case deviceInfoRequest = 9
+    case listEntitiesRequest = 11
+    case subscribeStatesRequest = 20
+    case switchCommandRequest = 33
+    case lightCommandRequest = 35
+    
+    // Response messages
+    case helloResponse = 2
+    case connectResponse = 4
+    case disconnectResponse = 6
+    case pingResponse = 8
+    case deviceInfoResponse = 10
+    case listEntitiesDoneResponse = 19
+    case binarySensorStateResponse = 22
+    case sensorStateResponse = 25
+    case switchStateResponse = 27
+    case lightStateResponse = 29
+    
+    /// Whether this message type expects a payload
+    var hasPayload: Bool {
+        switch self {
+        case .pingRequest, .pingResponse, .disconnectRequest, .disconnectResponse,
+             .listEntitiesRequest, .listEntitiesDoneResponse, .subscribeStatesRequest:
+            return false
+        default:
+            return true
+        }
+    }
+    
+    /// Expected minimum payload size for messages that have payloads
+    var minimumPayloadSize: Int {
+        switch self {
+        case .helloRequest, .helloResponse, .connectRequest, .connectResponse,
+             .deviceInfoRequest, .deviceInfoResponse:
+            return 1
+        case .binarySensorStateResponse, .switchStateResponse, .switchCommandRequest:
+            return 5
+        case .sensorStateResponse:
+            return 8
+        case .lightStateResponse, .lightCommandRequest:
+            return 5
+        default:
+            return 0
+        }
+    }
+}
+
 /// Device connection for communicating with ESPHome Swift devices via native API
 public class DeviceConnection {
     private let host: String
@@ -79,7 +133,7 @@ public class DeviceConnection {
         try await ensureConnected()
         
         // Send ping request
-        let pingMessage = createMessage(type: 7, data: Data()) // PING_REQUEST = 7
+        let pingMessage = createMessage(type: .pingRequest, data: Data())
         try await sendMessage(pingMessage)
         
         // Wait for ping response (simplified - in reality we'd wait for response)
@@ -92,31 +146,60 @@ public class DeviceConnection {
     public func getDeviceInfo() async throws -> DeviceConnectionInfo {
         try await ensureConnected()
         
+        // Simulate network delay if enabled
+        await NetworkSimulator.simulateDelay()
+        
+        // Check for simulated network failure
+        if NetworkSimulator.shouldSimulateFailure() {
+            throw DeviceConnectionError.connectionFailed(NSError(domain: "SimulatedFailure", code: -1))
+        }
+        
         // Send device info request
-        let deviceInfoMessage = createMessage(type: 9, data: Data()) // DEVICE_INFO_REQUEST = 9
+        let deviceInfoMessage = createMessage(type: .deviceInfoRequest, data: Data())
         try await sendMessage(deviceInfoMessage)
         
-        // For now, return mock data - in a real implementation we'd parse the response
-        return DeviceConnectionInfo(
-            name: extractDeviceName(),
-            friendlyName: nil,
-            board: "esp32-c6-devkitc-1",
-            version: "1.0.0",
-            macAddress: "AA:BB:CC:DD:EE:FF",
-            compilationTime: Date()
-        )
+        // Use mock data in development or return parsed response in production
+        if DevelopmentConfiguration.useMockData {
+            return MockDataProvider.mockDeviceInfo(for: host)
+        } else {
+            // TODO: Parse real device info response
+            // For now, return basic info until real protocol parsing is implemented
+            return DeviceConnectionInfo(
+                name: extractDeviceName(),
+                friendlyName: nil,
+                board: "esp32-c6-devkitc-1",
+                version: "1.0.0",
+                macAddress: "AA:BB:CC:DD:EE:FF",
+                compilationTime: Date()
+            )
+        }
     }
     
     /// List all entities on the device
     public func listEntities() async throws -> [DeviceEntity] {
         try await ensureConnected()
         
+        // Simulate network delay if enabled
+        await NetworkSimulator.simulateDelay()
+        
+        // Check for simulated network failure
+        if NetworkSimulator.shouldSimulateFailure() {
+            throw DeviceConnectionError.connectionFailed(NSError(domain: "SimulatedFailure", code: -1))
+        }
+        
         // Send list entities request
-        let listMessage = createMessage(type: 11, data: Data()) // LIST_ENTITIES_REQUEST = 11
+        let listMessage = createMessage(type: .listEntitiesRequest, data: Data())
         try await sendMessage(listMessage)
         
-        // For now, return mock entities - in a real implementation we'd parse the response
-        return createMockEntities()
+        // Use mock data in development or return parsed response in production
+        if DevelopmentConfiguration.useMockData {
+            let deviceName = extractDeviceName()
+            return MockDataProvider.mockEntities(for: deviceName)
+        } else {
+            // TODO: Parse real entity list response
+            // For now, return basic mock entities until real protocol parsing is implemented
+            return createMockEntities()
+        }
     }
     
     /// Subscribe to state updates
@@ -124,7 +207,7 @@ public class DeviceConnection {
         try await ensureConnected()
         
         // Send subscribe states request
-        let subscribeMessage = createMessage(type: 20, data: Data()) // SUBSCRIBE_STATES_REQUEST = 20
+        let subscribeMessage = createMessage(type: .subscribeStatesRequest, data: Data())
         try await sendMessage(subscribeMessage)
         
         // Start receiving state updates
@@ -140,7 +223,7 @@ public class DeviceConnection {
         commandData.append(contentsOf: withUnsafeBytes(of: key.littleEndian) { Data($0) })
         commandData.append(state ? 1 : 0)
         
-        let commandMessage = createMessage(type: 33, data: commandData) // SWITCH_COMMAND_REQUEST = 33
+        let commandMessage = createMessage(type: .switchCommandRequest, data: commandData)
         try await sendMessage(commandMessage)
     }
     
@@ -170,7 +253,7 @@ public class DeviceConnection {
             commandData.append(contentsOf: withUnsafeBytes(of: blue) { Data($0) })
         }
         
-        let commandMessage = createMessage(type: 35, data: commandData) // LIGHT_COMMAND_REQUEST = 35
+        let commandMessage = createMessage(type: .lightCommandRequest, data: commandData)
         try await sendMessage(commandMessage)
     }
     
@@ -182,7 +265,7 @@ public class DeviceConnection {
         }
     }
     
-    private func createMessage(type: UInt8, data: Data) -> Data {
+    private func createMessage(type: MessageType, data: Data) -> Data {
         var message = Data()
         
         // Preamble
@@ -193,7 +276,7 @@ public class DeviceConnection {
         message.append(contentsOf: withUnsafeBytes(of: length.littleEndian) { Data($0) })
         
         // Message type
-        message.append(type)
+        message.append(type.rawValue)
         
         // Message data
         message.append(data)
@@ -269,22 +352,51 @@ public class DeviceConnection {
     }
     
     private func processMessage(_ data: Data) {
-        guard !data.isEmpty else { return }
+        guard !data.isEmpty else {
+            logger.warning("Received empty message")
+            return
+        }
         
-        let messageType = data[0]
+        let messageTypeRaw = data[0]
         let payload = data.dropFirst()
         
+        // Validate message type
+        guard let messageType = MessageType(rawValue: messageTypeRaw) else {
+            logger.warning("Received unknown message type: \(messageTypeRaw)")
+            return
+        }
+        
+        // Validate payload size
+        if messageType.hasPayload {
+            guard payload.count >= messageType.minimumPayloadSize else {
+                logger.warning("Message type \(messageType) requires at least \(messageType.minimumPayloadSize) bytes, got \(payload.count)")
+                return
+            }
+        } else {
+            guard payload.isEmpty else {
+                logger.warning("Message type \(messageType) should not have payload, got \(payload.count) bytes")
+                return
+            }
+        }
+        
+        // Process validated message
         switch messageType {
-        case 22: // BINARY_SENSOR_STATE_RESPONSE
+        case .binarySensorStateResponse:
             processBinarySensorState(payload)
-        case 25: // SENSOR_STATE_RESPONSE
+        case .sensorStateResponse:
             processSensorState(payload)
-        case 27: // SWITCH_STATE_RESPONSE
+        case .switchStateResponse:
             processSwitchState(payload)
-        case 29: // LIGHT_STATE_RESPONSE
+        case .lightStateResponse:
             processLightState(payload)
+        case .pingResponse:
+            logger.debug("Received ping response")
+        case .deviceInfoResponse:
+            logger.debug("Received device info response")
+        case .listEntitiesDoneResponse:
+            logger.debug("Received list entities done response")
         default:
-            logger.debug("Unhandled message type: \\(messageType)")
+            logger.debug("Unhandled message type: \(messageType)")
         }
     }
     

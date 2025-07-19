@@ -31,6 +31,7 @@ struct ESPHomeSwiftCLI: ParsableCommand {
 
 struct BuildCommand: ParsableCommand {
     static let configuration = CommandConfiguration(
+        commandName: "build",
         abstract: "Build firmware from ESPHome Swift configuration"
     )
     
@@ -47,7 +48,7 @@ struct BuildCommand: ParsableCommand {
         setupLogging(verbose: verbose)
         
         let logger = Logger(label: "BuildCommand")
-        logger.info("Building project from: \\(configPath)")
+        logger.info("Building project from: \(configPath)")
         
         // Parse configuration
         let core = ESPHomeSwiftCore.shared
@@ -69,8 +70,8 @@ struct BuildCommand: ParsableCommand {
         )
         
         logger.info("Build completed successfully!")
-        logger.info("Firmware: \\(buildResult.firmwarePath)")
-        logger.info("Project: \\(buildResult.projectPath)")
+        logger.info("Firmware: \(buildResult.firmwarePath)")
+        logger.info("Project: \(buildResult.projectPath)")
     }
 }
 
@@ -78,6 +79,7 @@ struct BuildCommand: ParsableCommand {
 
 struct FlashCommand: ParsableCommand {
     static let configuration = CommandConfiguration(
+        commandName: "flash",
         abstract: "Flash firmware to ESP32 device"
     )
     
@@ -97,11 +99,11 @@ struct FlashCommand: ParsableCommand {
         setupLogging(verbose: verbose)
         
         let logger = Logger(label: "FlashCommand")
-        logger.info("Flashing firmware from: \\(projectPath)")
+        logger.info("Flashing firmware from: \(projectPath)")
         
         let buildResult = BuildResult(
             projectPath: projectPath,
-            firmwarePath: "\\(projectPath)/build/firmware.bin",
+            firmwarePath: "\(projectPath)/build/firmware.bin",
             buildOutput: "",
             success: true
         )
@@ -126,6 +128,7 @@ struct FlashCommand: ParsableCommand {
 
 struct MonitorCommand: ParsableCommand {
     static let configuration = CommandConfiguration(
+        commandName: "monitor",
         abstract: "Monitor serial output from ESP32 device"
     )
     
@@ -145,11 +148,11 @@ struct MonitorCommand: ParsableCommand {
         setupLogging(verbose: verbose)
         
         let logger = Logger(label: "MonitorCommand")
-        logger.info("Starting serial monitor for: \\(projectPath)")
+        logger.info("Starting serial monitor for: \(projectPath)")
         
         let buildResult = BuildResult(
             projectPath: projectPath,
-            firmwarePath: "\\(projectPath)/build/firmware.bin",
+            firmwarePath: "\(projectPath)/build/firmware.bin",
             buildOutput: "",
             success: true
         )
@@ -167,6 +170,7 @@ struct MonitorCommand: ParsableCommand {
 
 struct ValidateCommand: ParsableCommand {
     static let configuration = CommandConfiguration(
+        commandName: "validate",
         abstract: "Validate ESPHome Swift configuration file"
     )
     
@@ -180,7 +184,7 @@ struct ValidateCommand: ParsableCommand {
         setupLogging(verbose: verbose)
         
         let logger = Logger(label: "ValidateCommand")
-        logger.info("Validating configuration: \\(configPath)")
+        logger.info("Validating configuration: \(configPath)")
         
         do {
             let core = ESPHomeSwiftCore.shared
@@ -191,29 +195,29 @@ struct ValidateCommand: ParsableCommand {
             print("Configuration validation passed!")
             
             // Print summary
-            print("\\nProject Summary:")
-            print("  Name: \\(configuration.esphomeSwift.name)")
+            print("\nProject Summary:")
+            print("  Name: \(configuration.esphomeSwift.name)")
             if let friendlyName = configuration.esphomeSwift.friendlyName {
-                print("  Friendly Name: \\(friendlyName)")
+                print("  Friendly Name: \(friendlyName)")
             }
-            print("  Board: \\(configuration.esp32.board)")
-            print("  Framework: \\(configuration.esp32.framework.type.rawValue)")
+            print("  Board: \(configuration.esp32.board)")
+            print("  Framework: \(configuration.esp32.framework.type.rawValue)")
             
             if let sensors = configuration.sensor {
-                print("  Sensors: \\(sensors.count)")
+                print("  Sensors: \(sensors.count)")
             }
             if let switches = configuration.`switch` {
-                print("  Switches: \\(switches.count)")
+                print("  Switches: \(switches.count)")
             }
             if let lights = configuration.light {
-                print("  Lights: \\(lights.count)")
+                print("  Lights: \(lights.count)")
             }
             if let binarySensors = configuration.binary_sensor {
-                print("  Binary Sensors: \\(binarySensors.count)")
+                print("  Binary Sensors: \(binarySensors.count)")
             }
             
         } catch {
-            logger.error("❌ Configuration validation failed: \\(error)")
+            logger.error("❌ Configuration validation failed: \(error)")
             print("Configuration validation failed:")
             print(error.localizedDescription)
             throw ExitCode.failure
@@ -236,20 +240,20 @@ struct ListComponentsCommand: ParsableCommand {
         let registry = ComponentRegistry.shared
         let platforms = registry.availablePlatforms
         
-        print("Available Component Platforms:\\n")
+        print("Available Component Platforms:\n")
         
         for factoryInfo in registry.allFactories {
-            print("📦 \\(factoryInfo.platform) (\\(factoryInfo.componentType.rawValue))")
+            print("📦 \(factoryInfo.platform) (\(factoryInfo.componentType.rawValue))")
             
             if detailed {
-                print("   Required: \\(factoryInfo.factory.requiredProperties.joined(separator: ", "))")
-                print("   Optional: \\(factoryInfo.factory.optionalProperties.joined(separator: ", "))")
+                print("   Required: \(factoryInfo.factory.requiredProperties.joined(separator: ", "))")
+                print("   Optional: \(factoryInfo.factory.optionalProperties.joined(separator: ", "))")
                 print()
             }
         }
         
         if !detailed {
-            print("\\nUse --detailed for more information about each component.")
+            print("\nUse --detailed for more information about each component.")
         }
     }
 }

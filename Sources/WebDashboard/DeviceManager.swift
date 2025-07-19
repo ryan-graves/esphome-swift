@@ -10,13 +10,24 @@ public class DeviceManager: ObservableObject {
     private var discoveryTimer: Timer?
     private var mdnsListener: NWListener?
     
+    // Thread safety
+    private let deviceAccessQueue = DispatchQueue(label: "DeviceManager.devices", qos: .userInitiated)
+    private let concurrentRefreshQueue = DispatchQueue(
+        label: "DeviceManager.refresh",
+        qos: .utility,
+        attributes: .concurrent
+    )
+    
     /// Discovered devices
     @Published public var discoveredDevices: [ManagedDevice] = []
     
     public init() {
-        // Temporarily disable device discovery for debugging
-        // startDeviceDiscovery()
-        logger.info("DeviceManager initialized (discovery disabled for testing)")
+        if DevelopmentConfiguration.enableDeviceDiscovery {
+            startDeviceDiscovery()
+            logger.info("DeviceManager initialized with discovery enabled")
+        } else {
+            logger.info("DeviceManager initialized (discovery disabled via configuration)")
+        }
     }
     
     deinit {
@@ -43,7 +54,8 @@ public class DeviceManager: ObservableObject {
             mdnsListener?.start(queue: .main)
             
             // Start periodic discovery refresh
-            discoveryTimer = Timer.scheduledTimer(withTimeInterval: 30.0, repeats: true) { [weak self] _ in
+            let refreshInterval = DevelopmentConfiguration.mockRefreshInterval
+            discoveryTimer = Timer.scheduledTimer(withTimeInterval: refreshInterval, repeats: true) { [weak self] _ in
                 self?.refreshDevices()
             }
             
@@ -85,9 +97,7 @@ public class DeviceManager: ObservableObject {
         // Try to connect to the device's API
         do {
             let device = try await connectToDevice(host: hostString, port: portInt)
-            await MainActor.run {
-                addOrUpdateDevice(device)
-            }
+            addOrUpdateDevice(device)
         } catch {
             logger.warning("Failed to connect to device at \\(hostString): \\(error)")
         }
@@ -119,17 +129,30 @@ public class DeviceManager: ObservableObject {
     
     /// Add or update a device in the registry
     private func addOrUpdateDevice(_ device: ManagedDevice) {
-        devices[device.id] = device
-        discoveredDevices = Array(devices.values)
+        deviceAccessQueue.sync {
+            devices[device.id] = device
+        }
+        
+        // Update published property on main queue
+        Task { @MainActor in
+            let allDevices = deviceAccessQueue.sync { Array(devices.values) }
+            discoveredDevices = allDevices
+        }
         
         logger.info("Device updated: \\(device.name) (\\(device.host))")
     }
     
-    /// Refresh all known devices
+    /// Refresh all known devices using structured concurrency
     private func refreshDevices() {
         Task {
-            for device in devices.values {
-                await refreshDevice(device)
+            let currentDevices = deviceAccessQueue.sync { Array(devices.values) }
+            
+            await withTaskGroup(of: Void.self) { group in
+                for device in currentDevices {
+                    group.addTask { [weak self] in
+                        await self?.refreshDevice(device)
+                    }
+                }
             }
         }
     }
@@ -155,9 +178,7 @@ public class DeviceManager: ObservableObject {
                 connection: device.connection
             )
             
-            await MainActor.run {
-                addOrUpdateDevice(updatedDevice)
-            }
+            addOrUpdateDevice(updatedDevice)
             
         } catch {
             logger.warning("Failed to refresh device \\(device.name): \\(error)")
@@ -178,9 +199,7 @@ public class DeviceManager: ObservableObject {
                 connection: device.connection
             )
             
-            await MainActor.run {
-                addOrUpdateDevice(offlineDevice)
-            }
+            addOrUpdateDevice(offlineDevice)
         }
     }
     
@@ -190,9 +209,7 @@ public class DeviceManager: ObservableObject {
         
         do {
             let device = try await connectToDevice(host: host, port: port)
-            await MainActor.run {
-                addOrUpdateDevice(device)
-            }
+            addOrUpdateDevice(device)
         } catch {
             logger.error("Failed to add device at \\(host): \\(error)")
             throw error
@@ -201,14 +218,24 @@ public class DeviceManager: ObservableObject {
     
     /// Remove a device from the registry
     public func removeDevice(_ deviceId: String) {
-        devices.removeValue(forKey: deviceId)
-        discoveredDevices = Array(devices.values)
+        _ = deviceAccessQueue.sync {
+            devices.removeValue(forKey: deviceId)
+        }
+        
+        // Update published property on main queue
+        Task { @MainActor in
+            let allDevices = deviceAccessQueue.sync { Array(devices.values) }
+            discoveredDevices = allDevices
+        }
+        
         logger.info("Device removed: \\(deviceId)")
     }
     
     /// Get device by ID
     public func getDevice(_ deviceId: String) -> ManagedDevice? {
-        return devices[deviceId]
+        return deviceAccessQueue.sync {
+            return devices[deviceId]
+        }
     }
     
     /// Get all online devices

@@ -7,6 +7,7 @@ public class WebDashboard {
     private let app: Application
     private let logger = Logger(label: "WebDashboard")
     private let deviceManager = DeviceManager()
+    private let rateLimiter = RateLimiter(maxRequests: 100, timeWindow: 3600) // 100 requests per hour
     
     public init() async throws {
         // Create environment with minimal command line parsing
@@ -358,6 +359,11 @@ public class WebDashboard {
                     throw Abort(.badRequest, reason: "Device ID required")
                 }
                 
+                // Validate device ID
+                guard InputValidator.isValidDeviceId(deviceId) else {
+                    throw Abort(.badRequest, reason: "Invalid device ID format")
+                }
+                
                 guard let device = self.deviceManager.getDevice(deviceId) else {
                     throw Abort(.notFound, reason: "Device not found")
                 }
@@ -382,9 +388,39 @@ public class WebDashboard {
                     throw Abort(.internalServerError, reason: "Dashboard not available")
                 }
                 
+                // Get client IP for rate limiting
+                let clientIP = req.remoteAddress?.ipAddress ?? "unknown"
+                
+                // Check rate limit
+                guard self.rateLimiter.isAllowed(for: clientIP) else {
+                    throw Abort(.tooManyRequests, reason: "Rate limit exceeded. Please try again later.")
+                }
+                
                 let addRequest = try req.content.decode(AddDeviceRequest.self)
                 
-                try await self.deviceManager.addDevice(host: addRequest.host, port: addRequest.port ?? 6053)
+                // Validate host
+                guard !addRequest.host.isEmpty else {
+                    throw Abort(.badRequest, reason: "Host cannot be empty")
+                }
+                
+                guard InputValidator.isValidHost(addRequest.host) else {
+                    throw Abort(.badRequest, reason: "Invalid host address: \(addRequest.host)")
+                }
+                
+                guard InputValidator.isSafeHost(addRequest.host) else {
+                    throw Abort(
+                        .badRequest,
+                        reason: "Unsafe host address. Only private IP addresses and local hostnames are allowed"
+                    )
+                }
+                
+                // Validate port
+                let port = addRequest.port ?? 6053
+                guard InputValidator.isValidPort(port) else {
+                    throw Abort(.badRequest, reason: "Invalid port number: \(port). Must be between 1 and 65535")
+                }
+                
+                try await self.deviceManager.addDevice(host: addRequest.host, port: port)
                 
                 return AddDeviceResponse(success: true, message: "Device added successfully")
             }
@@ -395,8 +431,21 @@ public class WebDashboard {
                     throw Abort(.internalServerError, reason: "Dashboard not available")
                 }
                 
+                // Get client IP for rate limiting
+                let clientIP = req.remoteAddress?.ipAddress ?? "unknown"
+                
+                // Check rate limit
+                guard self.rateLimiter.isAllowed(for: clientIP) else {
+                    throw Abort(.tooManyRequests, reason: "Rate limit exceeded. Please try again later.")
+                }
+                
                 guard let deviceId = req.parameters.get("deviceId") else {
                     throw Abort(.badRequest, reason: "Device ID required")
+                }
+                
+                // Validate device ID
+                guard InputValidator.isValidDeviceId(deviceId) else {
+                    throw Abort(.badRequest, reason: "Invalid device ID format")
                 }
                 
                 self.deviceManager.removeDevice(deviceId)
@@ -413,9 +462,26 @@ public class WebDashboard {
                     throw Abort(.internalServerError, reason: "Dashboard not available")
                 }
                 
+                // Get client IP for rate limiting
+                let clientIP = req.remoteAddress?.ipAddress ?? "unknown"
+                
+                // Check rate limit (more generous for control commands)
+                guard self.rateLimiter.isAllowed(for: clientIP) else {
+                    throw Abort(.tooManyRequests, reason: "Rate limit exceeded. Please try again later.")
+                }
+                
                 guard let deviceId = req.parameters.get("deviceId"),
                       let entityId = req.parameters.get("entityId") else {
                     throw Abort(.badRequest, reason: "Device ID and Entity ID required")
+                }
+                
+                // Validate IDs
+                guard InputValidator.isValidDeviceId(deviceId) else {
+                    throw Abort(.badRequest, reason: "Invalid device ID format")
+                }
+                
+                guard InputValidator.isValidEntityId(entityId) else {
+                    throw Abort(.badRequest, reason: "Invalid entity ID format")
                 }
                 
                 let controlRequest = try req.content.decode(SwitchControlRequest.self)
@@ -437,12 +503,42 @@ public class WebDashboard {
                     throw Abort(.internalServerError, reason: "Dashboard not available")
                 }
                 
+                // Get client IP for rate limiting
+                let clientIP = req.remoteAddress?.ipAddress ?? "unknown"
+                
+                // Check rate limit
+                guard self.rateLimiter.isAllowed(for: clientIP) else {
+                    throw Abort(.tooManyRequests, reason: "Rate limit exceeded. Please try again later.")
+                }
+                
                 guard let deviceId = req.parameters.get("deviceId"),
                       let entityId = req.parameters.get("entityId") else {
                     throw Abort(.badRequest, reason: "Device ID and Entity ID required")
                 }
                 
+                // Validate IDs
+                guard InputValidator.isValidDeviceId(deviceId) else {
+                    throw Abort(.badRequest, reason: "Invalid device ID format")
+                }
+                
+                guard InputValidator.isValidEntityId(entityId) else {
+                    throw Abort(.badRequest, reason: "Invalid entity ID format")
+                }
+                
                 let controlRequest = try req.content.decode(LightControlRequest.self)
+                
+                // Validate light control values
+                if let brightness = controlRequest.brightness {
+                    guard brightness >= 0.0 && brightness <= 1.0 else {
+                        throw Abort(.badRequest, reason: "Brightness must be between 0.0 and 1.0")
+                    }
+                }
+                
+                if let red = controlRequest.red, let green = controlRequest.green, let blue = controlRequest.blue {
+                    guard red >= 0.0 && red <= 1.0 && green >= 0.0 && green <= 1.0 && blue >= 0.0 && blue <= 1.0 else {
+                        throw Abort(.badRequest, reason: "RGB values must be between 0.0 and 1.0")
+                    }
+                }
                 
                 guard let device = self.deviceManager.getDevice(deviceId),
                       let entity = device.entities.first(where: { $0.id == entityId }),
