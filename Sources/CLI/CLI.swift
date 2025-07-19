@@ -381,9 +381,28 @@ struct DashboardCommand: ParsableCommand {
         print("DEBUG: Logger created")
         logger.info("Starting ESPHome Swift Dashboard on port \(port)...")
         
-        // Use semaphore to properly bridge async/sync without concurrency violations
+        // Use semaphore with atomic reference wrapper to avoid concurrency violations
         let semaphore = DispatchSemaphore(value: 0)
-        var result: Result<Void, Error>?
+        
+        // Use a thread-safe container for the result
+        final class ResultContainer: @unchecked Sendable {
+            private let lock = NSLock()
+            private var _result: Result<Void, Error>?
+            
+            func setResult(_ result: Result<Void, Error>) {
+                lock.withLock {
+                    _result = result
+                }
+            }
+            
+            func getResult() -> Result<Void, Error>? {
+                lock.withLock {
+                    return _result
+                }
+            }
+        }
+        
+        let resultContainer = ResultContainer()
         
         Task {
             do {
@@ -397,12 +416,12 @@ struct DashboardCommand: ParsableCommand {
                 print("DEBUG: About to start dashboard on port \(port)")
                 // Start the dashboard (this will run until interrupted)
                 try await dashboard.start(port: port)
-                result = .success(())
+                resultContainer.setResult(.success(()))
             } catch {
                 print("DEBUG: Error caught: \(error)")
                 logger.error("❌ Failed to start dashboard: \(error)")
                 print("Error: \(error.localizedDescription)")
-                result = .failure(error)
+                resultContainer.setResult(.failure(error))
             }
             semaphore.signal()
         }
@@ -411,7 +430,7 @@ struct DashboardCommand: ParsableCommand {
         semaphore.wait()
         
         // Check result and throw if there was an error
-        switch result {
+        switch resultContainer.getResult() {
         case .success:
             break
         case .failure(let error):
