@@ -34,10 +34,11 @@ api:
 logger:
   level: INFO
 
-# Temperature and humidity sensor with API reporting
+# Temperature, humidity, and analog sensors with API reporting
 sensor:
   - platform: dht
-    pin: GPIO4
+    pin:
+      number: GPIO4
     model: DHT22
     temperature:
       id: room_temperature
@@ -52,11 +53,17 @@ sensor:
       unit_of_measurement: "%"
       accuracy_decimals: 1
     update_interval: 30s
+# Additional sensors would go here (ADC not yet implemented)
+  # - platform: adc
+  #   pin:
+  #     number: GPIO1
+  #   id: analog_sensor
+  #   name: "Analog Input"
 
 # Binary sensor with API state reporting
 binary_sensor:
   - platform: gpio
-    pin: 
+    pin:
       number: GPIO5
       mode: INPUT_PULLUP
       inverted: true
@@ -67,31 +74,31 @@ binary_sensor:
 # Controllable switch via API commands
 switch:
   - platform: gpio
-    pin: GPIO6
+    pin:
+      number: GPIO6
     id: relay_switch
     name: "Relay Switch"
     icon: "mdi:power-socket-eu"
     restore_mode: RESTORE_DEFAULT_OFF
 
-# RGB light with full API control (brightness, color)
+# Status LED (RGB not yet implemented)
 light:
-  - platform: rgb
+  - platform: binary
+    pin:
+      number: GPIO7
     id: status_light
     name: "Status Light"
-    red: GPIO7
-    green: GPIO8
-    blue: GPIO9
-    default_transition_length: 1s
+# RGB light example (not yet implemented):
+  # - platform: rgb
+  #   id: rgb_light
+  #   name: "RGB Light"
+  #   red:
+  #     number: GPIO7
+  #   green:
+  #     number: GPIO8
+  #   blue:
+  #     number: GPIO9
 
-# Additional GPIO sensor for demonstration
-sensor:
-  - platform: adc
-    pin: GPIO1
-    id: analog_sensor
-    name: "Analog Input"
-    unit_of_measurement: "V"
-    accuracy_decimals: 3
-    update_interval: 10s
 
 # API Usage Notes:
 #
