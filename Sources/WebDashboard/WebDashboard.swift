@@ -125,6 +125,17 @@ public class WebDashboard {
                 <script>
                     let devices = [];
                     
+                    // HTML escaping function to prevent XSS attacks
+                    function escapeHtml(unsafe) {
+                        if (typeof unsafe !== 'string') return unsafe;
+                        return unsafe
+                            .replace(/&/g, "&amp;")
+                            .replace(/</g, "&lt;")
+                            .replace(/>/g, "&gt;")
+                            .replace(/"/g, "&quot;")
+                            .replace(/'/g, "&#039;");
+                    }
+                    
                     // Load devices on page load
                     window.onload = function() {
                         loadDevices();
@@ -164,20 +175,20 @@ public class WebDashboard {
                             <div class="device-card">
                                 <div class="device-header">
                                     <div>
-                                        <div class="device-name">${device.friendlyName || device.name}</div>
-                                        <div style="font-size: 12px; color: #666;">${device.ipAddress} • ${device.board}</div>
+                                        <div class="device-name">${escapeHtml(device.friendlyName || device.name)}</div>
+                                        <div style="font-size: 12px; color: #666;">${escapeHtml(device.ipAddress)} • ${escapeHtml(device.board)}</div>
                                     </div>
-                                    <span class="status ${device.status}">${device.status.toUpperCase()}</span>
+                                    <span class="status ${escapeHtml(device.status)}">${escapeHtml(device.status.toUpperCase())}</span>
                                 </div>
                                 <div style="font-size: 12px; color: #666; margin-bottom: 10px;">
-                                    Version: ${device.version} | Last seen: ${new Date(device.lastSeen).toLocaleTimeString()}
+                                    Version: ${escapeHtml(device.version)} | Last seen: ${new Date(device.lastSeen).toLocaleTimeString()}
                                 </div>
-                                <div id="entities-${device.name}" class="entity-grid">
+                                <div id="entities-${escapeHtml(device.name)}" class="entity-grid">
                                     <div class="loading">Loading entities...</div>
                                 </div>
                                 <div style="margin-top: 10px;">
-                                    <button onclick="loadDeviceDetails('${device.name}')" class="control-btn">Refresh</button>
-                                    <button onclick="removeDevice('${device.name}')" class="control-btn" style="background: #dc3545; margin-left: 5px;">Remove</button>
+                                    <button onclick="loadDeviceDetails('${escapeHtml(device.name)}')" class="control-btn">Refresh</button>
+                                    <button onclick="removeDevice('${escapeHtml(device.name)}')" class="control-btn" style="background: #dc3545; margin-left: 5px;">Remove</button>
                                 </div>
                             </div>
                         `).join('');
@@ -193,12 +204,12 @@ public class WebDashboard {
                             renderDeviceEntities(deviceId, data.entities);
                         } catch (error) {
                             console.error(`Failed to load details for ${deviceId}:`, error);
-                            document.getElementById(`entities-${deviceId}`).innerHTML = '<div style="color: #dc3545;">Failed to load entities</div>';
+                            document.getElementById(`entities-${escapeHtml(deviceId)}`).innerHTML = '<div style="color: #dc3545;">Failed to load entities</div>';
                         }
                     }
                     
                     function renderDeviceEntities(deviceId, entities) {
-                        const container = document.getElementById(`entities-${deviceId}`);
+                        const container = document.getElementById(`entities-${escapeHtml(deviceId)}`);
                         
                         if (entities.length === 0) {
                             container.innerHTML = '<div style="color: #666;">No entities found</div>';
@@ -212,18 +223,18 @@ public class WebDashboard {
                             let controlHtml = '';
                             if (isControllable) {
                                 const isOn = entity.state && (entity.state.switch?.value || entity.state.light?.isOn);
-                                controlHtml = `<button onclick="toggleEntity('${deviceId}', '${entity.id}', '${entity.type}', ${!isOn})" 
+                                controlHtml = `<button onclick="toggleEntity('${escapeHtml(deviceId)}', '${escapeHtml(entity.id)}', '${escapeHtml(entity.type)}', ${!isOn})" 
                                                      class="control-btn ${isOn ? 'on' : ''}">${isOn ? 'ON' : 'OFF'}</button>`;
                             }
                             
                             return `
                                 <div class="entity">
                                     <div>
-                                        <div class="entity-name">${entity.name}</div>
-                                        <div style="font-size: 11px; color: #999;">${entity.type}${entity.deviceClass ? ' • ' + entity.deviceClass : ''}</div>
+                                        <div class="entity-name">${escapeHtml(entity.name)}</div>
+                                        <div style="font-size: 11px; color: #999;">${escapeHtml(entity.type)}${entity.deviceClass ? ' • ' + escapeHtml(entity.deviceClass) : ''}</div>
                                     </div>
                                     <div style="display: flex; align-items: center; gap: 10px;">
-                                        <span class="entity-value">${stateDisplay}${entity.unitOfMeasurement || ''}</span>
+                                        <span class="entity-value">${escapeHtml(stateDisplay)}${entity.unitOfMeasurement ? escapeHtml(entity.unitOfMeasurement) : ''}</span>
                                         ${controlHtml}
                                     </div>
                                 </div>
