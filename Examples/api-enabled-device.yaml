@@ -1,0 +1,158 @@
+# ESPHome Swift API-Enabled Device Example
+# 
+# This example demonstrates a device with full API server integration
+# for Home Assistant compatibility and real-time communication.
+#
+# Features demonstrated:
+# - Native API server with state management
+# - Multi-sensor data reporting  
+# - Switch and light control via API
+# - Home Assistant auto-discovery
+
+esphome_swift:
+  name: api_demo_device
+  friendly_name: "API Demo Device"
+  comment: "Demonstrates ESPHome Swift native API capabilities"
+
+esp32:
+  board: esp32-c6-devkitc-1
+  framework:
+    type: esp-idf
+    version: recommended
+
+# WiFi configuration for network connectivity
+wifi:
+  ssid: "YOUR_WIFI_SSID"
+  password: "YOUR_WIFI_PASSWORD"
+
+# Native API server - enables Home Assistant integration
+api:
+  port: 6053  # Standard ESPHome API port
+  # password: "optional_api_password"  # Uncomment for security
+
+# Enable logging for API debugging
+logger:
+  level: INFO
+
+# Temperature, humidity, and analog sensors with API reporting
+sensor:
+  - platform: dht
+    pin:
+      number: GPIO4
+    model: DHT22
+    temperature:
+      id: room_temperature
+      name: "Room Temperature"
+      device_class: temperature
+      unit_of_measurement: "°C"
+      accuracy_decimals: 1
+    humidity:
+      id: room_humidity  
+      name: "Room Humidity"
+      device_class: humidity
+      unit_of_measurement: "%"
+      accuracy_decimals: 1
+    update_interval: 30s
+# Additional sensors would go here (ADC not yet implemented)
+  # - platform: adc
+  #   pin:
+  #     number: GPIO1
+  #   id: analog_sensor
+  #   name: "Analog Input"
+
+# Binary sensor with API state reporting
+binary_sensor:
+  - platform: gpio
+    pin:
+      number: GPIO5
+      mode: INPUT_PULLUP
+      inverted: true
+    id: motion_sensor
+    name: "Motion Sensor"
+    device_class: motion
+
+# Controllable switch via API commands
+switch:
+  - platform: gpio
+    pin:
+      number: GPIO6
+    id: relay_switch
+    name: "Relay Switch"
+    icon: "mdi:power-socket-eu"
+    restore_mode: RESTORE_DEFAULT_OFF
+
+# Status LED (RGB not yet implemented)
+light:
+  - platform: binary
+    pin:
+      number: GPIO7
+    id: status_light
+    name: "Status Light"
+# RGB light example (not yet implemented):
+  # - platform: rgb
+  #   id: rgb_light
+  #   name: "RGB Light"
+  #   red:
+  #     number: GPIO7
+  #   green:
+  #     number: GPIO8
+  #   blue:
+  #     number: GPIO9
+
+
+# API Usage Notes:
+#
+# Once flashed, this device will:
+#
+# 1. Connect to WiFi and start the API server on port 6053
+# 2. Advertise itself via mDNS for auto-discovery
+# 3. Report sensor states in real-time to connected clients
+# 4. Accept control commands for switch and light
+# 5. Automatically appear in Home Assistant integrations
+# 
+# Home Assistant Integration:
+# - Go to Settings > Devices & Services
+# - Click "Add Integration" 
+# - Search for "ESPHome"
+# - Device should auto-discover, or add manually with IP address
+#
+# Manual API Testing:
+# You can test the API using Python:
+#
+# ```python
+# import aioesphomeapi
+# import asyncio
+# 
+# async def test_api():
+#     api = aioesphomeapi.APIClient("DEVICE_IP", 6053, "")
+#     await api.connect()
+#     
+#     # Get device information
+#     device_info = await api.device_info()
+#     print(f"Connected to: {device_info.name}")
+#     
+#     # List all entities  
+#     entities = await api.list_entities_services()
+#     for entity in entities:
+#         print(f"Entity: {entity.name} ({entity.key})")
+#     
+#     # Subscribe to state updates
+#     def on_state(state):
+#         print(f"State update: {state}")
+#     
+#     await api.subscribe_states(on_state)
+#     
+#     # Control the switch
+#     await api.switch_command(relay_switch_key, True)  # Turn on
+#     await asyncio.sleep(2)
+#     await api.switch_command(relay_switch_key, False) # Turn off
+# 
+# asyncio.run(test_api())
+# ```
+#
+# The generated firmware will include:
+# - Complete API server implementation
+# - State management for all components
+# - Real-time state updates
+# - Command handling for controllable devices
+# - Home Assistant compatible device information

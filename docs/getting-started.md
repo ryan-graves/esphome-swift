@@ -7,6 +7,18 @@ title: Getting Started
 
 This guide will walk you through setting up ESPHome Swift and creating your first project.
 
+## How ESPHome Swift Works
+
+ESPHome Swift uses a **hybrid architecture** that combines Swift's development-time benefits with C/C++ runtime efficiency:
+
+1. **Write YAML configurations** (same familiar syntax as ESPHome)
+2. **Swift parses and validates** your configuration with type safety
+3. **Generates optimized C/C++ code** for ESP32 microcontrollers
+4. **ESP-IDF compiles** the generated code into firmware
+5. **Flash firmware** to your ESP32 device
+
+This approach gives you Swift's excellent developer experience while ensuring your devices run reliable, efficient C/C++ code.
+
 ## Prerequisites
 
 Before you begin, ensure you have:

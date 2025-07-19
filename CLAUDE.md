@@ -16,6 +16,44 @@ YAML Config → Swift Parser → Code Generation → ESP-IDF/Embedded Swift → 
 - Swift developers interested in embedded systems  
 - Home Assistant users wanting type-safe device firmware
 
+## Architecture: Swift Development, C Runtime
+
+**Critical Understanding**: ESPHome Swift uses a hybrid architecture where Swift provides development-time type safety and generates C/C++ code for ESP32 runtime execution.
+
+### Development Flow
+```
+YAML Config → Swift Parser → C/C++ Code Generation → ESP-IDF Build → ESP32 Firmware
+```
+
+### Why This Design?
+
+1. **Swift for Development**: Type safety, validation, and code generation
+2. **C/C++ for Runtime**: ESP32 compatibility, performance, and proven ecosystem
+3. **Future Ready**: Migration path to Swift Embedded when ESP32 support matures
+
+### Code Generation Pattern
+Components generate C/C++ code strings that become part of the final ESP32 firmware:
+
+```swift
+// Swift code (development time)
+func generateCode() -> ComponentCode {
+    return ComponentCode(
+        headerIncludes: ["#include \"DHT.h\""],
+        globalDeclarations: ["DHT sensor(4, DHT22);"],
+        setupCode: ["sensor.begin();"],
+        loopCode: ["float temp = sensor.readTemperature();"]
+    )
+}
+```
+
+Generates C++ code (runtime on ESP32):
+```cpp
+#include "DHT.h"
+DHT sensor(4, DHT22);
+void setup() { sensor.begin(); }
+void loop() { float temp = sensor.readTemperature(); }
+```
+
 ## Core Project Principles
 
 These principles guide all development on ESPHome Swift and ensure we deliver a high-quality, user-friendly experience that honors the original ESPHome while leveraging Swift's strengths.

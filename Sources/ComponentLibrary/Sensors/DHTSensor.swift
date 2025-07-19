@@ -54,14 +54,42 @@ public struct DHTSensorFactory: ComponentFactory {
         
         var loopCode: [String] = []
         
+        var apiCode: [String] = []
+        
         // Generate temperature reading code
         if let tempConfig = config.temperature {
             let tempId = tempConfig.id ?? "\(componentId)_temperature"
+            let tempKey = generateComponentKey(name: tempId, type: "sensor")
+            
+            apiCode.append("""
+            // API integration for temperature sensor: \(tempId)
+            static uint32_t \(tempId)_key = \(tempKey);
+            static float \(tempId)_state = 0.0f;
+            static bool \(tempId)_has_state = false;
+            
+            void \(tempId)_register_api() {
+                api_register_sensor(\(tempKey), "\(tempId)", "\(tempId)", "temperature", "°C");
+            }
+            
+            void \(tempId)_report_state(float value) {
+                \(tempId)_state = value;
+                \(tempId)_has_state = true;
+                if (api_client_subscribed()) {
+                    api_send_sensor_state(\(tempKey), value, false);
+                }
+            }
+            """)
+            
             loopCode.append("""
             float \(tempId)_value = \(componentId).readTemperature();
             if (!isnan(\(tempId)_value)) {
-                // TODO: Send temperature value via API
+                \(tempId)_report_state(\(tempId)_value);
                 printf("Temperature: %.2f°C\\n", \(tempId)_value);
+            } else {
+                \(tempId)_has_state = false;
+                if (api_client_subscribed()) {
+                    api_send_sensor_state(\(tempKey), 0.0f, true);
+                }
             }
             """)
         }
@@ -69,11 +97,37 @@ public struct DHTSensorFactory: ComponentFactory {
         // Generate humidity reading code
         if let humConfig = config.humidity {
             let humId = humConfig.id ?? "\(componentId)_humidity"
+            let humKey = generateComponentKey(name: humId, type: "sensor")
+            
+            apiCode.append("""
+            // API integration for humidity sensor: \(humId)
+            static uint32_t \(humId)_key = \(humKey);
+            static float \(humId)_state = 0.0f;
+            static bool \(humId)_has_state = false;
+            
+            void \(humId)_register_api() {
+                api_register_sensor(\(humKey), "\(humId)", "\(humId)", "humidity", "%");
+            }
+            
+            void \(humId)_report_state(float value) {
+                \(humId)_state = value;
+                \(humId)_has_state = true;
+                if (api_client_subscribed()) {
+                    api_send_sensor_state(\(humKey), value, false);
+                }
+            }
+            """)
+            
             loopCode.append("""
             float \(humId)_value = \(componentId).readHumidity();
             if (!isnan(\(humId)_value)) {
-                // TODO: Send humidity value via API
+                \(humId)_report_state(\(humId)_value);
                 printf("Humidity: %.2f%%\\n", \(humId)_value);
+            } else {
+                \(humId)_has_state = false;
+                if (api_client_subscribed()) {
+                    api_send_sensor_state(\(humKey), 0.0f, true);
+                }
             }
             """)
         }
@@ -82,7 +136,9 @@ public struct DHTSensorFactory: ComponentFactory {
             headerIncludes: headerIncludes,
             globalDeclarations: globalDeclarations,
             setupCode: setupCode,
-            loopCode: loopCode
+            loopCode: loopCode,
+            apiCode: apiCode,
+            config: config
         )
     }
     
@@ -95,5 +151,10 @@ public struct DHTSensorFactory: ComponentFactory {
         case .am2302:
             return "DHT22" // AM2302 uses same constant as DHT22
         }
+    }
+    
+    /// Generate unique component key based on name and type using FNV-1a hash
+    private func generateComponentKey(name: String, type: String) -> UInt32 {
+        return HashUtils.generateComponentKey(name: name, type: type)
     }
 }

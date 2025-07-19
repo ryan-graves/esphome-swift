@@ -202,19 +202,25 @@ public struct ComponentCode {
     public let setupCode: [String]
     public let loopCode: [String]
     public let classDefinitions: [String]
+    public let apiCode: [String]
+    public let config: ComponentConfig?
     
     public init(
         headerIncludes: [String] = [],
         globalDeclarations: [String] = [],
         setupCode: [String] = [],
         loopCode: [String] = [],
-        classDefinitions: [String] = []
+        classDefinitions: [String] = [],
+        apiCode: [String] = [],
+        config: ComponentConfig? = nil
     ) {
         self.headerIncludes = headerIncludes
         self.globalDeclarations = globalDeclarations
         self.setupCode = setupCode
         self.loopCode = loopCode
         self.classDefinitions = classDefinitions
+        self.apiCode = apiCode
+        self.config = config
     }
 }
 
