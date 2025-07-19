@@ -302,7 +302,11 @@ public class WebDashboard {
             </html>
             """
             
-            return Response(status: .ok, headers: HTTPHeaders([("Content-Type", "text/html; charset=utf-8")]), body: .init(string: html))
+            return Response(
+                status: .ok,
+                headers: HTTPHeaders([("Content-Type", "text/html; charset=utf-8")]),
+                body: .init(string: html)
+            )
         }
         
         // API routes
