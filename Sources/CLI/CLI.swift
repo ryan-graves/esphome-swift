@@ -381,9 +381,9 @@ struct DashboardCommand: ParsableCommand {
         print("DEBUG: Logger created")
         logger.info("Starting ESPHome Swift Dashboard on port \(port)...")
         
-        // Use RunLoop to handle async operations in synchronous context
+        // Use semaphore to properly bridge async/sync without concurrency violations
         let semaphore = DispatchSemaphore(value: 0)
-        var taskError: Error?
+        var result: Result<Void, Error>?
         
         Task {
             do {
@@ -397,12 +397,12 @@ struct DashboardCommand: ParsableCommand {
                 print("DEBUG: About to start dashboard on port \(port)")
                 // Start the dashboard (this will run until interrupted)
                 try await dashboard.start(port: port)
-                
+                result = .success(())
             } catch {
                 print("DEBUG: Error caught: \(error)")
                 logger.error("❌ Failed to start dashboard: \(error)")
                 print("Error: \(error.localizedDescription)")
-                taskError = error
+                result = .failure(error)
             }
             semaphore.signal()
         }
@@ -410,7 +410,13 @@ struct DashboardCommand: ParsableCommand {
         // Wait for the async task to complete
         semaphore.wait()
         
-        if let error = taskError {
+        // Check result and throw if there was an error
+        switch result {
+        case .success:
+            break
+        case .failure(let error):
+            throw error
+        case .none:
             throw ExitCode.failure
         }
     }
