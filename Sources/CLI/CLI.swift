@@ -4,6 +4,7 @@ import ESPHomeSwiftCore
 import CodeGeneration
 import ComponentLibrary
 import MatterSupport
+import WebDashboard
 import Logging
 
 /// Main CLI entry point for ESPHome Swift
@@ -20,7 +21,8 @@ struct ESPHomeSwiftCLI: ParsableCommand {
             ValidateCommand.self,
             ListComponentsCommand.self,
             NewProjectCommand.self,
-            GenerateCredentialsCommand.self
+            GenerateCredentialsCommand.self,
+            DashboardCommand.self
         ]
     )
 }
@@ -349,6 +351,43 @@ struct GenerateCredentialsCommand: ParsableCommand {
             return credentials.count == 1 ? credentials[0].jsonFormat : credentials.jsonFormat
         case .text:
             return credentials.count == 1 ? credentials[0].textFormat : credentials.textFormat
+        }
+    }
+}
+
+// MARK: - Dashboard Command
+
+struct DashboardCommand: ParsableCommand {
+    static let configuration = CommandConfiguration(
+        commandName: "dashboard",
+        abstract: "Start the web dashboard for monitoring and managing ESPHome Swift devices"
+    )
+    
+    @Option(name: .shortAndLong, help: "Port to run the dashboard server on")
+    var port: Int = 8080
+    
+    @Flag(name: .shortAndLong, help: "Enable verbose logging")
+    var verbose: Bool = false
+    
+    func run() async throws {
+        setupLogging(verbose: verbose)
+        
+        let logger = Logger(label: "DashboardCommand")
+        logger.info("Starting ESPHome Swift Dashboard on port \(port)...")
+        
+        do {
+            let dashboard = try WebDashboard()
+            
+            logger.info("✅ Dashboard server starting...")
+            logger.info("🌐 Open http://localhost:\(port) in your browser")
+            
+            // Start the dashboard (this will run until interrupted)
+            try await dashboard.start(port: port)
+            
+        } catch {
+            logger.error("❌ Failed to start dashboard: \(error)")
+            print("Error: \(error.localizedDescription)")
+            throw ExitCode.failure
         }
     }
 }
