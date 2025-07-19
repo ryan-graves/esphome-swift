@@ -369,24 +369,44 @@ struct DashboardCommand: ParsableCommand {
     @Flag(name: .shortAndLong, help: "Enable verbose logging")
     var verbose: Bool = false
     
-    func run() async throws {
+    func run() throws {
+        print("DEBUG: Dashboard command run() called")
         setupLogging(verbose: verbose)
         
         let logger = Logger(label: "DashboardCommand")
+        print("DEBUG: Logger created")
         logger.info("Starting ESPHome Swift Dashboard on port \(port)...")
         
-        do {
-            let dashboard = try WebDashboard()
-            
-            logger.info("✅ Dashboard server starting...")
-            logger.info("🌐 Open http://localhost:\(port) in your browser")
-            
-            // Start the dashboard (this will run until interrupted)
-            try await dashboard.start(port: port)
-            
-        } catch {
-            logger.error("❌ Failed to start dashboard: \(error)")
-            print("Error: \(error.localizedDescription)")
+        // Use RunLoop to handle async operations in synchronous context
+        let semaphore = DispatchSemaphore(value: 0)
+        var taskError: Error?
+        
+        Task {
+            do {
+                print("DEBUG: Creating WebDashboard...")
+                let dashboard = try await WebDashboard()
+                print("DEBUG: WebDashboard created successfully")
+                
+                logger.info("✅ Dashboard server starting...")
+                logger.info("🌐 Open http://localhost:\(port) in your browser")
+                
+                print("DEBUG: About to start dashboard on port \(port)")
+                // Start the dashboard (this will run until interrupted)
+                try await dashboard.start(port: port)
+                
+            } catch {
+                print("DEBUG: Error caught: \(error)")
+                logger.error("❌ Failed to start dashboard: \(error)")
+                print("Error: \(error.localizedDescription)")
+                taskError = error
+            }
+            semaphore.signal()
+        }
+        
+        // Wait for the async task to complete
+        semaphore.wait()
+        
+        if let error = taskError {
             throw ExitCode.failure
         }
     }

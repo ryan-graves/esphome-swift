@@ -8,17 +8,19 @@ public class WebDashboard {
     private let logger = Logger(label: "WebDashboard")
     private let deviceManager = DeviceManager()
     
-    public init() throws {
-        var env = try Environment.detect()
-        try LoggingSystem.bootstrap(from: &env)
+    public init() async throws {
+        // Create environment with minimal command line parsing
+        var env = Environment.development
+        env.commandInput = .init(arguments: ["esphome-swift"])
         
-        app = Application(env)
+        // Use modern async Application initialization
+        app = try await Application.make(env)
         try configure(app)
     }
     
     deinit {
-        // Synchronous shutdown for deinit
-        app.shutdown()
+        // Don't call shutdown in deinit - it should be handled properly by stop()
+        // Vapor will handle cleanup automatically
     }
     
     /// Start the web server
@@ -26,11 +28,16 @@ public class WebDashboard {
         app.http.server.configuration.port = port
         logger.info("Web dashboard starting on port \(port)")
         
-        try await app.startup()
-        
-        if let running = app.running {
-            try await running.onStop.get()
+        // Use the proper Vapor serve approach
+        defer { 
+            Task {
+                try? await app.asyncShutdown()
+            }
         }
+        
+        // Start the server and wait for shutdown signal
+        try await app.startup()
+        try await app.running?.onStop.get()
     }
     
     /// Stop the web server
@@ -45,7 +52,7 @@ public class WebDashboard {
         
         // Configure routes
         app.get { req in
-            return """
+            let html = """
             <!DOCTYPE html>
             <html>
             <head>
@@ -294,6 +301,8 @@ public class WebDashboard {
             </body>
             </html>
             """
+            
+            return Response(status: .ok, headers: HTTPHeaders([("Content-Type", "text/html; charset=utf-8")]), body: .init(string: html))
         }
         
         // API routes

@@ -14,7 +14,9 @@ public class DeviceManager: ObservableObject {
     @Published public var discoveredDevices: [ManagedDevice] = []
     
     public init() {
-        startDeviceDiscovery()
+        // Temporarily disable device discovery for debugging
+        // startDeviceDiscovery()
+        logger.info("DeviceManager initialized (discovery disabled for testing)")
     }
     
     deinit {
