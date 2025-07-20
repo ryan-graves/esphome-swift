@@ -1,0 +1,80 @@
+# Example configuration for Swift Embedded mode
+# This demonstrates the new build system architecture
+
+esphome_swift:
+  name: "Swift Embedded Test"
+  version: "1.0.0"
+
+esp32:
+  board: esp32-c6-devkitc-1
+  framework:
+    type: swift-embedded  # New Swift Embedded mode
+
+# WiFi configuration
+wifi:
+  ssid: "TestNetwork"
+  password: "TestPassword"
+
+# Enable API server
+api:
+  password: "api_password"
+
+# Enable OTA updates
+ota:
+  password: "ota_password"
+
+# Example components that are supported in Swift Embedded mode
+sensor:
+  - platform: dht
+    pin: GPIO4
+    model: DHT22
+    temperature:
+      name: "Living Room Temperature"
+      id: living_room_temp
+    humidity:
+      name: "Living Room Humidity"
+      id: living_room_humidity
+    update_interval: 30s
+
+  - platform: adc
+    pin: GPIO0
+    name: "Battery Voltage"
+    id: battery_voltage
+    attenuation: db11
+    voltage_divider:
+      r1: 10000
+      r2: 10000
+    filters:
+      - moving_average:
+          window_size: 10
+      - calibrate_linear:
+          datapoints:
+            - 0.5 -> 0.0
+            - 3.3 -> 6.6
+    update_interval: 60s
+
+switch:
+  - platform: gpio
+    pin: GPIO5
+    name: "LED Switch"
+    id: led_switch
+    inverted: false
+    restore_mode: RESTORE_DEFAULT_OFF
+
+light:
+  - platform: rgb
+    name: "RGB Status Light"
+    id: status_light
+    red_pin: GPIO6
+    green_pin: GPIO7
+    blue_pin: GPIO8
+    frequency: 5000
+
+binary_sensor:
+  - platform: gpio
+    pin:
+      number: GPIO9
+      mode: INPUT_PULLUP
+    name: "Button"
+    id: button_sensor
+    inverted: true

@@ -1,0 +1,284 @@
+// Swift Package Generator for ESPHome Swift Embedded Mode
+
+import Foundation
+import ESPHomeSwiftCore
+
+/// Generates Swift Package structure for embedded firmware
+public class SwiftPackageGenerator {
+    private let componentAssembler = ComponentAssembler()
+    
+    public init() {}
+    
+    /// Generate complete Swift package from configuration
+    public func generatePackage(
+        from configuration: ESPHomeConfiguration,
+        outputDirectory: String
+    ) throws -> GeneratedSwiftPackage {
+        let projectName = configuration.esphomeSwift.name
+        let projectPath = "\(outputDirectory)/\(projectName)"
+        
+        // Create package structure
+        try createPackageStructure(at: projectPath)
+        
+        // Generate Package.swift
+        let packageManifest = try generatePackageManifest(
+            configuration: configuration,
+            projectName: projectName
+        )
+        
+        // Generate main.swift with assembled components
+        let mainSwift = try componentAssembler.assembleMainFile(
+            configuration: configuration
+        )
+        
+        // Generate component sources
+        let componentSources = try generateComponentSources(
+            configuration: configuration
+        )
+        
+        // Write all files
+        try writePackageFiles(
+            projectPath: projectPath,
+            manifest: packageManifest,
+            mainSwift: mainSwift,
+            componentSources: componentSources
+        )
+        
+        return GeneratedSwiftPackage(
+            path: projectPath,
+            targetName: projectName,
+            executableName: "\(projectName)Firmware"
+        )
+    }
+    
+    // MARK: - Private Methods
+    
+    private func createPackageStructure(at path: String) throws {
+        let directories = [
+            path,
+            "\(path)/Sources",
+            "\(path)/Sources/Firmware",
+            "\(path)/Sources/Components",
+            "\(path)/Resources"
+        ]
+        
+        for directory in directories {
+            try FileManager.default.createDirectory(
+                atPath: directory,
+                withIntermediateDirectories: true,
+                attributes: nil
+            )
+        }
+    }
+    
+    private func generatePackageManifest(
+        configuration: ESPHomeConfiguration,
+        projectName: String
+    ) throws -> String {
+        let board = configuration.esp32.board
+        let targetTriple = getTargetTriple(for: board)
+        
+        return """
+        // swift-tools-version: 5.9
+        // ESPHome Swift Generated Package - \(Date())
+        
+        import PackageDescription
+        
+        let package = Package(
+            name: "\(projectName)",
+            platforms: [.macOS(.v13)],
+            products: [
+                .executable(
+                    name: "\(projectName)Firmware",
+                    targets: ["Firmware"]
+                )
+            ],
+            dependencies: [
+                // Local dependencies for HAL
+                .package(path: "../../../ESP32Hardware"),
+                .package(path: "../../../SwiftEmbeddedCore")
+            ],
+            targets: [
+                .executableTarget(
+                    name: "Firmware",
+                    dependencies: [
+                        "Components",
+                        "ESP32Hardware",
+                        "SwiftEmbeddedCore"
+                    ],
+                    swiftSettings: [
+                        .enableExperimentalFeature("Embedded"),
+                        .unsafeFlags([
+                            "-target", "\(targetTriple)",
+                            "-Xfrontend", "-function-sections",
+                            "-Xfrontend", "-data-sections",
+                            "-Xfrontend", "-disable-stack-protector"
+                        ])
+                    ],
+                    linkerSettings: [
+                        .unsafeFlags([
+                            "-Xlinker", "-T",
+                            "-Xlinker", "\\(Bundle.module.path(forResource: "esp32c6", ofType: "ld")!)"
+                        ])
+                    ]
+                ),
+                .target(
+                    name: "Components",
+                    dependencies: [
+                        "ESP32Hardware",
+                        "SwiftEmbeddedCore"
+                    ],
+                    swiftSettings: [
+                        .enableExperimentalFeature("Embedded")
+                    ]
+                )
+            ]
+        )
+        """
+    }
+    
+    private func generateComponentSources(
+        configuration: ESPHomeConfiguration
+    ) throws -> [ComponentSource] {
+        var sources: [ComponentSource] = []
+        
+        // Generate component configuration structs
+        let configSource = try generateComponentConfigs(configuration)
+        sources.append(ComponentSource(
+            fileName: "ComponentConfigs.swift",
+            content: configSource
+        ))
+        
+        // Copy required component implementations
+        // In real implementation, this would copy actual component files
+        
+        return sources
+    }
+    
+    private func generateComponentConfigs(
+        _ configuration: ESPHomeConfiguration
+    ) throws -> String {
+        var configs = """
+        // Auto-generated component configurations
+        import Foundation
+        import SwiftEmbeddedCore
+        
+        """
+        
+        // Generate config structs for each component type
+        if let sensors = configuration.sensor {
+            for sensor in sensors {
+                configs += generateSensorConfig(sensor)
+            }
+        }
+        
+        if let switches = configuration.`switch` {
+            for sw in switches {
+                configs += generateSwitchConfig(sw)
+            }
+        }
+        
+        return configs
+    }
+    
+    private func generateSensorConfig(_ sensor: SensorConfig) -> String {
+        let id = sensor.id ?? "sensor_\(sensor.platform)"
+        return """
+        
+        struct \(id.camelCased())Config {
+            static let platform = "\(sensor.platform)"
+            static let pin = \(sensor.pin?.description ?? "nil")
+            static let name = "\(sensor.name ?? id)"
+            static let updateInterval: UInt32 = \(parseInterval(sensor.updateInterval))
+        }
+        
+        """
+    }
+    
+    private func generateSwitchConfig(_ switch: SwitchConfig) -> String {
+        let id = `switch`.id ?? "switch_\(`switch`.platform)"
+        return """
+        
+        struct \(id.camelCased())Config {
+            static let platform = "\(`switch`.platform)"
+            static let pin = \(`switch`.pin?.description ?? "nil")
+            static let name = "\(`switch`.name ?? id)"
+            static let inverted = \(`switch`.inverted ?? false)
+        }
+        
+        """
+    }
+    
+    private func writePackageFiles(
+        projectPath: String,
+        manifest: String,
+        mainSwift: String,
+        componentSources: [ComponentSource]
+    ) throws {
+        // Write Package.swift
+        try manifest.write(
+            toFile: "\(projectPath)/Package.swift",
+            atomically: true,
+            encoding: .utf8
+        )
+        
+        // Write main.swift
+        try mainSwift.write(
+            toFile: "\(projectPath)/Sources/Firmware/main.swift",
+            atomically: true,
+            encoding: .utf8
+        )
+        
+        // Write component sources
+        for source in componentSources {
+            try source.content.write(
+                toFile: "\(projectPath)/Sources/Components/\(source.fileName)",
+                atomically: true,
+                encoding: .utf8
+            )
+        }
+    }
+    
+    private func getTargetTriple(for board: String) -> String {
+        // All current ESP32 RISC-V boards use 32-bit architecture
+        return "riscv32-none-none-eabi"
+    }
+    
+    private func parseInterval(_ interval: String?) -> UInt32 {
+        guard let interval = interval else { return 60 }
+        
+        if interval.hasSuffix("s") {
+            return UInt32(interval.dropLast()) ?? 60
+        } else if interval.hasSuffix("ms") {
+            return (UInt32(interval.dropLast(2)) ?? 60000) / 1000
+        }
+        
+        return UInt32(interval) ?? 60
+    }
+}
+
+/// Generated Swift package information
+public struct GeneratedSwiftPackage {
+    public let path: String
+    public let targetName: String
+    public let executableName: String
+}
+
+/// Component source file
+struct ComponentSource {
+    let fileName: String
+    let content: String
+}
+
+// String extension for camelCase conversion
+extension String {
+    func camelCased() -> String {
+        let parts = self.split(separator: "_")
+        guard !parts.isEmpty else { return self }
+        
+        let first = String(parts[0])
+        let rest = parts.dropFirst().map { $0.capitalized }
+        
+        return ([first] + rest).joined()
+    }
+}

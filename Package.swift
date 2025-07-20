@@ -31,6 +31,11 @@ let package = Package(
         .library(
             name: "MatterSupport",
             targets: ["MatterSupport"]
+        ),
+        // Swift Embedded code generation
+        .library(
+            name: "SwiftEmbeddedGen",
+            targets: ["SwiftEmbeddedGen"]
         )
     ],
     dependencies: [
@@ -85,6 +90,17 @@ let package = Package(
             ]
         ),
         
+        // Swift Embedded code generation
+        .target(
+            name: "SwiftEmbeddedGen",
+            dependencies: [
+                "ESPHomeSwiftCore",
+                "ComponentLibrary",
+                .product(name: "Logging", package: "swift-log"),
+                .product(name: "SystemPackage", package: "swift-system")
+            ]
+        ),
+        
         // Command line interface
         .executableTarget(
             name: "CLI",
@@ -92,6 +108,7 @@ let package = Package(
                 "ESPHomeSwiftCore",
                 "CodeGeneration",
                 "ComponentLibrary",
+                "SwiftEmbeddedGen",
                 "WebDashboard",
                 .product(name: "ArgumentParser", package: "swift-argument-parser"),
                 .product(name: "Logging", package: "swift-log")
