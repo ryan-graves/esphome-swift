@@ -102,6 +102,7 @@ ESPHomeSwift/
 - [x] **Matter protocol support** (ESP32-C6/H2 with Thread networking)
 - [x] **25+ Matter device types** (lights, sensors, switches, locks)
 - [x] **WiFi and Thread transport** with comprehensive validation
+- [ ] **Component Library ESP-IDF Migration** - Replace Arduino-style APIs with native ESP-IDF C APIs for all sensors/actuators
 - [ ] Plugin system architecture for custom components
 - [ ] Advanced automation engine with on-device rules
 - [ ] Advanced sensor filters and data processing
