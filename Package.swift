@@ -17,11 +17,6 @@ let package = Package(
             name: "ESPHomeSwiftCore",
             targets: ["ESPHomeSwiftCore"]
         ),
-        // Code generation library
-        .library(
-            name: "CodeGeneration",
-            targets: ["CodeGeneration"]
-        ),
         // Component library
         .library(
             name: "ComponentLibrary",
@@ -61,18 +56,6 @@ let package = Package(
             ]
         ),
         
-        // Code generation engine
-        .target(
-            name: "CodeGeneration",
-            dependencies: [
-                "ESPHomeSwiftCore",
-                "ComponentLibrary",
-                "MatterSupport",
-                .product(name: "Logging", package: "swift-log"),
-                .product(name: "SystemPackage", package: "swift-system")
-            ]
-        ),
-        
         // Built-in component definitions
         .target(
             name: "ComponentLibrary",
@@ -106,10 +89,10 @@ let package = Package(
             name: "CLI",
             dependencies: [
                 "ESPHomeSwiftCore",
-                "CodeGeneration",
                 "ComponentLibrary",
                 "SwiftEmbeddedGen",
                 "WebDashboard",
+                "MatterSupport",
                 .product(name: "ArgumentParser", package: "swift-argument-parser"),
                 .product(name: "Logging", package: "swift-log")
             ]
@@ -128,10 +111,6 @@ let package = Package(
         .testTarget(
             name: "ESPHomeSwiftCoreTests",
             dependencies: ["ESPHomeSwiftCore"]
-        ),
-        .testTarget(
-            name: "CodeGenerationTests",
-            dependencies: ["CodeGeneration"]
         ),
         .testTarget(
             name: "ComponentLibraryTests",

@@ -1,9 +1,9 @@
 import Foundation
 import ArgumentParser
 import ESPHomeSwiftCore
-import CodeGeneration
 import ComponentLibrary
 import MatterSupport
+import SwiftEmbeddedGen
 import Logging
 
 /// Main CLI entry point for ESPHome Swift
@@ -51,24 +51,64 @@ struct BuildCommand: ParsableCommand {
         let core = ESPHomeSwiftCore.shared
         let configuration = try core.parseConfiguration(file: configPath)
         
-        // Generate code
-        let codeGenerator = CodeGenerator()
-        let generatedProject = try codeGenerator.generateCode(
+        logger.info("Building Swift Embedded firmware from: \\(configPath)")
+        
+        // Validate configuration for Swift Embedded
+        try SwiftEmbeddedGen.validateConfiguration(configuration)
+        
+        // Generate Swift package
+        let generatedPackage = try SwiftEmbeddedGen.generateProject(
             from: configuration,
             outputDirectory: output
         )
         
-        // Build project
-        let builder = ProjectBuilder()
-        let buildResult = try builder.buildProject(
-            generatedProject: generatedProject,
-            configuration: configuration,
-            outputDirectory: output
-        )
+        logger.info("Generated Swift package at: \\(generatedPackage.path)")
+        logger.info("Target: \\(generatedPackage.targetName)")
+        logger.info("Executable: \\(generatedPackage.executableName)")
         
+        // Build Swift package
+        logger.info("Building Swift Embedded firmware...")
+        let buildCommand = [
+            "swift", "build",
+            "-c", "release",
+            "--package-path", generatedPackage.path,
+            "--product", generatedPackage.executableName
+        ]
+        
+        if verbose {
+            logger.debug("Build command: \\(buildCommand.joined(separator: \" \"))")
+        }
+        
+        // Execute build
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
+        process.arguments = buildCommand
+        process.currentDirectoryURL = URL(fileURLWithPath: generatedPackage.path)
+        
+        if verbose {
+            process.standardOutput = FileHandle.standardOutput
+            process.standardError = FileHandle.standardError
+        }
+        
+        try process.run()
+        process.waitUntilExit()
+        
+        guard process.terminationStatus == 0 else {
+            logger.error("Swift build failed with exit code: \\(process.terminationStatus)")
+            throw ExitCode.failure
+        }
+        
+        let binaryPath = "\\(generatedPackage.path)/.build/release/\\(generatedPackage.executableName)"
         logger.info("Build completed successfully!")
-        logger.info("Firmware: \\(buildResult.firmwarePath)")
-        logger.info("Project: \\(buildResult.projectPath)")
+        logger.info("Binary: \\(binaryPath)")
+        logger.info("Project: \\(generatedPackage.path)")
+        
+        // Note about development snapshot requirement
+        if !FileManager.default.fileExists(atPath: binaryPath) {
+            logger.warning("Binary not found. This usually means Swift Embedded compilation failed.")
+            logger.warning("Make sure you have a Swift development snapshot with Embedded support installed.")
+            logger.warning("See: https://www.swift.org/download/#snapshots")
+        }
     }
 }
 
@@ -97,26 +137,10 @@ struct FlashCommand: ParsableCommand {
         let logger = Logger(label: "FlashCommand")
         logger.info("Flashing firmware from: \\(projectPath)")
         
-        let buildResult = BuildResult(
-            projectPath: projectPath,
-            firmwarePath: "\\(projectPath)/build/firmware.bin",
-            buildOutput: "",
-            success: true
-        )
-        
-        let builder = ProjectBuilder()
-        let flashResult = try builder.flashProject(
-            buildResult: buildResult,
-            port: port,
-            baudRate: baudRate
-        )
-        
-        if flashResult.success {
-            logger.info("Flash completed successfully!")
-        } else {
-            logger.error("Flash failed")
-            throw ExitCode.failure
-        }
+        // TODO: Implement Swift Embedded binary flashing
+        logger.error("Flash command not yet implemented for Swift Embedded binaries")
+        logger.info("Please use ESP-IDF tools to flash the generated binary")
+        throw ExitCode.failure
     }
 }
 
@@ -145,19 +169,10 @@ struct MonitorCommand: ParsableCommand {
         let logger = Logger(label: "MonitorCommand")
         logger.info("Starting serial monitor for: \\(projectPath)")
         
-        let buildResult = BuildResult(
-            projectPath: projectPath,
-            firmwarePath: "\\(projectPath)/build/firmware.bin",
-            buildOutput: "",
-            success: true
-        )
-        
-        let builder = ProjectBuilder()
-        try builder.monitorSerial(
-            buildResult: buildResult,
-            port: port,
-            baudRate: baudRate
-        )
+        // TODO: Implement serial monitoring for Swift Embedded devices
+        logger.error("Monitor command not yet implemented for Swift Embedded")
+        logger.info("Please use a serial terminal like 'screen' or 'minicom'")
+        throw ExitCode.failure
     }
 }
 
@@ -185,6 +200,10 @@ struct ValidateCommand: ParsableCommand {
             let configuration = try core.parseConfiguration(file: configPath)
             try core.validateConfiguration(configuration)
             
+            // Validate for Swift Embedded (the only supported mode)
+            try SwiftEmbeddedGen.validateConfiguration(configuration)
+            logger.info("✅ Configuration is valid for Swift Embedded")
+            
             logger.info("✅ Configuration is valid")
             print("Configuration validation passed!")
             
@@ -210,6 +229,12 @@ struct ValidateCommand: ParsableCommand {
                 print("  Binary Sensors: \\(binarySensors.count)")
             }
             
+            // Swift Embedded info
+            print("\\nSwift Embedded Mode:")
+            print("  ⚠️  Requires Swift development snapshot with Embedded support")
+            print("  📦 Generates Swift Package for ESP32 firmware")
+            print("  🎯 Target triple: riscv32-none-none-eabi")
+            
         } catch {
             logger.error("❌ Configuration validation failed: \\(error)")
             print("Configuration validation failed:")
@@ -232,8 +257,6 @@ struct ListComponentsCommand: ParsableCommand {
     
     func run() throws {
         let registry = ComponentRegistry.shared
-        let platforms = registry.availablePlatforms
-        
         print("Available Component Platforms:\\n")
         
         for factoryInfo in registry.allFactories {
@@ -388,7 +411,7 @@ func generateProjectTemplate(name: String, board: String) -> String {
     esp32:
       board: \(board)
       framework:
-        type: esp-idf
+        type: swift-embedded
     
     # Enable logging
     logger:
