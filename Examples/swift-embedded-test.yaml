@@ -1,5 +1,5 @@
-# Example configuration for Swift Embedded mode
-# This demonstrates the new build system architecture
+# Example configuration for ESPHome Swift
+# ESPHome Swift uses pure Swift Embedded for ESP32 firmware generation
 
 esphome_swift:
   name: "Swift Embedded Test"
@@ -8,7 +8,7 @@ esphome_swift:
 esp32:
   board: esp32-c6-devkitc-1
   framework:
-    type: swift-embedded  # New Swift Embedded mode
+    type: swift-embedded
 
 # WiFi configuration
 wifi:

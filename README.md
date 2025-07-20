@@ -6,7 +6,7 @@
 [![ESP-IDF](https://img.shields.io/badge/ESP--IDF-v5.3-blue.svg)](https://github.com/espressif/esp-idf)
 [![Documentation](https://img.shields.io/badge/docs-github.io-blue.svg)](https://ryan-graves.github.io/esphome-swift/)
 
-A Swift-based replacement for ESPHome that generates Embedded Swift firmware for ESP32 microcontrollers from declarative YAML configuration files.
+A pure Swift Embedded firmware generator for ESP32 microcontrollers that compiles native Swift code from declarative YAML configuration files.
 
 ## Project Overview
 
@@ -14,43 +14,27 @@ ESPHome Swift brings the power and type safety of Swift to embedded IoT developm
 
 ## Core Architecture
 
-### Configuration System
-- **YAML Input**: Familiar ESPHome-style configuration files
-- **Swift Parser**: Native Swift YAML parsing with Foundation/Yams
-- **Schema Validation**: Type-safe validation with descriptive error messages
-- **Component Registry**: Extensible component registration system
-
-### Code Generation Engine
-- **Template-Based**: Swift code generation from YAML to C/C++ for ESP-IDF
-- **Modular Components**: Sensors, actuators, networking, automation
-- **ESP-IDF Integration**: Seamless integration with Espressif's development framework
-- **Production Ready**: Generates optimized C code for reliable embedded operation
-
-## Why Swift Generates C Code?
-
-**ESPHome Swift uses a hybrid architecture**: Swift for development-time type safety and code generation, C/C++ for runtime execution on ESP32.
+### Pure Swift Embedded
+ESPHome Swift uses **pure Swift Embedded** - your Swift code runs directly on the ESP32 microcontroller with no C++ generation or runtime overhead.
 
 ### Development Flow
 ```
-YAML Config → Swift Parser → C/C++ Code Generation → ESP-IDF Build → ESP32 Firmware
+YAML Config → Swift Parser → Swift Component Assembly → Swift Embedded Compilation → ESP32 Firmware
 ```
 
-### Why This Approach?
+### Key Benefits
 
-1. **ESP32 Compatibility**: ESP32 microcontrollers run ESP-IDF (C/C++ framework) with proven stability
-2. **Production Ready**: C/C++ toolchain is mature and well-tested for embedded systems
-3. **Memory Efficiency**: No Swift runtime overhead on resource-constrained microcontrollers
-4. **Hardware Integration**: Direct access to ESP-IDF APIs and peripheral drivers
-5. **ESPHome Ecosystem**: Compatible with existing ESPHome patterns and Home Assistant integration
+1. **Type Safety on Device**: Full Swift type safety and memory safety running on the microcontroller
+2. **Modern Language**: Use Swift's powerful features (optionals, generics, error handling) in embedded code
+3. **Unified Development**: Single language from configuration parsing to device runtime
+4. **Zero Overhead**: Swift Embedded compiles to efficient machine code with no runtime
+5. **Future Proof**: Built on Apple's official Swift Embedded support
 
-### Swift Embedded Future
+### Requirements
 
-While **Swift Embedded** is advancing rapidly, ESP32 RISC-V support is still experimental. Our architecture provides:
-- ✅ **Type safety** at development time (Swift)
-- ✅ **Reliability** at runtime (C/C++)
-- ✅ **Migration path** to native Swift when the ecosystem matures
-
-When Swift Embedded fully supports ESP32 (expected 2025-2026), we can offer both approaches while maintaining backward compatibility.
+- **Swift Development Snapshot**: Requires a development snapshot toolchain with Embedded Swift support
+- **Supported Boards**: ESP32-C3, C6, H2, P4 (RISC-V architecture)
+- **Components**: Currently supports GPIO, DHT sensors, ADC, RGB lights, and more being added
 
 ### Target Platforms
 - ESP32-C3, ESP32-C6, ESP32-H2, ESP32-P4 (RISC-V architecture)

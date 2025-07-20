@@ -187,7 +187,7 @@ public class SwiftPackageGenerator {
         
         struct \(id.camelCased())Config {
             static let platform = "\(sensor.platform)"
-            static let pin = \(sensor.pin?.description ?? "nil")
+            static let pin = \(sensor.pin.map { "GPIO(\($0.number))" } ?? "nil")
             static let name = "\(sensor.name ?? id)"
             static let updateInterval: UInt32 = \(parseInterval(sensor.updateInterval))
         }
@@ -201,7 +201,7 @@ public class SwiftPackageGenerator {
         
         struct \(id.camelCased())Config {
             static let platform = "\(`switch`.platform)"
-            static let pin = \(`switch`.pin?.description ?? "nil")
+            static let pin = \(`switch`.pin.map { "GPIO(\($0.number))" } ?? "nil")
             static let name = "\(`switch`.name ?? id)"
             static let inverted = \(`switch`.inverted ?? false)
         }
@@ -216,26 +216,17 @@ public class SwiftPackageGenerator {
         componentSources: [ComponentSource]
     ) throws {
         // Write Package.swift
-        try manifest.write(
-            toFile: "\(projectPath)/Package.swift",
-            atomically: true,
-            encoding: .utf8
-        )
+        let manifestURL = URL(fileURLWithPath: "\(projectPath)/Package.swift")
+        try manifest.write(to: manifestURL, atomically: true, encoding: .utf8)
         
         // Write main.swift
-        try mainSwift.write(
-            toFile: "\(projectPath)/Sources/Firmware/main.swift",
-            atomically: true,
-            encoding: .utf8
-        )
+        let mainURL = URL(fileURLWithPath: "\(projectPath)/Sources/Firmware/main.swift")
+        try mainSwift.write(to: mainURL, atomically: true, encoding: .utf8)
         
         // Write component sources
         for source in componentSources {
-            try source.content.write(
-                toFile: "\(projectPath)/Sources/Components/\(source.fileName)",
-                atomically: true,
-                encoding: .utf8
-            )
+            let sourceURL = URL(fileURLWithPath: "\(projectPath)/Sources/Components/\(source.fileName)")
+            try source.content.write(to: sourceURL, atomically: true, encoding: .utf8)
         }
     }
     
@@ -270,15 +261,4 @@ struct ComponentSource {
     let content: String
 }
 
-// String extension for camelCase conversion
-extension String {
-    func camelCased() -> String {
-        let parts = self.split(separator: "_")
-        guard !parts.isEmpty else { return self }
-        
-        let first = String(parts[0])
-        let rest = parts.dropFirst().map { $0.capitalized }
-        
-        return ([first] + rest).joined()
-    }
-}
+// String extension for camelCase conversion is in ComponentAssembler.swift

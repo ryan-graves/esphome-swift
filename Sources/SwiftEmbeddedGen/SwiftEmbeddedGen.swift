@@ -1,6 +1,9 @@
 // Swift Embedded Code Generation Module
 // Handles the transition from YAML configuration to Swift Embedded firmware
 
+import Foundation
+import ESPHomeSwiftCore
+
 /// Main entry point for Swift Embedded code generation
 public struct SwiftEmbeddedGen {
     
@@ -20,12 +23,7 @@ public struct SwiftEmbeddedGen {
     public static func validateConfiguration(
         _ configuration: ESPHomeConfiguration
     ) throws {
-        // Check framework type
-        guard configuration.esp32.framework?.type == "swift-embedded" else {
-            throw ValidationError.wrongFramework(
-                "Configuration must specify 'framework: type: swift-embedded'"
-            )
-        }
+        // Framework type is always Swift Embedded now
         
         // Validate board support
         let supportedBoards = [
@@ -83,7 +81,7 @@ public struct SwiftEmbeddedGen {
         }
         
         // Check binary sensor platforms
-        if let binarySensors = config.binarySensor {
+        if let binarySensors = config.binary_sensor {
             for sensor in binarySensors {
                 guard sensor.platform == "gpio" else {
                     throw ValidationError.unsupportedComponent(
