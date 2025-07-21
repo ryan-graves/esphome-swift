@@ -1,0 +1,55 @@
+services:
+  swift-embedded:
+    build:
+      context: .
+      dockerfile: Dockerfile.simple
+    image: esphome-swift:embedded
+    container_name: esphome-swift-dev
+    
+    # Mount the project directory into the container
+    volumes:
+      - .:/workspace/esphome-swift
+      - swift-build-cache:/workspace/esphome-swift/.build
+    
+    # Keep STDIN open and allocate a pseudo-TTY
+    stdin_open: true
+    tty: true
+    
+    # Environment variables
+    environment:
+      - TERM=xterm-256color
+      - SWIFT_EMBEDDED=1
+    
+    # Working directory
+    working_dir: /workspace/esphome-swift
+    
+    # For USB device access (ESP32 flashing)
+    # Uncomment these lines when you need to flash devices
+    # privileged: true
+    # devices:
+    #   - /dev/ttyUSB0:/dev/ttyUSB0
+    #   - /dev/tty.usbserial:/dev/tty.usbserial
+    
+    # Network mode for development
+    network_mode: bridge
+
+  # Quick command shortcuts
+  build:
+    extends: swift-embedded
+    command: swift build
+    stdin_open: false
+    tty: false
+  
+  test:
+    extends: swift-embedded
+    command: swift test
+    stdin_open: false
+    tty: false
+
+  shell:
+    extends: swift-embedded
+    command: /bin/bash
+
+# Named volume for build cache persistence
+volumes:
+  swift-build-cache:
