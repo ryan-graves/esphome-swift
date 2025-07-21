@@ -44,6 +44,9 @@ public class SwiftPackageGenerator {
             componentSources: componentSources
         )
         
+        // Copy HAL source files
+        try copyHALSources(to: projectPath)
+        
         return GeneratedSwiftPackage(
             path: projectPath,
             targetName: projectName,
@@ -59,6 +62,8 @@ public class SwiftPackageGenerator {
             "\(path)/Sources",
             "\(path)/Sources/Firmware",
             "\(path)/Sources/Components",
+            "\(path)/Sources/ESP32Hardware",
+            "\(path)/Sources/SwiftEmbeddedCore",
             "\(path)/Resources"
         ]
         
@@ -94,9 +99,8 @@ public class SwiftPackageGenerator {
                 )
             ],
             dependencies: [
-                // Local dependencies for HAL
-                .package(path: "../../../ESP32Hardware"),
-                .package(path: "../../../SwiftEmbeddedCore")
+                // ESPHome Swift framework dependencies
+                // These would be resolved from the main project
             ],
             targets: [
                 .executableTarget(
@@ -124,10 +128,23 @@ public class SwiftPackageGenerator {
                 ),
                 .target(
                     name: "Components",
-                    dependencies: [
-                        "ESP32Hardware",
-                        "SwiftEmbeddedCore"
-                    ],
+                    dependencies: ["ESP32Hardware", "SwiftEmbeddedCore"],
+                    swiftSettings: [
+                        .enableExperimentalFeature("Embedded")
+                    ]
+                ),
+                .target(
+                    name: "ESP32Hardware",
+                    dependencies: [],
+                    path: "Sources/ESP32Hardware",
+                    swiftSettings: [
+                        .enableExperimentalFeature("Embedded")
+                    ]
+                ),
+                .target(
+                    name: "SwiftEmbeddedCore",
+                    dependencies: ["ESP32Hardware"],
+                    path: "Sources/SwiftEmbeddedCore",
                     swiftSettings: [
                         .enableExperimentalFeature("Embedded")
                     ]
@@ -245,6 +262,36 @@ public class SwiftPackageGenerator {
         }
         
         return UInt32(interval) ?? 60
+    }
+    
+    private func copyHALSources(to projectPath: String) throws {
+        let fileManager = FileManager.default
+        
+        // Get the path to the HAL modules in the main project
+        // This assumes the generator is running from the main project directory
+        let currentDirectory = fileManager.currentDirectoryPath
+        let esp32HardwarePath = "\(currentDirectory)/Sources/ESP32Hardware"
+        let swiftEmbeddedCorePath = "\(currentDirectory)/Sources/SwiftEmbeddedCore"
+        
+        // Copy ESP32Hardware files
+        if fileManager.fileExists(atPath: esp32HardwarePath) {
+            let hardwareFiles = try fileManager.contentsOfDirectory(atPath: esp32HardwarePath)
+            for file in hardwareFiles where file.hasSuffix(".swift") {
+                let sourcePath = "\(esp32HardwarePath)/\(file)"
+                let destPath = "\(projectPath)/Sources/ESP32Hardware/\(file)"
+                try fileManager.copyItem(atPath: sourcePath, toPath: destPath)
+            }
+        }
+        
+        // Copy SwiftEmbeddedCore files
+        if fileManager.fileExists(atPath: swiftEmbeddedCorePath) {
+            let coreFiles = try fileManager.contentsOfDirectory(atPath: swiftEmbeddedCorePath)
+            for file in coreFiles where file.hasSuffix(".swift") {
+                let sourcePath = "\(swiftEmbeddedCorePath)/\(file)"
+                let destPath = "\(projectPath)/Sources/SwiftEmbeddedCore/\(file)"
+                try fileManager.copyItem(atPath: sourcePath, toPath: destPath)
+            }
+        }
     }
 }
 

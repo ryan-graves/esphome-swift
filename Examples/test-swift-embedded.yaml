@@ -1,0 +1,33 @@
+# Test configuration for Swift Embedded mode
+esphome_swift:
+  name: "Test Swift Embedded"
+  framework_type: swift-embedded
+
+esp32:
+  board: esp32-c6-devkitc-1
+
+# Basic GPIO components for testing
+switch:
+  - platform: gpio
+    pin: GPIO5
+    name: "LED Switch"
+    id: led_switch
+    restore_mode: RESTORE_DEFAULT_OFF
+
+binary_sensor:
+  - platform: gpio
+    pin: GPIO9
+    name: "Button"
+    id: button_sensor
+    inverted: true
+
+# Test sensor
+sensor:
+  - platform: adc
+    pin: GPIO1
+    name: "Battery Voltage"
+    id: battery_sensor
+    update_interval: 60s
+    attenuation: db11
+    filters:
+      - multiply: 3.3

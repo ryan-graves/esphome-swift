@@ -84,6 +84,26 @@ let package = Package(
             ]
         ),
         
+        // ESP32 Hardware Abstraction Layer
+        .target(
+            name: "ESP32Hardware",
+            dependencies: []
+            // Uncomment when Swift development snapshot is installed:
+            // swiftSettings: [
+            //     .enableExperimentalFeature("Embedded")
+            // ]
+        ),
+        
+        // Swift Embedded Core Component System
+        .target(
+            name: "SwiftEmbeddedCore",
+            dependencies: ["ESP32Hardware"]
+            // Uncomment when Swift development snapshot is installed:
+            // swiftSettings: [
+            //     .enableExperimentalFeature("Embedded")
+            // ]
+        ),
+        
         // Command line interface
         .executableTarget(
             name: "CLI",
