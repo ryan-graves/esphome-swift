@@ -1,7 +1,7 @@
 // ESP32 ADC Hardware Abstraction Layer for Swift Embedded
 
 /// ADC channel errors
-public enum ADCError: Error {
+public enum ADCError {
     case invalidChannel
     case invalidAttenuation
     case calibrationFailed
@@ -67,34 +67,45 @@ public struct ADCChannel {
     }
     
     /// Configure ADC channel
-    public func configure() throws {
+    public func configure(attenuation: ADCAttenuation, resolution: ADCResolution) -> Bool {
         // In real implementation:
         // adc1_config_width(resolution)
         // adc1_config_channel_atten(channel, attenuation)
+        return true
     }
     
     /// Read raw ADC value
-    public func readRaw() throws -> UInt16 {
+    public func readRaw() -> UInt16? {
         // In real implementation:
         // return adc1_get_raw(channel)
         return 2048 // Simulated middle value
     }
     
     /// Read voltage in volts
-    public func readVoltage() throws -> Float {
-        let raw = try readRaw()
+    public func readVoltage() -> Float? {
+        guard let raw = readRaw() else { return nil }
+        let ratio = Float(raw) / Float(resolution.maxValue)
+        return ratio * attenuation.maxVoltage
+    }
+    
+    /// Convert raw value to voltage
+    public func rawToVoltage(_ raw: UInt16, attenuation: ADCAttenuation) -> Float {
         let ratio = Float(raw) / Float(resolution.maxValue)
         return ratio * attenuation.maxVoltage
     }
     
     /// Read with averaging for stability
-    public func readAveraged(samples: Int = 10) throws -> UInt16 {
+    public func readAveraged(samples: Int = 10) -> UInt16? {
         var sum: UInt32 = 0
+        var validSamples = 0
         for _ in 0..<samples {
-            sum += UInt32(try readRaw())
+            if let raw = readRaw() {
+                sum += UInt32(raw)
+                validSamples += 1
+            }
             SystemTime.delayMicros(100) // Small delay between samples
         }
-        return UInt16(sum / UInt32(samples))
+        return validSamples > 0 ? UInt16(sum / UInt32(validSamples)) : nil
     }
 }
 
@@ -123,7 +134,7 @@ public struct ADCCalibrationHandle {
 /// Helper to get ADC channel for a pin on specific board
 public struct ADCMapper {
     /// Get ADC channel info for a GPIO pin
-    public static func channel(for pin: GPIO, board: String) throws -> ADCChannel {
+    public static func channel(for pin: GPIO, board: String) -> ADCChannel? {
         // Board-specific mapping
         // This would use BoardCapabilities to determine ADC support
         
@@ -136,7 +147,7 @@ public struct ADCMapper {
                 pin: pin
             )
         default:
-            throw ADCError.invalidChannel
+            return nil
         }
     }
 }

@@ -24,20 +24,31 @@ public struct GPIO {
     }
     
     /// Configure pin direction
-    public func setDirection(_ direction: GPIODirection) throws {
+    public func setDirection(_ direction: GPIODirection) -> Bool {
         // In real implementation, this would interface with ESP-IDF
         // gpio_set_direction(gpio_num_t(number), direction.toESPIDF())
+        return true
     }
     
     /// Read digital value
-    public func digitalRead() -> GPIOLevel {
+    public func digitalRead() -> Bool {
         // In real implementation: gpio_get_level(gpio_num_t(number))
-        return .low
+        return false // Placeholder
+    }
+    
+    /// Read digital value as GPIOLevel
+    public func readLevel() -> GPIOLevel {
+        return digitalRead() ? .high : .low
     }
     
     /// Write digital value
     public func digitalWrite(_ level: GPIOLevel) {
         // In real implementation: gpio_set_level(gpio_num_t(number), level.toESPIDF())
+    }
+    
+    /// Write digital value (boolean convenience)
+    public func digitalWrite(_ high: Bool) {
+        digitalWrite(high ? .high : .low)
     }
 }
 

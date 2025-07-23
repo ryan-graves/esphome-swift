@@ -1,7 +1,7 @@
 // ESP32 WiFi Hardware Abstraction Layer for Swift Embedded
 
 /// WiFi errors
-public enum WiFiError: Error {
+public enum WiFiError {
     case initializationFailed
     case connectionFailed
     case authenticationFailed
@@ -102,17 +102,18 @@ public struct WiFiStation {
     }
     
     /// Connect to WiFi network
-    public mutating func connect(config: WiFiConfig) throws {
+    public mutating func connect(config: WiFiConfig) -> Bool {
         guard !config.ssid.isEmpty else {
-            throw WiFiError.invalidSSID
+            return false
         }
         
         if !config.password.isEmpty && config.password.count < 8 {
-            throw WiFiError.invalidPassword
+            return false
         }
         
         self.config = config
         state = .connecting
+        return true
         
         // In real implementation:
         // wifi_config_t wifi_config = {}
@@ -166,12 +167,13 @@ public struct WiFiAccessPoint {
     private var started: Bool = false
     
     /// Start access point
-    public mutating func start(config: WiFiConfig) throws {
+    public mutating func start(config: WiFiConfig) -> Bool {
         guard !config.ssid.isEmpty else {
-            throw WiFiError.invalidSSID
+            return false
         }
         
         self.config = config
+        return true
         
         // In real implementation:
         // esp_netif_create_default_wifi_ap()

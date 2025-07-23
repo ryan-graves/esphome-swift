@@ -1,7 +1,7 @@
 // ESP32 Timer Hardware Abstraction Layer for Swift Embedded
 
 /// Timer errors
-public enum TimerError: Error {
+public enum TimerError {
     case initializationFailed
     case invalidFrequency
     case timerNotAvailable
@@ -21,13 +21,14 @@ public struct HardwareTimer {
     }
     
     /// Initialize timer with frequency in Hz
-    public func initialize(frequency: UInt32) throws {
+    public func initialize(frequency: UInt32) -> Bool {
         guard frequency > 0 && frequency <= 40_000_000 else {
-            throw TimerError.invalidFrequency
+            return false
         }
         
         // In real implementation: timer_config_t setup with ESP-IDF
         // esp_timer_create() and esp_timer_start_periodic()
+        return true
     }
     
     /// Start periodic timer

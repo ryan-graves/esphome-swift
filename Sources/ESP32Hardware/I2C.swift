@@ -1,7 +1,7 @@
 // ESP32 I2C Hardware Abstraction Layer for Swift Embedded
 
 /// I2C communication errors
-public enum I2CError: Error {
+public enum I2CError {
     case initializationFailed
     case communicationTimeout
     case nackReceived
