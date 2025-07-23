@@ -1,7 +1,7 @@
 // Swift Embedded Core Error Types
 
 /// Base error type for Swift Embedded components
-public enum ComponentError: Error {
+public enum ComponentError {
     case setupFailed(component: String, reason: String)
     case loopFailed(component: String, reason: String)
     case invalidConfiguration(component: String, property: String, value: String)
@@ -11,7 +11,7 @@ public enum ComponentError: Error {
 }
 
 /// Hardware-specific errors
-public enum HardwareError: Error {
+public enum HardwareError {
     case gpioError(pin: UInt8, operation: String)
     case i2cError(address: UInt8, operation: String)
     case spiError(device: String, operation: String)
@@ -21,7 +21,7 @@ public enum HardwareError: Error {
 }
 
 /// Sensor-specific errors
-public enum SensorError: Error {
+public enum SensorError {
     case readingFailed(sensor: String, reason: String)
     case outOfRange(sensor: String, value: Float, min: Float, max: Float)
     case timeout(sensor: String)

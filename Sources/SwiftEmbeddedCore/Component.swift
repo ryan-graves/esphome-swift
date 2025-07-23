@@ -9,10 +9,10 @@ public protocol Component {
     var name: String? { get }
     
     /// Setup component (called once at startup)
-    mutating func setup() throws
+    mutating func setup() -> Bool
     
     /// Component main loop (called repeatedly)
-    mutating func loop() throws
+    mutating func loop() -> Bool
 }
 
 /// Component with state reporting capability
@@ -32,23 +32,23 @@ public protocol SensorComponent: StatefulComponent where State == Float {
     var updateInterval: UInt32 { get }
     
     /// Read sensor value
-    mutating func readValue() throws -> Float?
+    mutating func readValue() -> Float?
 }
 
 /// Binary sensor component protocol  
 public protocol BinarySensorComponent: StatefulComponent where State == Bool {
     /// Read binary state
-    mutating func readState() throws -> Bool
+    mutating func readState() -> Bool?
 }
 
 /// Switch component protocol
 public protocol SwitchComponent: StatefulComponent where State == Bool {
     /// Turn switch on
-    mutating func turnOn() throws
+    mutating func turnOn() -> Bool
     
     /// Turn switch off
-    mutating func turnOff() throws
+    mutating func turnOff() -> Bool
     
     /// Toggle switch state
-    mutating func toggle() throws
+    mutating func toggle() -> Bool
 }
