@@ -9,6 +9,18 @@ public class ComponentAssembler {
     
     public init() {}
     
+    /// Extract pin number from PinConfig for code generation
+    private func extractPinNumber(_ pinConfig: PinConfig) -> Int {
+        switch pinConfig.number {
+        case .integer(let number):
+            return number
+        case .gpio(let gpioString):
+            // Extract number from "GPIO4" format or return as-is if numeric
+            let cleanString = gpioString.replacingOccurrences(of: "GPIO", with: "")
+            return Int(cleanString) ?? 0
+        }
+    }
+    
     /// Generate complete main.swift file from configuration
     public func assembleMainFile(
         configuration: ESPHomeConfiguration
@@ -103,7 +115,7 @@ public class ComponentAssembler {
         var \(varName) = try DHTSensor(
             id: "\(sensor.id ?? varName)",
             name: \(sensor.name.map { "\"\($0)\"" } ?? "nil"),
-            pin: GPIO(\(pin.number)),
+            pin: GPIO(\(extractPinNumber(pin))),
             model: .\(model.lowercased()),
             updateInterval: \(updateInterval)
         )
@@ -130,7 +142,7 @@ public class ComponentAssembler {
         var \(varName) = try ADCSensor(
             id: "\(sensor.id ?? varName)",
             name: \(sensor.name.map { "\"\($0)\"" } ?? "nil"),
-            pin: GPIO(\(pin.number)),
+            pin: GPIO(\(extractPinNumber(pin))),
             updateInterval: \(updateInterval),
             attenuation: .db11
         """
@@ -166,7 +178,7 @@ public class ComponentAssembler {
         var \(varName) = try DallasTemperatureSensor(
             id: "\(sensor.id ?? varName)",
             name: \(sensor.name.map { "\"\($0)\"" } ?? "nil"),
-            pin: GPIO(\(pin.number)),
+            pin: GPIO(\(extractPinNumber(pin))),
             address: 0x0000000000000000,
             updateInterval: \(updateInterval)
         )
@@ -209,7 +221,7 @@ public class ComponentAssembler {
         var \(varName) = try GPIOSwitch(
             id: "\(`switch`.id ?? varName)",
             name: \(`switch`.name.map { "\"\($0)\"" } ?? "nil"),
-            pin: GPIO(\(pin.number)),
+            pin: GPIO(\(extractPinNumber(pin))),
             inverted: \(inverted),
             restoreMode: .\(restoreMode.camelCased())
         )
@@ -280,7 +292,7 @@ public class ComponentAssembler {
         var \(varName) = try MonochromaticLight(
             id: "\(light.id ?? varName)",
             name: \(light.name.map { "\"\($0)\"" } ?? "nil"),
-            pin: GPIO(\(pin.number))
+            pin: GPIO(\(extractPinNumber(pin)))
         )
         """
         
@@ -320,7 +332,7 @@ public class ComponentAssembler {
         var \(varName) = try GPIOBinarySensor(
             id: "\(sensor.id ?? varName)",
             name: \(sensor.name.map { "\"\($0)\"" } ?? "nil"),
-            pin: GPIO(\(pin.number)),
+            pin: GPIO(\(extractPinNumber(pin))),
             inverted: \(inverted),
             mode: .input
         )

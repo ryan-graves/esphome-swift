@@ -9,6 +9,18 @@ public class SwiftPackageGenerator {
     
     public init() {}
     
+    /// Extract pin number from PinConfig for code generation
+    private func extractPinNumber(_ pinConfig: PinConfig) -> Int {
+        switch pinConfig.number {
+        case .integer(let number):
+            return number
+        case .gpio(let gpioString):
+            // Extract number from "GPIO4" format or return as-is if numeric
+            let cleanString = gpioString.replacingOccurrences(of: "GPIO", with: "")
+            return Int(cleanString) ?? 0
+        }
+    }
+    
     /// Generate complete Swift package from configuration
     public func generatePackage(
         from configuration: ESPHomeConfiguration,
@@ -113,16 +125,13 @@ public class SwiftPackageGenerator {
                     swiftSettings: [
                         .enableExperimentalFeature("Embedded"),
                         .unsafeFlags([
-                            "-target", "\(targetTriple)",
-                            "-Xfrontend", "-function-sections",
-                            "-Xfrontend", "-data-sections",
-                            "-Xfrontend", "-disable-stack-protector"
+                            "-target", "\(targetTriple)"
                         ])
                     ],
                     linkerSettings: [
                         .unsafeFlags([
                             "-Xlinker", "-T",
-                            "-Xlinker", "\\(Bundle.module.path(forResource: "esp32c6", ofType: "ld")!)"
+                            "-Xlinker", "esp32c6.ld"
                         ])
                     ]
                 ),
@@ -177,8 +186,8 @@ public class SwiftPackageGenerator {
     ) throws -> String {
         var configs = """
         // Auto-generated component configurations
-        import Foundation
         import SwiftEmbeddedCore
+        import ESP32Hardware
         
         """
         
@@ -204,7 +213,7 @@ public class SwiftPackageGenerator {
         
         struct \(id.camelCased())Config {
             static let platform = "\(sensor.platform)"
-            static let pin = \(sensor.pin.map { "GPIO(\($0.number))" } ?? "nil")
+            static let pin = \(sensor.pin.map { "GPIO(\(extractPinNumber($0)))" } ?? "nil")
             static let name = "\(sensor.name ?? id)"
             static let updateInterval: UInt32 = \(parseInterval(sensor.updateInterval))
         }
@@ -218,7 +227,7 @@ public class SwiftPackageGenerator {
         
         struct \(id.camelCased())Config {
             static let platform = "\(`switch`.platform)"
-            static let pin = \(`switch`.pin.map { "GPIO(\($0.number))" } ?? "nil")
+            static let pin = \(`switch`.pin.map { "GPIO(\(extractPinNumber($0)))" } ?? "nil")
             static let name = "\(`switch`.name ?? id)"
             static let inverted = \(`switch`.inverted ?? false)
         }
