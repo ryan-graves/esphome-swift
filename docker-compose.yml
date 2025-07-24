@@ -5,11 +5,20 @@ services:
       dockerfile: Dockerfile.simple
     image: esphome-swift:embedded
     container_name: esphome-swift-dev
+  
+  # ESP-IDF + Swift Embedded environment for Phase 2
+  esp-idf:
+    build:
+      context: .
+      dockerfile: Dockerfile.esp-idf
+    image: esphome-swift:esp-idf
+    container_name: esphome-swift-esp-idf
     
     # Mount the project directory into the container
     volumes:
       - .:/workspace/esphome-swift
       - swift-build-cache:/workspace/esphome-swift/.build
+      - esp-idf-tools:/opt/esp-tools
     
     # Keep STDIN open and allocate a pseudo-TTY
     stdin_open: true
@@ -19,6 +28,8 @@ services:
     environment:
       - TERM=xterm-256color
       - SWIFT_EMBEDDED=1
+      - IDF_PATH=/opt/esp-idf
+      - IDF_TOOLS_PATH=/opt/esp-tools
     
     # Working directory
     working_dir: /workspace/esphome-swift
@@ -50,6 +61,18 @@ services:
     extends: swift-embedded
     command: /bin/bash
 
-# Named volume for build cache persistence
+  # ESP-IDF environment shortcuts
+  esp-build:
+    extends: esp-idf
+    command: /bin/bash -c "source /opt/setup-esp-idf.sh && swift build"
+    stdin_open: false
+    tty: false
+  
+  esp-shell:
+    extends: esp-idf
+    command: /bin/bash -c "source /opt/setup-esp-idf.sh && /bin/bash"
+
+# Named volumes for persistence
 volumes:
   swift-build-cache:
+  esp-idf-tools:

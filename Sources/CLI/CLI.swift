@@ -66,24 +66,36 @@ struct BuildCommand: ParsableCommand {
         logger.info("Target: \\(generatedPackage.targetName)")
         logger.info("Executable: \\(generatedPackage.executableName)")
         
-        // Build Swift package
-        logger.info("Building Swift Embedded firmware...")
-        let buildCommand = [
-            "swift", "build",
-            "-c", "release",
-            "--package-path", generatedPackage.path,
-            "--product", generatedPackage.executableName
-        ]
+        // Build ESP32 firmware using ESP-IDF
+        logger.info("Building ESP32 firmware using ESP-IDF...")
+        
+        // Check if ESP-IDF is available
+        guard isESPIDFAvailable() else {
+            logger.error("ESP-IDF not found. Please install ESP-IDF or use Docker:")
+            logger.error("  docker compose run esp-shell")
+            logger.error("See: https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/")
+            throw ExitCode.failure
+        }
+        
+        let buildCommand = ["idf.py", "build"]
         
         if verbose {
             logger.debug("Build command: \\(buildCommand.joined(separator: \" \"))")
+            logger.debug("Working directory: \\(generatedPackage.path)")
         }
         
-        // Execute build
+        // Execute ESP-IDF build
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
         process.arguments = buildCommand
         process.currentDirectoryURL = URL(fileURLWithPath: generatedPackage.path)
+        
+        // Set ESP-IDF environment variables
+        var environment = ProcessInfo.processInfo.environment
+        if let idfPath = environment["IDF_PATH"] {
+            environment["PATH"] = "\(idfPath)/tools:\(environment["PATH"] ?? "")"
+        }
+        process.environment = environment
         
         if verbose {
             process.standardOutput = FileHandle.standardOutput
@@ -94,20 +106,42 @@ struct BuildCommand: ParsableCommand {
         process.waitUntilExit()
         
         guard process.terminationStatus == 0 else {
-            logger.error("Swift build failed with exit code: \\(process.terminationStatus)")
+            logger.error("ESP-IDF build failed with exit code: \\(process.terminationStatus)")
+            logger.error("Try running the build in Docker environment:")
+            logger.error("  docker compose run esp-shell")
+            logger.error("  cd build/\\(generatedPackage.targetName) && idf.py build")
             throw ExitCode.failure
         }
         
-        let binaryPath = "\\(generatedPackage.path)/.build/release/\\(generatedPackage.executableName)"
+        let binaryPath = "\\(generatedPackage.path)/build/\\(generatedPackage.targetName).bin" 
         logger.info("Build completed successfully!")
-        logger.info("Binary: \\(binaryPath)")
+        logger.info("Firmware binary: \\(binaryPath)")
         logger.info("Project: \\(generatedPackage.path)")
         
-        // Note about development snapshot requirement
+        // Check if binary was created
         if !FileManager.default.fileExists(atPath: binaryPath) {
-            logger.warning("Binary not found. This usually means Swift Embedded compilation failed.")
-            logger.warning("Make sure you have a Swift development snapshot with Embedded support installed.")
-            logger.warning("See: https://www.swift.org/download/#snapshots")
+            logger.warning("Firmware binary not found at expected location.")
+            logger.warning("Check build output for ESP-IDF compilation errors.")
+            logger.info("You can also build manually using:")
+            logger.info("  docker compose run esp-shell")
+            logger.info("  cd build/\\(generatedPackage.targetName) && idf.py build")
+        }
+    }
+    
+    private func isESPIDFAvailable() -> Bool {
+        // Check if idf.py is available in PATH
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
+        process.arguments = ["which", "idf.py"]
+        process.standardOutput = Pipe()
+        process.standardError = Pipe()
+        
+        do {
+            try process.run()
+            process.waitUntilExit()
+            return process.terminationStatus == 0
+        } catch {
+            return false
         }
     }
 }
