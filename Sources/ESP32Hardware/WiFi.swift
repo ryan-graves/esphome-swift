@@ -91,52 +91,51 @@ public struct WiFiStation {
     
     /// Initialize WiFi station
     public mutating func initialize() throws {
-        // In real implementation:
-        // esp_netif_init()
-        // esp_event_loop_create_default()
-        // esp_netif_create_default_wifi_sta()
-        // wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT()
-        // esp_wifi_init(&cfg)
-        
+        // Simplified implementation for Swift Embedded compilation
+        // Real implementation would use ESP-IDF WiFi initialization sequence
+        print("WiFi: Initializing station mode")
         state = .disconnected
+        eventHandler?(.started)
     }
     
     /// Connect to WiFi network
     public mutating func connect(config: WiFiConfig) -> Bool {
         guard !config.ssid.isEmpty else {
+            print("WiFi Error: SSID cannot be empty")
             return false
         }
         
         if !config.password.isEmpty && config.password.count < 8 {
+            print("WiFi Error: Password must be at least 8 characters")
             return false
         }
         
         self.config = config
         state = .connecting
-        return true
         
-        // In real implementation:
-        // wifi_config_t wifi_config = {}
-        // Copy SSID and password
-        // esp_wifi_set_mode(WIFI_MODE_STA)
-        // esp_wifi_set_config(WIFI_IF_STA, &wifi_config)
-        // esp_wifi_start()
-        // esp_wifi_connect()
+        print("WiFi: Connecting to '\(config.ssid)' with \(config.authMode) authentication")
         
-        // Simulate connection
-        eventHandler?(.started)
+        // Simplified implementation - simulate successful connection
+        // Real implementation would use ESP-IDF WiFi API
         eventHandler?(.connected)
         state = .connected
         
-        // Simulate getting IP
-        let ip = IPAddress(192, 168, 1, 100)
+        print("WiFi: Connected successfully")
+        state = .obtainingIP
+        
+        // Simulate getting IP address via DHCP
+        let ip = IPAddress(192, 168, 1, 100 + UInt8.random(in: 0...50))
         eventHandler?(.gotIP(address: ip))
         state = .ready
+        print("WiFi: Got IP address: \(ip.string)")
+        
+        return true
     }
     
     /// Disconnect from WiFi
     public mutating func disconnect() {
-        // esp_wifi_disconnect()
+        print("WiFi: Disconnecting")
+        // Real implementation would use: esp_wifi_disconnect()
         state = .disconnected
         eventHandler?(.disconnected(reason: 0))
     }
@@ -144,7 +143,7 @@ public struct WiFiStation {
     /// Get current IP address
     public func getIPAddress() -> IPAddress? {
         guard state == .ready else { return nil }
-        // In real implementation: get from esp_netif
+        // Simplified implementation - real would get from esp_netif
         return IPAddress(192, 168, 1, 100)
     }
     
@@ -169,26 +168,23 @@ public struct WiFiAccessPoint {
     /// Start access point
     public mutating func start(config: WiFiConfig) -> Bool {
         guard !config.ssid.isEmpty else {
+            print("WiFi AP Error: SSID cannot be empty")
             return false
         }
         
         self.config = config
-        return true
+        print("WiFi AP: Starting access point '\(config.ssid)' on channel \(config.channel ?? 1)")
         
-        // In real implementation:
-        // esp_netif_create_default_wifi_ap()
-        // wifi_config_t wifi_config = {}
-        // Configure AP settings
-        // esp_wifi_set_mode(WIFI_MODE_AP)
-        // esp_wifi_set_config(WIFI_IF_AP, &wifi_config)
-        // esp_wifi_start()
-        
+        // Simplified implementation for Swift Embedded compilation
+        // Real implementation would use ESP-IDF WiFi AP configuration
         started = true
+        return true
     }
     
     /// Stop access point
     public mutating func stop() {
-        // esp_wifi_stop()
+        print("WiFi AP: Stopping access point")
+        // Real implementation would use: esp_wifi_stop()
         started = false
     }
     

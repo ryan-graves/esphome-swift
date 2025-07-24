@@ -87,19 +87,13 @@ let package = Package(
         // ESP32 Hardware Abstraction Layer
         .target(
             name: "ESP32Hardware",
-            dependencies: [],
-            swiftSettings: [
-                .enableExperimentalFeature("Embedded")
-            ]
+            dependencies: []
         ),
         
         // Swift Embedded Core Component System
         .target(
             name: "SwiftEmbeddedCore",
-            dependencies: ["ESP32Hardware"],
-            swiftSettings: [
-                .enableExperimentalFeature("Embedded")
-            ]
+            dependencies: ["ESP32Hardware"]
         ),
         
         // Command line interface

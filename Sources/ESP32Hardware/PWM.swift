@@ -68,27 +68,17 @@ public struct PWMChannel {
     
     /// Initialize PWM channel
     public func setup() -> Bool {
-        // Configure timer
-        // In real implementation:
-        // ledc_timer_config_t timer_conf = {
-        //     .speed_mode = LEDC_LOW_SPEED_MODE,
-        //     .duty_resolution = resolution,
-        //     .timer_num = timer,
-        //     .freq_hz = frequency,
-        //     .clk_cfg = LEDC_AUTO_CLK
-        // }
-        // ledc_timer_config(&timer_conf)
+        // Simplified implementation for Swift Embedded compilation
+        // Real implementation would use ESP-IDF LEDC driver configuration
+        guard pin.supportsPWM() else {
+            print("PWM Error: GPIO\(pin.number) does not support PWM")
+            return false
+        }
         
-        // Configure channel
-        // ledc_channel_config_t channel_conf = {
-        //     .gpio_num = pin.number,
-        //     .speed_mode = LEDC_LOW_SPEED_MODE,
-        //     .channel = channel,
-        //     .timer_sel = timer,
-        //     .duty = 0,
-        //     .hpoint = 0
-        // }
-        // ledc_channel_config(&channel_conf)
+        print("PWM Channel \(channel): Setup on GPIO\(pin.number) at \(frequency)Hz with \(resolution.bits)-bit resolution")
+        
+        // Set pin as output for PWM
+        _ = pin.setDirection(.output)
         return true
     }
     
@@ -100,9 +90,12 @@ public struct PWMChannel {
         
         currentDuty = UInt32(duty * Float(resolution.maxDuty))
         
-        // In real implementation:
-        // ledc_set_duty(LEDC_LOW_SPEED_MODE, channel, currentDuty)
-        // ledc_update_duty(LEDC_LOW_SPEED_MODE, channel)
+        // Simplified implementation with GPIO simulation
+        // Real implementation would use: ledc_set_duty() and ledc_update_duty()
+        print("PWM Channel \(channel): Set duty to \(Int(duty * 100))% (\(currentDuty)/\(resolution.maxDuty))")
+        
+        // Simulate PWM by setting GPIO high/low based on duty
+        pin.digitalWrite(duty > 0.5)
         return true
     }
     
@@ -113,11 +106,11 @@ public struct PWMChannel {
         }
         
         currentDuty = duty
-        return true
+        print("PWM Channel \(channel): Set raw duty to \(duty)/\(resolution.maxDuty)")
         
-        // In real implementation:
-        // ledc_set_duty(LEDC_LOW_SPEED_MODE, channel, duty)
-        // ledc_update_duty(LEDC_LOW_SPEED_MODE, channel)
+        // Simplified implementation
+        // Real implementation would use: ledc_set_duty() and ledc_update_duty()
+        return true
     }
     
     /// Get current duty cycle (0.0 to 1.0)
@@ -131,22 +124,19 @@ public struct PWMChannel {
             return false
         }
         
-        let _ = UInt32(duty * Float(resolution.maxDuty))
-        return true
+        let _ = UInt32(duty * Float(resolution.maxDuty)) // Use underscore to avoid warning
+        print("PWM Channel \(channel): Fading to \(Int(duty * 100))% over \(durationMs)ms")
         
-        // In real implementation:
-        // ledc_set_fade_time_and_start(
-        //     LEDC_LOW_SPEED_MODE,
-        //     channel,
-        //     targetDuty,
-        //     durationMs,
-        //     LEDC_FADE_NO_WAIT
-        // )
+        // Simplified implementation - immediate change
+        // Real implementation would use ESP-IDF fade functions
+        return true
     }
     
     /// Stop PWM output
     public func stop() {
-        // ledc_stop(LEDC_LOW_SPEED_MODE, channel, 0)
+        print("PWM Channel \(channel): Stopped")
+        pin.digitalWrite(.low)
+        // Real implementation would use: ledc_stop(LEDC_LOW_SPEED_MODE, channel, 0)
     }
 }
 
@@ -182,11 +172,11 @@ public struct RGBLED {
     }
     
     /// Set color from hex value (0xRRGGBB)
-    public mutating func setColorHex(_ hex: UInt32) throws {
+    public mutating func setColorHex(_ hex: UInt32) -> Bool {
         let red = Float((hex >> 16) & 0xFF) / 255.0
         let green = Float((hex >> 8) & 0xFF) / 255.0
         let blue = Float(hex & 0xFF) / 255.0
-        try setColor(red: red, green: green, blue: blue)
+        return setColor(red: red, green: green, blue: blue)
     }
     
     /// Fade to color over duration

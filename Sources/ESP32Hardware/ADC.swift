@@ -68,17 +68,27 @@ public struct ADCChannel {
     
     /// Configure ADC channel
     public func configure(attenuation: ADCAttenuation, resolution: ADCResolution) -> Bool {
-        // In real implementation:
-        // adc1_config_width(resolution)
-        // adc1_config_channel_atten(channel, attenuation)
+        // Simplified implementation for Swift Embedded compilation
+        // Real implementation would use: adc1_config_width(resolution) and adc1_config_channel_atten(channel, attenuation)
+        guard pin.supportsADC() else { 
+            print("ADC Error: GPIO\(pin.number) does not support ADC")
+            return false 
+        }
+        print("ADC\(unit)_CH\(channel): Configured for GPIO\(pin.number) with \(attenuation) attenuation")
         return true
     }
     
-    /// Read raw ADC value
+    /// Read raw ADC value with simulated noise
     public func readRaw() -> UInt16? {
-        // In real implementation:
-        // return adc1_get_raw(channel)
-        return 2048 // Simulated middle value
+        // Simplified implementation with simulated ADC readings
+        // Real implementation would use: adc1_get_raw(channel)
+        guard pin.supportsADC() else { return nil }
+        
+        // Simulate realistic ADC values with some variation
+        let baseValue = UInt16(resolution.maxValue / 2) // Mid-range
+        let noise = Int16.random(in: -100...100) // Small random variation
+        let rawValue = max(0, min(Int(resolution.maxValue), Int(baseValue) + Int(noise)))
+        return UInt16(rawValue)
     }
     
     /// Read voltage in volts
@@ -117,17 +127,29 @@ public struct ADCCalibration {
         attenuation: ADCAttenuation,
         resolution: ADCResolution
     ) throws -> ADCCalibrationHandle {
-        // In real implementation: esp_adc_cal_characterize()
-        return ADCCalibrationHandle()
+        // Simplified implementation for Swift Embedded compilation
+        // Real implementation would use: esp_adc_cal_characterize()
+        print("ADC\(unit): Created calibration for \(attenuation) with \(resolution)")
+        return ADCCalibrationHandle(attenuation: attenuation, resolution: resolution)
     }
 }
 
 /// Calibration handle for accurate readings
 public struct ADCCalibrationHandle {
+    private let attenuation: ADCAttenuation
+    private let resolution: ADCResolution
+    
+    init(attenuation: ADCAttenuation = .db11, resolution: ADCResolution = .bits12) {
+        self.attenuation = attenuation
+        self.resolution = resolution
+    }
+    
     /// Convert raw value to calibrated voltage
     public func rawToVoltage(_ raw: UInt16) -> Float {
-        // In real implementation: esp_adc_cal_raw_to_voltage()
-        return Float(raw) * (3.3 / 4095.0)
+        // Simplified implementation using attenuation and resolution
+        // Real implementation would use: esp_adc_cal_raw_to_voltage()
+        let ratio = Float(raw) / Float(resolution.maxValue)
+        return ratio * attenuation.maxVoltage
     }
 }
 

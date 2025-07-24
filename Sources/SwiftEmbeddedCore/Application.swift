@@ -21,7 +21,7 @@ public class Application {
         }
         
         // Initialize watchdog
-        Watchdog.initialize(timeoutSeconds: 10)
+        Watchdog.initialize(timeout: 10000)
         Watchdog.addCurrentTask()
         return true
     }

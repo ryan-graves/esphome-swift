@@ -59,6 +59,13 @@ public class SwiftPackageGenerator {
         // Copy HAL source files
         try copyHALSources(to: projectPath)
         
+        // Generate ESP-IDF project files
+        try generateESPIDFProject(
+            at: projectPath,
+            configuration: configuration,
+            projectName: projectName
+        )
+        
         return GeneratedSwiftPackage(
             path: projectPath,
             targetName: projectName,
@@ -76,7 +83,10 @@ public class SwiftPackageGenerator {
             "\(path)/Sources/Components",
             "\(path)/Sources/ESP32Hardware",
             "\(path)/Sources/SwiftEmbeddedCore",
-            "\(path)/Resources"
+            "\(path)/Resources",
+            // ESP-IDF project structure
+            "\(path)/main",
+            "\(path)/components"
         ]
         
         for directory in directories {
@@ -186,8 +196,7 @@ public class SwiftPackageGenerator {
     ) throws -> String {
         var configs = """
         // Auto-generated component configurations
-        import SwiftEmbeddedCore
-        import ESP32Hardware
+        // Swift Embedded - no import statements needed
         
         """
         
@@ -300,6 +309,186 @@ public class SwiftPackageGenerator {
                 let destPath = "\(projectPath)/Sources/SwiftEmbeddedCore/\(file)"
                 try fileManager.copyItem(atPath: sourcePath, toPath: destPath)
             }
+        }
+    }
+    
+    // MARK: - ESP-IDF Project Generation
+    
+    private func generateESPIDFProject(
+        at projectPath: String,
+        configuration: ESPHomeConfiguration,
+        projectName: String
+    ) throws {
+        let board = configuration.esp32.board
+        
+        // Generate main CMakeLists.txt
+        let mainCMake = generateMainCMakeLists(projectName: projectName, board: board)
+        let mainCMakeURL = URL(fileURLWithPath: "\(projectPath)/CMakeLists.txt")
+        try mainCMake.write(to: mainCMakeURL, atomically: true, encoding: .utf8)
+        
+        // Generate main/CMakeLists.txt
+        let mainComponentCMake = generateMainComponentCMakeLists()
+        let mainComponentURL = URL(fileURLWithPath: "\(projectPath)/main/CMakeLists.txt")
+        try mainComponentCMake.write(to: mainComponentURL, atomically: true, encoding: .utf8)
+        
+        // Generate main/main.swift (ESP-IDF entry point)
+        let mainSwiftContent = generateESPIDFMainSwift(projectName: projectName)
+        let mainSwiftURL = URL(fileURLWithPath: "\(projectPath)/main/main.swift")
+        try mainSwiftContent.write(to: mainSwiftURL, atomically: true, encoding: .utf8)
+        
+        // Generate main/swift_main.c (C bridge)
+        let swiftMainC = generateSwiftMainC()
+        let swiftMainCURL = URL(fileURLWithPath: "\(projectPath)/main/swift_main.c")
+        try swiftMainC.write(to: swiftMainCURL, atomically: true, encoding: .utf8)
+        
+        // Generate sdkconfig.defaults
+        let sdkConfig = generateSDKConfig(board: board)
+        let sdkConfigURL = URL(fileURLWithPath: "\(projectPath)/sdkconfig.defaults")
+        try sdkConfig.write(to: sdkConfigURL, atomically: true, encoding: .utf8)
+    }
+    
+    private func generateMainCMakeLists(projectName: String, board: String) -> String {
+        let target = getESPIDFTarget(for: board)
+        
+        return """
+        # CMakeLists.txt for ESPHome Swift Embedded project
+        # Generated for \(projectName) - Board: \(board)
+        cmake_minimum_required(VERSION 3.16)
+        
+        # Set the target before including project.cmake
+        set(IDF_TARGET "\(target)")
+        
+        include($ENV{IDF_PATH}/tools/cmake/project.cmake)
+        project(\(projectName))
+        """
+    }
+    
+    private func generateMainComponentCMakeLists() -> String {
+        return """
+        # Main component CMakeLists.txt
+        # This component contains the Swift Embedded code compiled to RISC-V
+        
+        idf_component_register(
+            SRCS "swift_main.c"
+            INCLUDE_DIRS "."
+            REQUIRES "driver" "esp_system" "freertos"
+        )
+        
+        # Add Swift compilation
+        set(SWIFT_SOURCES "main.swift")
+        set(SWIFT_TARGET "riscv32-none-none-eabi")
+        set(SWIFT_FLAGS
+            -target \\${SWIFT_TARGET}
+            -Xcc -march=rv32imc_zicsr_zifencei
+            -Xcc -mabi=ilp32
+            -enable-experimental-feature Embedded
+            -wmo
+            -parse-as-library
+            -c
+        )
+        
+        # Compile Swift to object file
+        add_custom_command(
+            OUTPUT main.o
+            COMMAND swiftc \\${SWIFT_FLAGS} -o main.o \\${SWIFT_SOURCES}
+            DEPENDS \\${SWIFT_SOURCES}
+            WORKING_DIRECTORY \\${CMAKE_CURRENT_SOURCE_DIR}
+            COMMENT "Compiling Swift Embedded code"
+        )
+        
+        # Add Swift object to component
+        target_sources(\\${COMPONENT_LIB} PRIVATE main.o)
+        """
+    }
+    
+    private func generateESPIDFMainSwift(projectName: String) -> String {
+        return """
+        // ESPHome Swift Embedded Firmware - ESP-IDF Entry Point
+        // Generated for \(projectName)
+        
+        @_cdecl("swift_main")
+        public func swiftMain() {
+            // Import the generated firmware code
+            // Note: In Swift Embedded, all Swift files are compiled together
+            print("Starting \(projectName) firmware...")
+            
+            // Initialize the firmware
+            do {
+                try \(projectName.pascalCased())Firmware.main()
+            } catch {
+                print("Firmware error: \\(error)")
+            }
+        }
+        """
+    }
+    
+    private func generateSwiftMainC() -> String {
+        return """
+        // C bridge for Swift Embedded firmware
+        // This file provides the ESP-IDF entry point and calls into Swift code
+        
+        #include <stdio.h>
+        #include "freertos/FreeRTOS.h"
+        #include "freertos/task.h"
+        #include "esp_system.h"
+        #include "esp_log.h"
+        
+        // Swift function declaration
+        extern void swift_main(void);
+        
+        static const char *TAG = "swift_firmware";
+        
+        void app_main(void) {
+            ESP_LOGI(TAG, "Starting Swift Embedded firmware");
+            
+            // Call into Swift code
+            swift_main();
+            
+            ESP_LOGI(TAG, "Swift firmware completed");
+        }
+        """
+    }
+    
+    private func generateSDKConfig(board: String) -> String {
+        let target = getESPIDFTarget(for: board)
+        
+        return """
+        # ESP-IDF Configuration for \(board)
+        # Generated sdkconfig.defaults
+        
+        # Target configuration
+        CONFIG_IDF_TARGET="\(target)"
+        
+        # Enable ESP32 features needed for Swift Embedded
+        CONFIG_FREERTOS_HZ=1000
+        CONFIG_ESP_TASK_WDT_TIMEOUT_S=10
+        CONFIG_ESP_MAIN_TASK_STACK_SIZE=8192
+        
+        # Memory configuration for Swift runtime
+        CONFIG_SPIRAM=n
+        CONFIG_ESP32_SPIRAM_SUPPORT=n
+        
+        # Enable logging
+        CONFIG_LOG_DEFAULT_LEVEL_INFO=y
+        CONFIG_LOG_MAXIMUM_LEVEL=5
+        
+        # Compiler optimizations
+        CONFIG_COMPILER_OPTIMIZATION_SIZE=y
+        """
+    }
+    
+    private func getESPIDFTarget(for board: String) -> String {
+        switch board {
+        case "esp32-c3-devkitm-1":
+            return "esp32c3"
+        case "esp32-c6-devkitc-1":
+            return "esp32c6"
+        case "esp32-h2-devkitm-1":
+            return "esp32h2"
+        case "esp32-p4-devkit":
+            return "esp32p4"
+        default:
+            return "esp32c6" // Default to C6
         }
     }
 }

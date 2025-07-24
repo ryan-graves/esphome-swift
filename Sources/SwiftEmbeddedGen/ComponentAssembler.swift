@@ -401,9 +401,8 @@ public class ComponentAssembler {
         // Board: \(board)
         // Generated: \(Date())
         
-        import ESP32Hardware
-        import SwiftEmbeddedCore
-        import Components
+        // Note: In Swift Embedded, all Swift files are compiled together
+        // No import statements needed - modules are linked at compile time
         
         // Board configuration
         let board = "\(board)"
