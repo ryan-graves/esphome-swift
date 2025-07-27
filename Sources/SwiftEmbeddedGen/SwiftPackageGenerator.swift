@@ -255,7 +255,7 @@ public class SwiftPackageGenerator {
         try manifest.write(to: manifestURL, atomically: true, encoding: .utf8)
         
         // Write main.swift
-        let mainURL = URL(fileURLWithPath: "\(projectPath)/Sources/Firmware/main.swift")
+        let mainURL = URL(fileURLWithPath: "\(projectPath)/Sources/Firmware/firmware.swift")
         try mainSwift.write(to: mainURL, atomically: true, encoding: .utf8)
         
         // Write component sources
@@ -368,36 +368,43 @@ public class SwiftPackageGenerator {
         # Main component CMakeLists.txt
         # This component contains the Swift Embedded code compiled to RISC-V
         
-        idf_component_register(
-            SRCS "swift_main.c"
-            INCLUDE_DIRS "."
-            REQUIRES "driver" "esp_system" "freertos"
+        # Set Swift compilation variables  
+        file(GLOB_RECURSE FIRMWARE_SOURCES "../Sources/Firmware/*.swift")
+        file(GLOB_RECURSE HARDWARE_SOURCES "../Sources/ESP32Hardware/*.swift")
+        set(SWIFT_SOURCES 
+            "main.swift"
+            \\${FIRMWARE_SOURCES}
+            \\${HARDWARE_SOURCES}
         )
-        
-        # Add Swift compilation
-        set(SWIFT_SOURCES "main.swift")
         set(SWIFT_TARGET "riscv32-none-none-eabi")
         set(SWIFT_FLAGS
             -target \\${SWIFT_TARGET}
             -Xcc -march=rv32imc_zicsr_zifencei
             -Xcc -mabi=ilp32
             -enable-experimental-feature Embedded
+            -DSWIFT_EMBEDDED
             -wmo
             -parse-as-library
             -c
         )
         
-        # Compile Swift to object file
-        add_custom_command(
-            OUTPUT main.o
+        # Compile Swift to object file before component registration
+        execute_process(
             COMMAND swiftc \\${SWIFT_FLAGS} -o main.o \\${SWIFT_SOURCES}
-            DEPENDS \\${SWIFT_SOURCES}
             WORKING_DIRECTORY \\${CMAKE_CURRENT_SOURCE_DIR}
-            COMMENT "Compiling Swift Embedded code"
+            RESULT_VARIABLE SWIFT_COMPILE_RESULT
         )
         
-        # Add Swift object to component
-        target_sources(\\${COMPONENT_LIB} PRIVATE main.o)
+        if(NOT SWIFT_COMPILE_RESULT EQUAL 0)
+            message(FATAL_ERROR "Swift compilation failed")
+        endif()
+        
+        # Register the component with both C and Swift object files
+        idf_component_register(
+            SRCS "swift_main.c" "main.o"
+            INCLUDE_DIRS "."
+            REQUIRES "driver" "esp_system" "freertos"
+        )
         """
     }
     

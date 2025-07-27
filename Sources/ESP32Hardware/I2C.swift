@@ -1,7 +1,7 @@
 // ESP32 I2C Hardware Abstraction Layer for Swift Embedded
 
 /// I2C communication errors
-public enum I2CError: Error {
+public enum I2CError {
     case initializationFailed
     case communicationTimeout
     case nackReceived
@@ -21,7 +21,7 @@ public struct I2C {
     }
     
     /// Initialize I2C bus
-    public func initialize() throws {
+    public func initialize() -> Bool {
         // Simplified implementation for Swift Embedded compilation
         // Real implementation would use ESP-IDF i2c_master_init()
         
@@ -33,26 +33,31 @@ public struct I2C {
         
         // Validate pin assignment for ESP32-C6
         guard sda.number != scl.number else {
-            throw I2CError.initializationFailed
+            print("I2C Error: SDA and SCL cannot use the same pin")
+            return false
         }
+        return true
     }
     
     /// Write data to I2C device
-    public func write(address: UInt8, data: [UInt8]) throws {
+    public func write(address: UInt8, data: [UInt8]) -> Bool {
         // Simplified implementation for Swift Embedded compilation
         // Real implementation would use: i2c_master_write_to_device()
         guard address <= 0x7F else {
-            throw I2CError.invalidAddress
+            print("I2C Error: Invalid address 0x\(String(address, radix: 16, uppercase: true))")
+            return false
         }
         print("I2C: Write to 0x\(String(address, radix: 16, uppercase: true)) - \(data.count) bytes: \(data.map { String($0, radix: 16, uppercase: true) }.joined(separator: " "))")
+        return true
     }
     
     /// Read data from I2C device
-    public func read(address: UInt8, bytes: Int) throws -> [UInt8] {
+    public func read(address: UInt8, bytes: Int) -> [UInt8]? {
         // Simplified implementation with simulated sensor data
         // Real implementation would use: i2c_master_read_from_device()
         guard address <= 0x7F else {
-            throw I2CError.invalidAddress
+            print("I2C Error: Invalid address 0x\(String(address, radix: 16, uppercase: true))")
+            return nil
         }
         guard bytes > 0 else {
             return []
@@ -68,8 +73,8 @@ public struct I2C {
     }
     
     /// Write then read (common pattern for sensors)
-    public func writeRead(address: UInt8, writeData: [UInt8], readBytes: Int) throws -> [UInt8] {
-        try write(address: address, data: writeData)
-        return try read(address: address, bytes: readBytes)
+    public func writeRead(address: UInt8, writeData: [UInt8], readBytes: Int) -> [UInt8]? {
+        guard write(address: address, data: writeData) else { return nil }
+        return read(address: address, bytes: readBytes)
     }
 }
