@@ -116,10 +116,9 @@ public struct FrameworkConfig: Codable {
     }
 }
 
-/// Supported framework types
+/// Supported framework types (Swift Embedded only)
 public enum FrameworkType: String, Codable, CaseIterable {
-    case espIDF = "esp-idf"
-    case arduino = "arduino"
+    case swiftEmbedded = "swift-embedded"
 }
 
 /// WiFi configuration

@@ -1,0 +1,36 @@
+# Multi-stage Dockerfile for ESP-IDF + Swift Embedded development
+# Stage 1: ESP-IDF base environment  
+FROM espressif/idf:v5.3.2 AS esp-base
+
+# Install dependencies for Swift
+RUN apt-get update && apt-get install -y \
+    curl \
+    libusb-1.0-0-dev \
+    libusb-1.0-0 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Stage 2: Add Swift to ESP-IDF environment
+FROM esp-base AS swift-esp-idf
+
+# Download and install Swift development snapshot with Embedded support
+# Note: Using latest development snapshot for Embedded Swift
+ARG SWIFT_VERSION=swift-DEVELOPMENT-SNAPSHOT-2024-12-03-a
+ARG SWIFT_PLATFORM=ubuntu22.04
+
+RUN curl -fsSL https://download.swift.org/development/ubuntu2204/${SWIFT_VERSION}/${SWIFT_VERSION}-${SWIFT_PLATFORM}.tar.gz | tar -xzC /opt/
+RUN ln -s /opt/${SWIFT_VERSION}-${SWIFT_PLATFORM} /opt/swift
+
+# Add Swift to PATH
+ENV PATH="/opt/swift/usr/bin:${PATH}"
+
+# Set up ESP-IDF environment script for easier access
+RUN echo '#!/bin/bash' > /opt/setup-esp-idf.sh && \
+    echo 'source /opt/esp-idf/export.sh' >> /opt/setup-esp-idf.sh && \
+    echo 'export PATH="/opt/swift/usr/bin:$PATH"' >> /opt/setup-esp-idf.sh && \
+    chmod +x /opt/setup-esp-idf.sh
+
+# Create working directory
+WORKDIR /workspace/esphome-swift
+
+# Default command runs the setup script
+CMD ["/bin/bash", "-c", "source /opt/setup-esp-idf.sh && /bin/bash"]

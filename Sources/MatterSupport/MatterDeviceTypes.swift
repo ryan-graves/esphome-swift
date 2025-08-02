@@ -1,5 +1,16 @@
 import Foundation
-import ComponentLibrary
+import ESPHomeSwiftCore
+
+/// Swift Embedded component types supported by ESPHome Swift
+public enum SwiftEmbeddedComponentType: String, CaseIterable {
+    case sensor = "sensor"
+    case `switch` = "switch"
+    case light = "light"
+    case binarySensor = "binary_sensor"
+    case cover = "cover"
+    case climate = "climate"
+    case fan = "fan"
+}
 
 /// Matter device types as defined in the Matter specification
 public enum MatterDeviceType: String, Codable, CaseIterable {
@@ -126,8 +137,8 @@ public enum MatterDeviceType: String, Codable, CaseIterable {
         }
     }
     
-    /// Check if this device type is compatible with the given ESPHome Swift component type
-    public func isCompatible(with componentType: ComponentType) -> Bool {
+    /// Check if this device type is compatible with the given Swift Embedded component type
+    public func isCompatible(with componentType: SwiftEmbeddedComponentType) -> Bool {
         switch (self, componentType) {
         case (.onOffLight, .light),
              (.dimmableLight, .light),
@@ -135,10 +146,10 @@ public enum MatterDeviceType: String, Codable, CaseIterable {
              (.extendedColorLight, .light):
             return true
             
-        case (.onOffSwitch, .switch_),
-             (.dimmerSwitch, .switch_),
-             (.colorDimmerSwitch, .switch_),
-             (.genericSwitch, .switch_):
+        case (.onOffSwitch, .`switch`),
+             (.dimmerSwitch, .`switch`),
+             (.colorDimmerSwitch, .`switch`),
+             (.genericSwitch, .`switch`):
             return true
             
         case (.temperatureSensor, .sensor),

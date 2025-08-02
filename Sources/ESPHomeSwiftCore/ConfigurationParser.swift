@@ -163,9 +163,13 @@ public class ConfigurationValidator {
             logger.warning("Board '\(config.board)' may not support Embedded Swift")
         }
         
-        // Validate framework
-        if config.framework.type == .arduino {
-            logger.warning("Arduino framework may have limited Embedded Swift support")
+        // Framework validation - Swift Embedded is the only option
+        if config.framework.type != .swiftEmbedded {
+            throw ValidationError.invalidPropertyValue(
+                property: "esp32.framework.type",
+                value: config.framework.type.rawValue,
+                reason: "Only 'swift-embedded' framework is supported"
+            )
         }
         
         logger.debug("ESP32 configuration validated")

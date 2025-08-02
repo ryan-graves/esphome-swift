@@ -12,7 +12,7 @@ final class ConfigurationTests: XCTestCase {
         esp32:
           board: esp32-c6-devkitc-1
           framework:
-            type: esp-idf
+            type: swift-embedded
         
         wifi:
           ssid: "TestNetwork"
@@ -32,7 +32,7 @@ final class ConfigurationTests: XCTestCase {
         XCTAssertEqual(config.esphomeSwift.name, "test_device")
         XCTAssertEqual(config.esphomeSwift.friendlyName, "Test Device")
         XCTAssertEqual(config.esp32.board, "esp32-c6-devkitc-1")
-        XCTAssertEqual(config.esp32.framework.type, .espIDF)
+        XCTAssertEqual(config.esp32.framework.type, .swiftEmbedded)
         XCTAssertEqual(config.wifi?.ssid, "TestNetwork")
         XCTAssertEqual(config.wifi?.password, "TestPassword")
         XCTAssertEqual(config.api?.encryption?.key, "test_encryption_key")
@@ -47,7 +47,7 @@ final class ConfigurationTests: XCTestCase {
         esp32:
           board: esp32-c6-devkitc-1
           framework:
-            type: esp-idf
+            type: swift-embedded
         
         sensor:
           - platform: dht
@@ -89,7 +89,7 @@ final class ConfigurationTests: XCTestCase {
         esp32:
           board: esp32-c6-devkitc-1
           framework:
-            type: esp-idf
+            type: swift-embedded
         
         switch:
           - platform: gpio
@@ -130,7 +130,7 @@ final class ConfigurationTests: XCTestCase {
         esp32:
           board: esp32-c6-devkitc-1
           framework:
-            type: esp-idf
+            type: swift-embedded
         """
         
         let parser = ConfigurationParser()
@@ -158,7 +158,7 @@ final class ConfigurationTests: XCTestCase {
         esp32:
           board: esp32-c6-devkitc-1
           framework:
-            type: esp-idf
+            type: swift-embedded
         
         switch:
           - platform: gpio

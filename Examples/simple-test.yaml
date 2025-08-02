@@ -1,0 +1,26 @@
+esphome_swift:
+  name: simple_test
+  friendly_name: "Simple Test"
+
+esp32:
+  board: esp32-c6-devkitc-1
+  framework:
+    type: swift-embedded
+
+# Simple GPIO switch
+switch:
+  - platform: gpio
+    pin: GPIO5
+    name: "LED Switch"
+    id: led_switch
+    inverted: false
+
+# Simple GPIO binary sensor
+binary_sensor:
+  - platform: gpio
+    pin:
+      number: GPIO9
+      mode: INPUT_PULLUP
+    name: "Button"
+    id: button_sensor
+    inverted: true

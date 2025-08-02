@@ -17,20 +17,15 @@ let package = Package(
             name: "ESPHomeSwiftCore",
             targets: ["ESPHomeSwiftCore"]
         ),
-        // Code generation library
-        .library(
-            name: "CodeGeneration",
-            targets: ["CodeGeneration"]
-        ),
-        // Component library
-        .library(
-            name: "ComponentLibrary",
-            targets: ["ComponentLibrary"]
-        ),
         // Matter protocol support library
         .library(
             name: "MatterSupport",
             targets: ["MatterSupport"]
+        ),
+        // Swift Embedded code generation
+        .library(
+            name: "SwiftEmbeddedGen",
+            targets: ["SwiftEmbeddedGen"]
         )
     ],
     dependencies: [
@@ -56,33 +51,34 @@ let package = Package(
             ]
         ),
         
-        // Code generation engine
+        // Matter protocol support
         .target(
-            name: "CodeGeneration",
-            dependencies: [
-                "ESPHomeSwiftCore",
-                "ComponentLibrary",
-                "MatterSupport",
-                .product(name: "Logging", package: "swift-log"),
-                .product(name: "SystemPackage", package: "swift-system")
-            ]
-        ),
-        
-        // Built-in component definitions
-        .target(
-            name: "ComponentLibrary",
+            name: "MatterSupport",
             dependencies: [
                 "ESPHomeSwiftCore"
             ]
         ),
         
-        // Matter protocol support
+        // Swift Embedded code generation
         .target(
-            name: "MatterSupport",
+            name: "SwiftEmbeddedGen",
             dependencies: [
                 "ESPHomeSwiftCore",
-                "ComponentLibrary"
+                .product(name: "Logging", package: "swift-log"),
+                .product(name: "SystemPackage", package: "swift-system")
             ]
+        ),
+        
+        // ESP32 Hardware Abstraction Layer
+        .target(
+            name: "ESP32Hardware",
+            dependencies: []
+        ),
+        
+        // Swift Embedded Core Component System
+        .target(
+            name: "SwiftEmbeddedCore",
+            dependencies: ["ESP32Hardware"]
         ),
         
         // Command line interface
@@ -90,9 +86,9 @@ let package = Package(
             name: "CLI",
             dependencies: [
                 "ESPHomeSwiftCore",
-                "CodeGeneration",
-                "ComponentLibrary",
+                "SwiftEmbeddedGen",
                 "WebDashboard",
+                "MatterSupport",
                 .product(name: "ArgumentParser", package: "swift-argument-parser"),
                 .product(name: "Logging", package: "swift-log")
             ]
@@ -113,20 +109,12 @@ let package = Package(
             dependencies: ["ESPHomeSwiftCore"]
         ),
         .testTarget(
-            name: "CodeGenerationTests",
-            dependencies: ["CodeGeneration"]
-        ),
-        .testTarget(
-            name: "ComponentLibraryTests",
-            dependencies: ["ComponentLibrary"]
-        ),
-        .testTarget(
             name: "CLITests",
             dependencies: ["CLI"]
         ),
         .testTarget(
             name: "MatterSupportTests",
-            dependencies: ["MatterSupport", "ESPHomeSwiftCore", "ComponentLibrary"]
+            dependencies: ["MatterSupport", "ESPHomeSwiftCore"]
         )
     ]
 )

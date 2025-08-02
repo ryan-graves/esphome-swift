@@ -1,0 +1,7 @@
+esphome_swift:
+  name: minimal_test
+
+esp32:
+  board: esp32-c6-devkitc-1
+  framework:
+    type: swift-embedded
