@@ -1,6 +1,6 @@
 // ESP32 Timer Hardware Abstraction Layer for Swift Embedded
 
-#if !SWIFT_EMBEDDED
+#if canImport(Foundation)
 import Foundation
 #endif
 

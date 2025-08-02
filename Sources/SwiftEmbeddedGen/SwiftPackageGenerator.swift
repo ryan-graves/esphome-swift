@@ -388,23 +388,29 @@ public class SwiftPackageGenerator {
             -c
         )
         
-        # Compile Swift to object file before component registration
-        execute_process(
+        # Create custom command to compile Swift at build time
+        add_custom_command(
+            OUTPUT main.o
             COMMAND swiftc \\${SWIFT_FLAGS} -o main.o \\${SWIFT_SOURCES}
+            DEPENDS \\${SWIFT_SOURCES}
             WORKING_DIRECTORY \\${CMAKE_CURRENT_SOURCE_DIR}
-            RESULT_VARIABLE SWIFT_COMPILE_RESULT
+            COMMENT "Compiling Swift sources to RISC-V object file"
+            VERBATIM
         )
         
-        if(NOT SWIFT_COMPILE_RESULT EQUAL 0)
-            message(FATAL_ERROR "Swift compilation failed")
-        endif()
+        # Create custom target for Swift compilation
+        add_custom_target(swift_compilation DEPENDS main.o)
         
-        # Register the component with both C and Swift object files
+        # Register the component with C bridge only
         idf_component_register(
-            SRCS "swift_main.c" "main.o"
+            SRCS "swift_main.c"
             INCLUDE_DIRS "."
             REQUIRES "driver" "esp_system" "freertos"
         )
+        
+        # Add the Swift object file to the component after registration
+        target_sources(\\${COMPONENT_LIB} PRIVATE main.o)
+        add_dependencies(\\${COMPONENT_LIB} swift_compilation)
         """
     }
     
