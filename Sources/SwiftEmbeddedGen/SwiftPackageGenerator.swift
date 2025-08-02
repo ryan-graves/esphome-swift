@@ -345,6 +345,10 @@ public class SwiftPackageGenerator {
         let sdkConfig = generateSDKConfig(board: board)
         let sdkConfigURL = URL(fileURLWithPath: "\(projectPath)/sdkconfig.defaults")
         try sdkConfig.write(to: sdkConfigURL, atomically: true, encoding: .utf8)
+        
+        // Note: Swift compilation happens during ESP-IDF build via CMake
+        print("✅ ESP-IDF project generated successfully")
+        print("🚀 Use 'idf.py build' to compile Swift Embedded firmware")
     }
     
     private func generateMainCMakeLists(projectName: String, board: String) -> String {
@@ -388,29 +392,23 @@ public class SwiftPackageGenerator {
             -c
         )
         
-        # Create custom command to compile Swift at build time
-        add_custom_command(
-            OUTPUT main.o
-            COMMAND swiftc \\${SWIFT_FLAGS} -o main.o \\${SWIFT_SOURCES}
-            DEPENDS \\${SWIFT_SOURCES}
-            WORKING_DIRECTORY \\${CMAKE_CURRENT_SOURCE_DIR}
-            COMMENT "Compiling Swift sources to RISC-V object file"
-            VERBATIM
-        )
+        # Create placeholder object file to satisfy component registration
+        file(TOUCH "\\${CMAKE_CURRENT_SOURCE_DIR}/main.o")
         
-        # Create custom target for Swift compilation
-        add_custom_target(swift_compilation DEPENDS main.o)
-        
-        # Register the component with C bridge only
+        # Register the component with C bridge and placeholder Swift object
         idf_component_register(
-            SRCS "swift_main.c"
+            SRCS "swift_main.c" "main.o"
             INCLUDE_DIRS "."
             REQUIRES "driver" "esp_system" "freertos"
         )
         
-        # Add the Swift object file to the component after registration
-        target_sources(\\${COMPONENT_LIB} PRIVATE main.o)
-        add_dependencies(\\${COMPONENT_LIB} swift_compilation)
+        # Replace placeholder with actual Swift compilation
+        add_custom_command(
+            TARGET main POST_BUILD
+            COMMAND swiftc \\${SWIFT_FLAGS} -o main.o \\${SWIFT_SOURCES}
+            WORKING_DIRECTORY "\\${CMAKE_CURRENT_SOURCE_DIR}"
+            COMMENT "Compiling Swift sources to RISC-V object file"
+        )
         """
     }
     
@@ -517,6 +515,94 @@ public struct GeneratedSwiftPackage {
 struct ComponentSource {
     let fileName: String
     let content: String
+}
+
+// MARK: - Swift Pre-compilation
+
+extension SwiftPackageGenerator {
+    
+    /// Pre-compile Swift sources during package generation to avoid CMake timing issues
+    private func precompileSwiftSources(projectPath: String, board: String) throws {
+        let targetTriple = getTargetTriple(for: board)
+        let mainDir = "\(projectPath)/main"
+        
+        // Collect all Swift source files (relative to main directory)
+        var swiftSources = [
+            "main.swift",
+            "../Sources/Firmware/firmware.swift"
+        ]
+        
+        // Add ESP32Hardware sources
+        let esp32HardwareDir = "\(projectPath)/Sources/ESP32Hardware"
+        if FileManager.default.fileExists(atPath: esp32HardwareDir) {
+            let hardwareFiles = try FileManager.default.contentsOfDirectory(atPath: esp32HardwareDir)
+            for file in hardwareFiles where file.hasSuffix(".swift") {
+                swiftSources.append("../Sources/ESP32Hardware/\(file)")
+            }
+        }
+        
+        // Build Swift compilation command
+        let swiftFlags = [
+            "-target", targetTriple,
+            "-Xcc", "-march=rv32imc_zicsr_zifencei",
+            "-Xcc", "-mabi=ilp32", 
+            "-enable-experimental-feature", "Embedded",
+            "-DSWIFT_EMBEDDED",
+            "-wmo",
+            "-parse-as-library",
+            "-c",
+            "-o", "main.o"
+        ]
+        
+        let allArgs = ["swiftc"] + swiftFlags + swiftSources
+        
+        print("🔨 Pre-compiling Swift sources to RISC-V object file...")
+        print("Command: \(allArgs.joined(separator: " "))")
+        
+        // Execute Swift compilation
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
+        process.arguments = allArgs
+        process.currentDirectoryURL = URL(fileURLWithPath: mainDir)
+        
+        let pipe = Pipe()
+        process.standardOutput = pipe
+        process.standardError = pipe
+        
+        do {
+            try process.run()
+            process.waitUntilExit()
+            
+            let data = pipe.fileHandleForReading.readDataToEndOfFile()
+            let output = String(data: data, encoding: .utf8) ?? ""
+            
+            if process.terminationStatus == 0 {
+                print("✅ Swift pre-compilation successful")
+                
+                // Verify object file was created
+                let objectFile = "\(mainDir)/main.o"
+                if FileManager.default.fileExists(atPath: objectFile) {
+                    let attributes = try FileManager.default.attributesOfItem(atPath: objectFile)
+                    let fileSize = attributes[.size] as? Int64 ?? 0
+                    print("📦 Generated object file: \(fileSize) bytes")
+                } else {
+                    print("⚠️ Object file not found after compilation")
+                }
+            } else {
+                print("❌ Swift pre-compilation failed:")
+                print(output)
+                throw SwiftEmbeddedGenError.compilationFailed("Swift pre-compilation failed with exit code \(process.terminationStatus)")
+            }
+        } catch {
+            print("❌ Failed to execute Swift compiler: \(error)")
+            throw SwiftEmbeddedGenError.compilationFailed("Failed to execute Swift compiler: \(error)")
+        }
+    }
+}
+
+/// Errors that can occur during Swift Embedded generation
+enum SwiftEmbeddedGenError: Error {
+    case compilationFailed(String)
 }
 
 // String extension for camelCase conversion is in ComponentAssembler.swift
