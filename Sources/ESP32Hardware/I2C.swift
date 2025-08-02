@@ -64,7 +64,7 @@ public struct I2C {
         }
         
         // Simulate realistic sensor data patterns
-        let simulatedData = (0..<bytes).map { index in
+        let simulatedData = (0 ..< bytes).map { index in
             UInt8((index * 17 + Int(address)) % 256) // Deterministic but varied data
         }
         

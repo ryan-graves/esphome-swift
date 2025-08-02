@@ -10,10 +10,10 @@ public enum ADCError {
 
 /// ADC attenuation settings (affects measurement range)
 public enum ADCAttenuation {
-    case db0    // 0dB attenuation, range: 0-950mV
-    case db2_5  // 2.5dB attenuation, range: 0-1250mV
-    case db6    // 6dB attenuation, range: 0-1750mV
-    case db11   // 11dB attenuation, range: 0-3100mV
+    case db0 // 0dB attenuation, range: 0-950mV
+    case db2_5 // 2.5dB attenuation, range: 0-1250mV
+    case db6 // 6dB attenuation, range: 0-1750mV
+    case db11 // 11dB attenuation, range: 0-3100mV
     
     var maxVoltage: Float {
         switch self {
@@ -27,7 +27,7 @@ public enum ADCAttenuation {
 
 /// ADC resolution in bits
 public enum ADCResolution {
-    case bits9  // 9-bit (0-511)
+    case bits9 // 9-bit (0-511)
     case bits10 // 10-bit (0-1023)
     case bits11 // 11-bit (0-2047)
     case bits12 // 12-bit (0-4095)
@@ -46,9 +46,9 @@ public enum ADCResolution {
 
 /// ADC channel abstraction
 public struct ADCChannel {
-    public let unit: UInt8      // ADC unit (1 or 2)
-    public let channel: UInt8   // Channel number
-    public let pin: GPIO        // Associated GPIO pin
+    public let unit: UInt8 // ADC unit (1 or 2)
+    public let channel: UInt8 // Channel number
+    public let pin: GPIO // Associated GPIO pin
     private let attenuation: ADCAttenuation
     private let resolution: ADCResolution
     
@@ -69,7 +69,8 @@ public struct ADCChannel {
     /// Configure ADC channel
     public func configure(attenuation: ADCAttenuation, resolution: ADCResolution) -> Bool {
         // Simplified implementation for Swift Embedded compilation
-        // Real implementation would use: adc1_config_width(resolution) and adc1_config_channel_atten(channel, attenuation)
+        // Real implementation would use: adc1_config_width(resolution) and adc1_config_channel_atten(channel,
+        // attenuation)
         guard pin.supportsADC() else { 
             print("ADC Error: GPIO\(pin.number) does not support ADC")
             return false 
@@ -86,7 +87,7 @@ public struct ADCChannel {
         
         // Simulate realistic ADC values with some variation
         let baseValue = UInt16(resolution.maxValue / 2) // Mid-range
-        let noise = Int16.random(in: -100...100) // Small random variation
+        let noise = Int16.random(in: -100 ... 100) // Small random variation
         let rawValue = max(0, min(Int(resolution.maxValue), Int(baseValue) + Int(noise)))
         return UInt16(rawValue)
     }
@@ -108,7 +109,7 @@ public struct ADCChannel {
     public func readAveraged(samples: Int = 10) -> UInt16? {
         var sum: UInt32 = 0
         var validSamples = 0
-        for _ in 0..<samples {
+        for _ in 0 ..< samples {
             if let raw = readRaw() {
                 sum += UInt32(raw)
                 validSamples += 1
@@ -162,7 +163,7 @@ public struct ADCMapper {
         
         // Example for ESP32-C6:
         switch pin.number {
-        case 0...7:
+        case 0 ... 7:
             return ADCChannel(
                 unit: 1,
                 channel: pin.number,

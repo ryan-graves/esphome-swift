@@ -82,7 +82,7 @@ public struct SystemTime {
         // Real implementation would use: ets_delay_us(us)
         #if SWIFT_EMBEDDED
         // In embedded mode, simulate with busy loop
-        for _ in 0..<(us / 10) { /* busy wait simulation */ }
+        for _ in 0 ..< (us / 10) { /* busy wait simulation */ }
         #else
         usleep(us)
         #endif
@@ -94,7 +94,7 @@ public struct SystemTime {
         // Real implementation would use: vTaskDelay(pdMS_TO_TICKS(ms))
         #if SWIFT_EMBEDDED
         // In embedded mode, simulate with busy loop
-        for _ in 0..<(ms * 100) { /* busy wait simulation */ }
+        for _ in 0 ..< (ms * 100) { /* busy wait simulation */ }
         #else
         usleep(ms * 1000)
         #endif

@@ -17,11 +17,6 @@ let package = Package(
             name: "ESPHomeSwiftCore",
             targets: ["ESPHomeSwiftCore"]
         ),
-        // Component library
-        .library(
-            name: "ComponentLibrary",
-            targets: ["ComponentLibrary"]
-        ),
         // Matter protocol support library
         .library(
             name: "MatterSupport",
@@ -56,20 +51,11 @@ let package = Package(
             ]
         ),
         
-        // Built-in component definitions
-        .target(
-            name: "ComponentLibrary",
-            dependencies: [
-                "ESPHomeSwiftCore"
-            ]
-        ),
-        
         // Matter protocol support
         .target(
             name: "MatterSupport",
             dependencies: [
-                "ESPHomeSwiftCore",
-                "ComponentLibrary"
+                "ESPHomeSwiftCore"
             ]
         ),
         
@@ -78,7 +64,6 @@ let package = Package(
             name: "SwiftEmbeddedGen",
             dependencies: [
                 "ESPHomeSwiftCore",
-                "ComponentLibrary",
                 .product(name: "Logging", package: "swift-log"),
                 .product(name: "SystemPackage", package: "swift-system")
             ]
@@ -101,7 +86,6 @@ let package = Package(
             name: "CLI",
             dependencies: [
                 "ESPHomeSwiftCore",
-                "ComponentLibrary",
                 "SwiftEmbeddedGen",
                 "WebDashboard",
                 "MatterSupport",
@@ -125,16 +109,12 @@ let package = Package(
             dependencies: ["ESPHomeSwiftCore"]
         ),
         .testTarget(
-            name: "ComponentLibraryTests",
-            dependencies: ["ComponentLibrary"]
-        ),
-        .testTarget(
             name: "CLITests",
             dependencies: ["CLI"]
         ),
         .testTarget(
             name: "MatterSupportTests",
-            dependencies: ["MatterSupport", "ESPHomeSwiftCore", "ComponentLibrary"]
+            dependencies: ["MatterSupport", "ESPHomeSwiftCore"]
         )
     ]
 )

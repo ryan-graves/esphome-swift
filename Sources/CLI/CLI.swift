@@ -1,7 +1,6 @@
 import Foundation
 import ArgumentParser
 import ESPHomeSwiftCore
-import ComponentLibrary
 import MatterSupport
 import SwiftEmbeddedGen
 import Logging
@@ -290,15 +289,21 @@ struct ListComponentsCommand: ParsableCommand {
     var detailed: Bool = false
     
     func run() throws {
-        let registry = ComponentRegistry.shared
-        print("Available Component Platforms:\\n")
+        print("Available Swift Embedded Components:\\n")
         
-        for factoryInfo in registry.allFactories {
-            print("📦 \\(factoryInfo.platform) (\\(factoryInfo.componentType.rawValue))")
-            
+        // List supported components for Swift Embedded
+        let components = [
+            ("sensor", "dht", "DHT temperature/humidity sensor"),
+            ("sensor", "adc", "Analog-to-digital converter sensor"),
+            ("switch", "gpio", "GPIO digital output switch"),
+            ("binary_sensor", "gpio", "GPIO digital input sensor")
+        ]
+        
+        for (type, platform, description) in components {
+            print("📦 \\(platform) (\\(type))")
             if detailed {
-                print("   Required: \\(factoryInfo.factory.requiredProperties.joined(separator: ", "))")
-                print("   Optional: \\(factoryInfo.factory.optionalProperties.joined(separator: ", "))")
+                print("   Description: \\(description)")
+                print("   Framework: Swift Embedded")
                 print()
             }
         }
@@ -306,6 +311,8 @@ struct ListComponentsCommand: ParsableCommand {
         if !detailed {
             print("\\nUse --detailed for more information about each component.")
         }
+        
+        print("\\n✨ All components use pure Swift Embedded architecture!")
     }
 }
 

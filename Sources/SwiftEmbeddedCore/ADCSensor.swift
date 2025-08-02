@@ -99,10 +99,10 @@ public enum SensorFilter {
             return value * factor
         case .offset(let offset):
             return value + offset
-        case .slidingWindowAverage(_):
+        case .slidingWindowAverage:
             // Simplified - would need state tracking for real implementation
             return value
-        case .exponentialMovingAverage(_):
+        case .exponentialMovingAverage:
             // Simplified - would need state tracking for real implementation
             return value
         }
@@ -114,7 +114,7 @@ public struct ADCHelper {
     public static func channel(for pin: GPIO, board: String) -> ADCChannel? {
         // Board-specific mapping - simplified for ESP32-C6
         switch pin.number {
-        case 0...7:
+        case 0 ... 7:
             return ADCChannel(
                 unit: 1,
                 channel: pin.number,

@@ -62,49 +62,49 @@ public struct GPIO {
 }
 
 // ESP32-C6 GPIO pin definitions
-extension GPIO {
-    public static let pin0 = GPIO(0)
-    public static let pin1 = GPIO(1)
-    public static let pin2 = GPIO(2)
-    public static let pin3 = GPIO(3)
-    public static let pin4 = GPIO(4)
-    public static let pin5 = GPIO(5)   // Default I2C SDA
-    public static let pin6 = GPIO(6)   // Default I2C SCL
-    public static let pin7 = GPIO(7)
-    public static let pin8 = GPIO(8)
-    public static let pin9 = GPIO(9)
-    public static let pin10 = GPIO(10)
-    public static let pin11 = GPIO(11)
-    public static let pin12 = GPIO(12)
-    public static let pin13 = GPIO(13)
-    public static let pin14 = GPIO(14)
-    public static let pin15 = GPIO(15)
-    public static let pin16 = GPIO(16)
-    public static let pin17 = GPIO(17)
-    public static let pin18 = GPIO(18) // Input-only
-    public static let pin19 = GPIO(19) // Input-only
-    public static let pin20 = GPIO(20)
-    public static let pin21 = GPIO(21)
-    public static let pin22 = GPIO(22)
-    public static let pin23 = GPIO(23)
+public extension GPIO {
+    static let pin0 = GPIO(0)
+    static let pin1 = GPIO(1)
+    static let pin2 = GPIO(2)
+    static let pin3 = GPIO(3)
+    static let pin4 = GPIO(4)
+    static let pin5 = GPIO(5) // Default I2C SDA
+    static let pin6 = GPIO(6) // Default I2C SCL
+    static let pin7 = GPIO(7)
+    static let pin8 = GPIO(8)
+    static let pin9 = GPIO(9)
+    static let pin10 = GPIO(10)
+    static let pin11 = GPIO(11)
+    static let pin12 = GPIO(12)
+    static let pin13 = GPIO(13)
+    static let pin14 = GPIO(14)
+    static let pin15 = GPIO(15)
+    static let pin16 = GPIO(16)
+    static let pin17 = GPIO(17)
+    static let pin18 = GPIO(18) // Input-only
+    static let pin19 = GPIO(19) // Input-only
+    static let pin20 = GPIO(20)
+    static let pin21 = GPIO(21)
+    static let pin22 = GPIO(22)
+    static let pin23 = GPIO(23)
     
     /// Check if pin is valid for ESP32-C6
-    public func isValid() -> Bool {
+    func isValid() -> Bool {
         return number <= 23
     }
     
     /// Check if pin is input-only
-    public func isInputOnly() -> Bool {
+    func isInputOnly() -> Bool {
         return number == 18 || number == 19
     }
     
     /// Check if pin supports ADC
-    public func supportsADC() -> Bool {
+    func supportsADC() -> Bool {
         return number <= 7 // GPIO0-7 are ADC1 channels
     }
     
     /// Check if pin supports PWM
-    public func supportsPWM() -> Bool {
+    func supportsPWM() -> Bool {
         return !isInputOnly() && isValid()
     }
 }

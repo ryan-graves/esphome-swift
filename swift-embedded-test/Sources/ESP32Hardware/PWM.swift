@@ -10,7 +10,7 @@ public enum PWMError: Error {
 
 /// PWM resolution in bits (affects duty cycle precision)
 public enum PWMResolution {
-    case bits8  // 0-255
+    case bits8 // 0-255
     case bits10 // 0-1023
     case bits12 // 0-4095
     case bits14 // 0-16383
@@ -61,7 +61,7 @@ public struct PWMChannel {
         
         self.channel = channel
         self.pin = pin
-        self.timer = channel / 2  // Use 4 timers for 8 channels
+        self.timer = channel / 2 // Use 4 timers for 8 channels
         self.frequency = frequency
         self.resolution = resolution
     }

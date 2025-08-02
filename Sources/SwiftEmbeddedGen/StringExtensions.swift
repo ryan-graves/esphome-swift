@@ -9,13 +9,13 @@ public extension String {
         guard !parts.isEmpty else { return self }
         
         let first = String(parts[0])
-        let rest = parts.dropFirst().map { $0.capitalized }
+        let rest = parts.dropFirst().map(\.capitalized)
         
         return ([first] + rest).joined()
     }
     
     func pascalCased() -> String {
         let parts = self.split(separator: "_")
-        return parts.map { $0.capitalized }.joined()
+        return parts.map(\.capitalized).joined()
     }
 }

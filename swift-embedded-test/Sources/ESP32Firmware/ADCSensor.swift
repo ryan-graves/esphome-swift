@@ -14,8 +14,8 @@ public struct ADCSensor: SensorComponent {
     
     /// Voltage divider configuration for extended range
     public struct VoltageDivider {
-        let r1: Float  // Upper resistor (to input)
-        let r2: Float  // Lower resistor (to ground)
+        let r1: Float // Upper resistor (to input)
+        let r2: Float // Lower resistor (to ground)
         
         /// Calculate actual voltage from ADC reading
         func actualVoltage(measured: Float) -> Float {

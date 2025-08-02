@@ -46,7 +46,7 @@ public struct HardwareTimer {
     }
     
     /// Delete timer
-    public func deinit() {
+    public func deinit () {
         // esp_timer_delete(timer)
     }
 }

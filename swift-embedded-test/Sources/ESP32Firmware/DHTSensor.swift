@@ -11,8 +11,8 @@ public enum DHTModel {
     
     var minInterval: UInt32 {
         switch self {
-        case .dht11: return 1000  // 1 second
-        case .dht22, .am2302: return 2000  // 2 seconds
+        case .dht11: return 1000 // 1 second
+        case .dht22, .am2302: return 2000 // 2 seconds
         }
     }
 }

@@ -124,7 +124,7 @@ public struct WiFiStation {
         state = .obtainingIP
         
         // Simulate getting IP address via DHCP
-        let ip = IPAddress(192, 168, 1, 100 + UInt8.random(in: 0...50))
+        let ip = IPAddress(192, 168, 1, 100 + UInt8.random(in: 0 ... 50))
         eventHandler?(.gotIP(address: ip))
         state = .ready
         print("WiFi: Got IP address: \(ip.string)")

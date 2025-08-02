@@ -42,14 +42,14 @@ public struct GPIO {
 }
 
 // Common ESP32 GPIO pins
-extension GPIO {
-    public static let pin0 = GPIO(0)
-    public static let pin1 = GPIO(1)
-    public static let pin2 = GPIO(2)
-    public static let pin3 = GPIO(3)
-    public static let pin4 = GPIO(4)
-    public static let pin5 = GPIO(5)
-    public static let pin6 = GPIO(6)
-    public static let pin7 = GPIO(7)
+public extension GPIO {
+    static let pin0 = GPIO(0)
+    static let pin1 = GPIO(1)
+    static let pin2 = GPIO(2)
+    static let pin3 = GPIO(3)
+    static let pin4 = GPIO(4)
+    static let pin5 = GPIO(5)
+    static let pin6 = GPIO(6)
+    static let pin7 = GPIO(7)
     // ... more pins
 }

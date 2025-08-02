@@ -79,7 +79,7 @@ public struct DHTSensor: SensorComponent {
         if !waitForPinState(true, timeoutMicros: 100) { return nil }
         
         // Read 40 bits
-        for _ in 0..<40 {
+        for _ in 0 ..< 40 {
             // Wait for start of bit (low for 50us)
             if !waitForPinState(false, timeoutMicros: 70) { return nil }
             if !waitForPinState(true, timeoutMicros: 70) { return nil }
