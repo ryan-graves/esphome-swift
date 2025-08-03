@@ -17,7 +17,7 @@ public struct DHTSensor: SensorComponent {
     public let model: DHTModel
     public let updateInterval: UInt32
     
-    public var state: Float? = nil
+    public var state: Float?
     private var lastReadTime: UInt32 = 0
     
     public init(
@@ -96,28 +96,28 @@ public struct DHTSensor: SensorComponent {
         }
         
         // Extract data bytes
-        let humidity_high = UInt8((data >> 32) & 0xFF)
-        let humidity_low = UInt8((data >> 24) & 0xFF)
-        let temperature_high = UInt8((data >> 16) & 0xFF)
-        let temperature_low = UInt8((data >> 8) & 0xFF)
+        let humidityHigh = UInt8((data >> 32) & 0xFF)
+        let humidityLow = UInt8((data >> 24) & 0xFF)
+        let temperatureHigh = UInt8((data >> 16) & 0xFF)
+        let temperatureLow = UInt8((data >> 8) & 0xFF)
         let checksum = UInt8(data & 0xFF)
         
         // Verify checksum
-        let calculated_checksum = humidity_high &+ humidity_low &+ temperature_high &+ temperature_low
-        if calculated_checksum != checksum {
+        let calculatedChecksum = humidityHigh &+ humidityLow &+ temperatureHigh &+ temperatureLow
+        if calculatedChecksum != checksum {
             return nil
         }
         
         // Convert to temperature based on model
         switch model {
         case .dht11:
-            return Float(temperature_high)
+            return Float(temperatureHigh)
         case .dht22, .am2302:
-            let temp_raw = (UInt16(temperature_high) << 8) | UInt16(temperature_low)
-            var temperature = Float(temp_raw) / 10.0
+            let tempRaw = (UInt16(temperatureHigh) << 8) | UInt16(temperatureLow)
+            var temperature = Float(tempRaw) / 10.0
             
             // Handle negative temperatures
-            if (temp_raw & 0x8000) != 0 {
+            if (tempRaw & 0x8000) != 0 {
                 temperature = -(temperature - Float(0x8000) / 10.0)
             }
             
@@ -154,12 +154,12 @@ public struct SystemTime {
         return 0 // Placeholder
     }
     
-    public static func delayMillis(_ ms: UInt32) {
+    public static func delayMillis(_ milliseconds: UInt32) {
         // In real implementation, this would use ESP-IDF delay
         // For now, basic implementation
     }
     
-    public static func delayMicros(_ us: UInt32) {
+    public static func delayMicros(_ microseconds: UInt32) {
         // In real implementation, this would use ESP-IDF microsecond delay
         // For now, basic implementation
     }

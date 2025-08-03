@@ -11,14 +11,14 @@ public enum ADCError {
 /// ADC attenuation settings (affects measurement range)
 public enum ADCAttenuation {
     case db0 // 0dB attenuation, range: 0-950mV
-    case db2_5 // 2.5dB attenuation, range: 0-1250mV
+    case db2point5 // 2.5dB attenuation, range: 0-1250mV
     case db6 // 6dB attenuation, range: 0-1750mV
     case db11 // 11dB attenuation, range: 0-3100mV
     
     var maxVoltage: Float {
         switch self {
         case .db0: return 0.95
-        case .db2_5: return 1.25
+        case .db2point5: return 1.25
         case .db6: return 1.75
         case .db11: return 3.1
         }

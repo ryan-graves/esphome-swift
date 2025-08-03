@@ -10,8 +10,8 @@ public struct GPIOBinarySensor: BinarySensorComponent {
     public let inverted: Bool
     public let pullMode: GPIODirection
     
-    public var state: Bool? = nil
-    private var lastState: Bool? = nil
+    public var state: Bool?
+    private var lastState: Bool?
     private var lastReadTime: UInt32 = 0
     private let debounceTime: UInt32 = 50 // 50ms debounce
     

@@ -77,26 +77,26 @@ public struct SystemTime {
     }
     
     /// Delay for specified microseconds
-    public static func delayMicros(_ us: UInt32) {
+    public static func delayMicros(_ microseconds: UInt32) {
         // Simplified implementation for compilation
-        // Real implementation would use: ets_delay_us(us)
+        // Real implementation would use: ets_delay_us(microseconds)
         #if SWIFT_EMBEDDED
         // In embedded mode, simulate with busy loop
         for _ in 0 ..< (us / 10) { /* busy wait simulation */ }
         #else
-        usleep(us)
+        usleep(microseconds)
         #endif
     }
     
     /// Delay for specified milliseconds  
-    public static func delayMillis(_ ms: UInt32) {
+    public static func delayMillis(_ milliseconds: UInt32) {
         // Simplified implementation for compilation
         // Real implementation would use: vTaskDelay(pdMS_TO_TICKS(ms))
         #if SWIFT_EMBEDDED
         // In embedded mode, simulate with busy loop
-        for _ in 0 ..< (ms * 100) { /* busy wait simulation */ }
+        for _ in 0 ..< (milliseconds * 100) { /* busy wait simulation */ }
         #else
-        usleep(ms * 1000)
+        usleep(milliseconds * 1000)
         #endif
     }
     
@@ -154,12 +154,12 @@ public struct SystemInfo {
 /// Timer utility functions
 public struct Timer {
     /// Delay for specified milliseconds (convenience wrapper)
-    public static func delayMillis(_ ms: UInt32) {
-        SystemTime.delayMillis(ms)
+    public static func delayMillis(_ milliseconds: UInt32) {
+        SystemTime.delayMillis(milliseconds)
     }
     
     /// Delay for specified microseconds (convenience wrapper)
-    public static func delayMicros(_ us: UInt32) {
-        SystemTime.delayMicros(us)
+    public static func delayMicros(_ microseconds: UInt32) {
+        SystemTime.delayMicros(microseconds)
     }
 }

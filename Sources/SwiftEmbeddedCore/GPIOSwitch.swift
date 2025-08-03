@@ -9,7 +9,7 @@ public struct GPIOSwitch: SwitchComponent {
     public let pin: GPIO
     public let inverted: Bool
     
-    public var state: Bool? = nil
+    public var state: Bool?
     
     public init(
         id: String,
@@ -30,7 +30,7 @@ public struct GPIOSwitch: SwitchComponent {
         // Set initial state to off
         if success {
             state = false
-            let _ = turnOff()
+            _ = turnOff()
         }
         
         return success

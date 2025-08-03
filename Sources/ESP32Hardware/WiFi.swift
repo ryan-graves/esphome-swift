@@ -42,14 +42,20 @@ public enum WiFiEvent {
 
 /// IP address representation
 public struct IPAddress {
-    public let octets: (UInt8, UInt8, UInt8, UInt8)
+    public let firstOctet: UInt8
+    public let secondOctet: UInt8
+    public let thirdOctet: UInt8
+    public let fourthOctet: UInt8
     
-    public init(_ a: UInt8, _ b: UInt8, _ c: UInt8, _ d: UInt8) {
-        self.octets = (a, b, c, d)
+    public init(_ firstOctet: UInt8, _ secondOctet: UInt8, _ thirdOctet: UInt8, _ fourthOctet: UInt8) {
+        self.firstOctet = firstOctet
+        self.secondOctet = secondOctet
+        self.thirdOctet = thirdOctet
+        self.fourthOctet = fourthOctet
     }
     
     public var string: String {
-        return "\(octets.0).\(octets.1).\(octets.2).\(octets.3)"
+        return "\(firstOctet).\(secondOctet).\(thirdOctet).\(fourthOctet)"
     }
 }
 
@@ -124,10 +130,10 @@ public struct WiFiStation {
         state = .obtainingIP
         
         // Simulate getting IP address via DHCP
-        let ip = IPAddress(192, 168, 1, 100 + UInt8.random(in: 0 ... 50))
-        eventHandler?(.gotIP(address: ip))
+        let ipAddress = IPAddress(192, 168, 1, 100 + UInt8.random(in: 0 ... 50))
+        eventHandler?(.gotIP(address: ipAddress))
         state = .ready
-        print("WiFi: Got IP address: \(ip.string)")
+        print("WiFi: Got IP address: \(ipAddress.string)")
         
         return true
     }

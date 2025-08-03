@@ -40,8 +40,8 @@ public class ComponentAssembler {
         }
         
         if let switches = configuration.`switch` {
-            for (index, sw) in switches.enumerated() {
-                let componentInfo = try generateSwitchComponent(sw, index: index)
+            for (index, switchConfig) in switches.enumerated() {
+                let componentInfo = try generateSwitchComponent(switchConfig, index: index)
                 components.append(componentInfo.declaration)
                 setupCalls.append(componentInfo.setupCall)
                 loopCalls.append(componentInfo.loopCall)

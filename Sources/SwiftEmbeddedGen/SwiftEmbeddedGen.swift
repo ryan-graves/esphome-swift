@@ -59,10 +59,10 @@ public struct SwiftEmbeddedGen {
         
         // Check switch platforms
         if let switches = config.`switch` {
-            for sw in switches {
-                guard sw.platform == "gpio" else {
+            for switchConfig in switches {
+                guard switchConfig.platform == "gpio" else {
                     throw ValidationError.unsupportedComponent(
-                        "Switch platform '\(sw.platform)' not yet supported in Swift Embedded mode"
+                        "Switch platform '\(switchConfig.platform)' not yet supported in Swift Embedded mode"
                     )
                 }
             }

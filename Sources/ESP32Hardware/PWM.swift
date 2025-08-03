@@ -124,7 +124,7 @@ public struct PWMChannel {
             return false
         }
         
-        let _ = UInt32(duty * Float(resolution.maxDuty)) // Use underscore to avoid warning
+        _ = UInt32(duty * Float(resolution.maxDuty)) // Use underscore to avoid warning
         print("PWM Channel \(channel): Fading to \(Int(duty * 100))% over \(durationMs)ms")
         
         // Simplified implementation - immediate change

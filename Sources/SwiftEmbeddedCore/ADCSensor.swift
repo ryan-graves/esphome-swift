@@ -11,7 +11,7 @@ public struct ADCSensor: SensorComponent {
     public let attenuation: ADCAttenuation
     public let filters: [SensorFilter]
     
-    public var state: Float? = nil
+    public var state: Float?
     private var lastReadTime: UInt32 = 0
     private var adcChannel: ADCChannel?
     

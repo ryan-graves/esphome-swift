@@ -208,8 +208,8 @@ public class SwiftPackageGenerator {
         }
         
         if let switches = configuration.`switch` {
-            for sw in switches {
-                configs += generateSwitchConfig(sw)
+            for switchConfig in switches {
+                configs += generateSwitchConfig(switchConfig)
             }
         }
         
