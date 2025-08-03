@@ -1,9 +1,8 @@
 import Foundation
 import ArgumentParser
 import ESPHomeSwiftCore
-import CodeGeneration
-import ComponentLibrary
 import MatterSupport
+import SwiftEmbeddedGen
 import Logging
 
 /// Main CLI entry point for ESPHome Swift
@@ -51,24 +50,98 @@ struct BuildCommand: ParsableCommand {
         let core = ESPHomeSwiftCore.shared
         let configuration = try core.parseConfiguration(file: configPath)
         
-        // Generate code
-        let codeGenerator = CodeGenerator()
-        let generatedProject = try codeGenerator.generateCode(
+        logger.info("Building Swift Embedded firmware from: \\(configPath)")
+        
+        // Validate configuration for Swift Embedded
+        try SwiftEmbeddedGen.validateConfiguration(configuration)
+        
+        // Generate Swift package
+        let generatedPackage = try SwiftEmbeddedGen.generateProject(
             from: configuration,
             outputDirectory: output
         )
         
-        // Build project
-        let builder = ProjectBuilder()
-        let buildResult = try builder.buildProject(
-            generatedProject: generatedProject,
-            configuration: configuration,
-            outputDirectory: output
-        )
+        logger.info("Generated Swift package at: \\(generatedPackage.path)")
+        logger.info("Target: \\(generatedPackage.targetName)")
+        logger.info("Executable: \\(generatedPackage.executableName)")
         
+        // Build ESP32 firmware using ESP-IDF
+        logger.info("Building ESP32 firmware using ESP-IDF...")
+        
+        // Check if ESP-IDF is available
+        guard isESPIDFAvailable() else {
+            logger.error("ESP-IDF not found. Please install ESP-IDF or use Docker:")
+            logger.error("  docker compose run esp-shell")
+            logger.error("See: https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/")
+            throw ExitCode.failure
+        }
+        
+        let buildCommand = ["idf.py", "build"]
+        
+        if verbose {
+            logger.debug("Build command: \\(buildCommand.joined(separator: \" \"))")
+            logger.debug("Working directory: \\(generatedPackage.path)")
+        }
+        
+        // Execute ESP-IDF build
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
+        process.arguments = buildCommand
+        process.currentDirectoryURL = URL(fileURLWithPath: generatedPackage.path)
+        
+        // Set ESP-IDF environment variables
+        var environment = ProcessInfo.processInfo.environment
+        if let idfPath = environment["IDF_PATH"] {
+            environment["PATH"] = "\(idfPath)/tools:\(environment["PATH"] ?? "")"
+        }
+        process.environment = environment
+        
+        if verbose {
+            process.standardOutput = FileHandle.standardOutput
+            process.standardError = FileHandle.standardError
+        }
+        
+        try process.run()
+        process.waitUntilExit()
+        
+        guard process.terminationStatus == 0 else {
+            logger.error("ESP-IDF build failed with exit code: \\(process.terminationStatus)")
+            logger.error("Try running the build in Docker environment:")
+            logger.error("  docker compose run esp-shell")
+            logger.error("  cd build/\\(generatedPackage.targetName) && idf.py build")
+            throw ExitCode.failure
+        }
+        
+        let binaryPath = "\\(generatedPackage.path)/build/\\(generatedPackage.targetName).bin" 
         logger.info("Build completed successfully!")
-        logger.info("Firmware: \\(buildResult.firmwarePath)")
-        logger.info("Project: \\(buildResult.projectPath)")
+        logger.info("Firmware binary: \\(binaryPath)")
+        logger.info("Project: \\(generatedPackage.path)")
+        
+        // Check if binary was created
+        if !FileManager.default.fileExists(atPath: binaryPath) {
+            logger.warning("Firmware binary not found at expected location.")
+            logger.warning("Check build output for ESP-IDF compilation errors.")
+            logger.info("You can also build manually using:")
+            logger.info("  docker compose run esp-shell")
+            logger.info("  cd build/\\(generatedPackage.targetName) && idf.py build")
+        }
+    }
+    
+    private func isESPIDFAvailable() -> Bool {
+        // Check if idf.py is available in PATH
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
+        process.arguments = ["which", "idf.py"]
+        process.standardOutput = Pipe()
+        process.standardError = Pipe()
+        
+        do {
+            try process.run()
+            process.waitUntilExit()
+            return process.terminationStatus == 0
+        } catch {
+            return false
+        }
     }
 }
 
@@ -97,26 +170,10 @@ struct FlashCommand: ParsableCommand {
         let logger = Logger(label: "FlashCommand")
         logger.info("Flashing firmware from: \\(projectPath)")
         
-        let buildResult = BuildResult(
-            projectPath: projectPath,
-            firmwarePath: "\\(projectPath)/build/firmware.bin",
-            buildOutput: "",
-            success: true
-        )
-        
-        let builder = ProjectBuilder()
-        let flashResult = try builder.flashProject(
-            buildResult: buildResult,
-            port: port,
-            baudRate: baudRate
-        )
-        
-        if flashResult.success {
-            logger.info("Flash completed successfully!")
-        } else {
-            logger.error("Flash failed")
-            throw ExitCode.failure
-        }
+        // TODO: Implement Swift Embedded binary flashing
+        logger.error("Flash command not yet implemented for Swift Embedded binaries")
+        logger.info("Please use ESP-IDF tools to flash the generated binary")
+        throw ExitCode.failure
     }
 }
 
@@ -145,19 +202,10 @@ struct MonitorCommand: ParsableCommand {
         let logger = Logger(label: "MonitorCommand")
         logger.info("Starting serial monitor for: \\(projectPath)")
         
-        let buildResult = BuildResult(
-            projectPath: projectPath,
-            firmwarePath: "\\(projectPath)/build/firmware.bin",
-            buildOutput: "",
-            success: true
-        )
-        
-        let builder = ProjectBuilder()
-        try builder.monitorSerial(
-            buildResult: buildResult,
-            port: port,
-            baudRate: baudRate
-        )
+        // TODO: Implement serial monitoring for Swift Embedded devices
+        logger.error("Monitor command not yet implemented for Swift Embedded")
+        logger.info("Please use a serial terminal like 'screen' or 'minicom'")
+        throw ExitCode.failure
     }
 }
 
@@ -185,6 +233,10 @@ struct ValidateCommand: ParsableCommand {
             let configuration = try core.parseConfiguration(file: configPath)
             try core.validateConfiguration(configuration)
             
+            // Validate for Swift Embedded (the only supported mode)
+            try SwiftEmbeddedGen.validateConfiguration(configuration)
+            logger.info("✅ Configuration is valid for Swift Embedded")
+            
             logger.info("✅ Configuration is valid")
             print("Configuration validation passed!")
             
@@ -210,6 +262,12 @@ struct ValidateCommand: ParsableCommand {
                 print("  Binary Sensors: \\(binarySensors.count)")
             }
             
+            // Swift Embedded info
+            print("\\nSwift Embedded Mode:")
+            print("  ⚠️  Requires Swift development snapshot with Embedded support")
+            print("  📦 Generates Swift Package for ESP32 firmware")
+            print("  🎯 Target triple: riscv32-none-none-eabi")
+            
         } catch {
             logger.error("❌ Configuration validation failed: \\(error)")
             print("Configuration validation failed:")
@@ -231,17 +289,21 @@ struct ListComponentsCommand: ParsableCommand {
     var detailed: Bool = false
     
     func run() throws {
-        let registry = ComponentRegistry.shared
-        let platforms = registry.availablePlatforms
+        print("Available Swift Embedded Components:\\n")
         
-        print("Available Component Platforms:\\n")
+        // List supported components for Swift Embedded
+        let components = [
+            ("sensor", "dht", "DHT temperature/humidity sensor"),
+            ("sensor", "adc", "Analog-to-digital converter sensor"),
+            ("switch", "gpio", "GPIO digital output switch"),
+            ("binary_sensor", "gpio", "GPIO digital input sensor")
+        ]
         
-        for factoryInfo in registry.allFactories {
-            print("📦 \\(factoryInfo.platform) (\\(factoryInfo.componentType.rawValue))")
-            
+        for (type, platform, description) in components {
+            print("📦 \\(platform) (\\(type))")
             if detailed {
-                print("   Required: \\(factoryInfo.factory.requiredProperties.joined(separator: ", "))")
-                print("   Optional: \\(factoryInfo.factory.optionalProperties.joined(separator: ", "))")
+                print("   Description: \\(description)")
+                print("   Framework: Swift Embedded")
                 print()
             }
         }
@@ -249,6 +311,8 @@ struct ListComponentsCommand: ParsableCommand {
         if !detailed {
             print("\\nUse --detailed for more information about each component.")
         }
+        
+        print("\\n✨ All components use pure Swift Embedded architecture!")
     }
 }
 
@@ -388,7 +452,7 @@ func generateProjectTemplate(name: String, board: String) -> String {
     esp32:
       board: \(board)
       framework:
-        type: esp-idf
+        type: swift-embedded
     
     # Enable logging
     logger:

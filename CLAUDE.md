@@ -4,11 +4,11 @@ This file provides guidance for AI agents (like Claude) working on the ESPHome S
 
 ## Project Overview
 
-ESPHome Swift is a Swift-based firmware generator for ESP32 microcontrollers that replaces the original Python ESPHome. It generates Embedded Swift code for RISC-V ESP32 boards (C3, C6, H2, P4) from YAML configuration files.
+ESPHome Swift is a pure Swift Embedded firmware generator for ESP32 microcontrollers that replaces the original Python ESPHome. It compiles native Swift code directly to RISC-V ESP32 boards (C3, C6, H2, P4) from YAML configuration files.
 
 ### Core Concept
 ```
-YAML Config → Swift Parser → Code Generation → ESP-IDF/Embedded Swift → ESP32 Firmware
+YAML Config → Swift Parser → Swift Component Assembly → Swift Embedded Compilation → ESP32 Firmware
 ```
 
 ### Target Users
@@ -16,42 +16,56 @@ YAML Config → Swift Parser → Code Generation → ESP-IDF/Embedded Swift → 
 - Swift developers interested in embedded systems  
 - Home Assistant users wanting type-safe device firmware
 
-## Architecture: Swift Development, C Runtime
+## Architecture: Pure Swift Embedded
 
-**Critical Understanding**: ESPHome Swift uses a hybrid architecture where Swift provides development-time type safety and generates C/C++ code for ESP32 runtime execution.
+**Critical Understanding**: ESPHome Swift uses pure Swift Embedded architecture where Swift provides both development-time type safety AND runtime execution on ESP32 microcontrollers.
 
 ### Development Flow
 ```
-YAML Config → Swift Parser → C/C++ Code Generation → ESP-IDF Build → ESP32 Firmware
+YAML Config → Swift Parser → Swift Component Assembly → Swift Embedded Compilation → ESP32 Firmware
 ```
 
-### Why This Design?
+### Why Pure Swift Embedded?
 
-1. **Swift for Development**: Type safety, validation, and code generation
-2. **C/C++ for Runtime**: ESP32 compatibility, performance, and proven ecosystem
-3. **Future Ready**: Migration path to Swift Embedded when ESP32 support matures
+1. **Runtime Type Safety**: Full Swift type safety and memory safety on the microcontroller
+2. **Modern Language Features**: Closures, optionals, generics, error handling on embedded hardware
+3. **Unified Development**: Single language from configuration to runtime execution
+4. **Apple Ecosystem**: Leverage official Swift Embedded support and Matter integration
+5. **Memory Safety**: Automatic memory management eliminates entire classes of embedded bugs
 
-### Code Generation Pattern
-Components generate C/C++ code strings that become part of the final ESP32 firmware:
+### Swift Embedded Component Pattern
+Components are implemented as native Swift classes that compile directly to ESP32 firmware:
 
 ```swift
-// Swift code (development time)
-func generateCode() -> ComponentCode {
-    return ComponentCode(
-        headerIncludes: ["#include \"DHT.h\""],
-        globalDeclarations: ["DHT sensor(4, DHT22);"],
-        setupCode: ["sensor.begin();"],
-        loopCode: ["float temp = sensor.readTemperature();"]
-    )
+// Swift Embedded component (compiles to ESP32)
+@main
+struct DHTSensor {
+    let pin: GPIO
+    let model: DHTModel
+    
+    func setup() {
+        pin.setDirection(.input)
+        // Initialize I2C communication
+    }
+    
+    func readTemperature() -> Float? {
+        // Native Swift I2C communication
+        guard let data = pin.readI2C() else { return nil }
+        return processTemperatureData(data)
+    }
+    
+    static func main() {
+        let sensor = DHTSensor(pin: GPIO.pin4, model: .dht22)
+        sensor.setup()
+        
+        while true {
+            if let temp = sensor.readTemperature() {
+                print("Temperature: \(temp)°C")
+            }
+            sleep(seconds: 1)
+        }
+    }
 }
-```
-
-Generates C++ code (runtime on ESP32):
-```cpp
-#include "DHT.h"
-DHT sensor(4, DHT22);
-void setup() { sensor.begin(); }
-void loop() { float temp = sensor.readTemperature(); }
 ```
 
 ## Core Project Principles
@@ -98,8 +112,8 @@ These principles guide all development on ESPHome Swift and ensure we deliver a 
 ESPHomeSwift/
 ├── Sources/
 │   ├── ESPHomeSwiftCore/     # Core configuration parsing & validation
-│   ├── CodeGeneration/       # Swift → ESP-IDF code generation
-│   ├── ComponentLibrary/     # Built-in component definitions
+│   ├── SwiftEmbeddedGen/     # Swift → Swift Embedded compilation
+│   ├── ComponentLibrary/     # Swift Embedded component implementations
 │   ├── CLI/                  # Command-line interface (ArgumentParser)
 │   └── WebDashboard/         # Web-based monitoring (Vapor.js)
 ├── Tests/                    # Unit tests for each module
@@ -126,8 +140,8 @@ public protocol ComponentFactory {
 #### 2. **Configuration as Code**
 YAML configurations are parsed into strongly-typed Swift structs with `Codable` conformance.
 
-#### 3. **Template-Based Code Generation**
-Generated code uses string interpolation and templates to create valid ESP-IDF/Embedded Swift code.
+#### 3. **Native Swift Component Assembly**
+Components are assembled into a complete Swift Embedded application using native Swift composition and dependency injection.
 
 ## Development Guidelines for AI Agents
 
@@ -147,11 +161,11 @@ Generated code uses string interpolation and templates to create valid ESP-IDF/E
    - Validate pin numbers for ESP32-C6 constraints
    - Verify platform-specific requirements
 
-5. **Generate appropriate code**:
-   - Include necessary headers
-   - Add global declarations
-   - Provide setup code (runs once)
-   - Provide loop code (runs repeatedly)
+5. **Implement Swift Embedded component**:
+   - Create native Swift class with hardware abstractions
+   - Implement setup() method for component initialization
+   - Implement runtime methods for ongoing operation
+   - Use Swift error handling and type safety
 
 6. **Register in ComponentLibrary.swift**:
    ```swift
@@ -163,22 +177,29 @@ Generated code uses string interpolation and templates to create valid ESP-IDF/E
 
 7. **Add tests** in corresponding `Tests/ComponentLibraryTests/` file
 
-### Code Generation Patterns
+### Swift Embedded Component Patterns
 
-#### Common ESP-IDF Structure
-```cpp
-// Headers
-#include "driver/gpio.h"
-#include "freertos/FreeRTOS.h"
+#### Common Swift Embedded Structure
+```swift
+// Native Swift hardware abstraction
+import SwiftEmbedded
+import ESP32Hardware
 
-// Global declarations
-static gpio_num_t sensor_pin = GPIO_NUM_4;
-
-// Setup code (in setup() function)
-gpio_set_direction(sensor_pin, GPIO_MODE_INPUT);
-
-// Loop code (in loop() function)  
-int value = gpio_get_level(sensor_pin);
+struct GPIOSensor {
+    let pin: GPIO
+    
+    init(pin: GPIO) {
+        self.pin = pin
+    }
+    
+    func setup() throws {
+        try pin.setDirection(.input)
+    }
+    
+    func readValue() -> Bool {
+        return pin.digitalRead()
+    }
+}
 ```
 
 #### Board-Aware Pin Validation
@@ -212,13 +233,14 @@ public func validate(config: ConfigType, board: String) throws {
     }
 }
 
-// Example: Code generation with board context
-public func generateCode(config: ConfigType, context: CodeGenerationContext) throws -> ComponentCode {
+// Example: Swift component creation with board context
+public func createComponent(config: ConfigType, context: SwiftEmbeddedContext) throws -> any SwiftComponent {
     // Use shared helper for board definition extraction
     let boardDef = try getBoardDefinition(from: context)
     let pinValidator = PinValidator(boardConstraints: boardDef.pinConstraints)
     
-    // Component-specific code generation...
+    // Create native Swift component instance
+    return try GPIOSensor(pin: GPIO(config.pin, board: boardDef))
 }
 ```
 
@@ -256,7 +278,7 @@ public struct SensorConfig: Codable {
 #### Integration Tests  
 - Validate complete YAML configurations
 - Test CLI commands end-to-end
-- Verify generated code compiles (if ESP-IDF available)
+- Verify Swift Embedded compilation and hardware testing
 
 #### Example Test Pattern
 ```swift
@@ -307,11 +329,11 @@ func testDHTSensorValidation() throws {
 - Follow SwiftLint rules (configured in `.swiftlint.yml`)
 - Use SwiftFormat for consistent formatting
 
-#### Generated Code Conventions
-- Use C naming conventions for ESP-IDF compatibility
-- Add comments explaining generated sections
-- Include error handling and safety checks
-- Follow ESP-IDF component structure
+#### Swift Embedded Code Conventions
+- Use Swift naming conventions (camelCase, PascalCase)
+- Add Swift documentation comments for all public APIs
+- Leverage Swift's error handling and Optional types
+- Follow Swift Embedded patterns and memory management
 
 ### Branching Workflow for AI
 
@@ -378,6 +400,9 @@ swiftformat --lint .
 
 # Validate example configurations
 swift run esphome-swift validate Examples/basic-sensor.yaml
+
+# Compile Swift Embedded firmware
+swift run esphome-swift build Examples/basic-sensor.yaml
 ```
 
 ### Common File Locations
@@ -397,11 +422,34 @@ swift run esphome-swift validate Examples/basic-sensor.yaml
 - **Swift Package Manager**: https://swift.org/package-manager/
 - **Embedded Swift**: https://github.com/apple/swift-embedded-examples
 
+### Swift Embedded Migration Status
+
+**CURRENT PRIORITY: Complete migration to Swift Embedded architecture**
+
+ESPHome Swift is undergoing a complete architectural migration from C++ code generation to pure Swift Embedded compilation. This migration eliminates the need for Arduino-style libraries and provides true runtime type safety.
+
+**Migration Philosophy**:
+- **Quality over speed**: Take time to understand each problem deeply and implement correct solutions
+- **No shortcuts**: Build the foundation that will support ESPHome Swift for years to come
+- **Complete solutions**: No temporary fixes or half-measures during migration
+- **Cross-platform support**: Ensure Linux development environment works throughout
+
+**Current Status**: Phase 0 - Foundation setup and documentation updates
+**Branch Strategy**: Use feature branches for each migration phase
+**Logging**: Maintain comprehensive logs in `docs/swift-embedded-migration/`
+
 ### Development Philosophy for AI Agents
 
-**Take Time to Do Things Right**: This is a new project with no users yet. Prioritize code quality, architectural cleanliness, and following best practices over speed. This is the foundation that will support the project long-term.
+**Take Time to Do Things Right**: This project prioritizes architectural correctness and code quality over development speed. There is no rush. Do everything the correct way, even if it's more complex.
 
 **Alignment with Core Principles**: All development work must align with the Core Project Principles defined above. When making decisions, refer back to these principles to ensure consistency across the codebase.
+
+**Swift Embedded First Guidelines**:
+1. **Pure Swift Approach**: No more C++ code generation - everything compiles to native Swift Embedded
+2. **No Legacy Compatibility**: Since no users exist, optimize purely for Swift Embedded without backward compatibility
+3. **Runtime Safety**: Leverage Swift's memory safety, type safety, and error handling on embedded hardware
+4. **Apple Ecosystem**: Use official Swift Embedded patterns and Matter protocol integration
+5. **Cross-Platform Development**: Ensure Linux developers have full capability alongside macOS
 
 **Key Implementation Guidelines**:
 1. **No Shortcuts**: Don't rush refactoring or take shortcuts that compromise code quality
@@ -413,12 +461,21 @@ swift run esphome-swift validate Examples/basic-sensor.yaml
 7. **ESPHome Compatibility**: Maintain familiar patterns and conventions for ESPHome users (see Core Principle #2)
 8. **CRITICAL: Pre-Push Validation**: Always run `swift test`, `swiftlint`, `swiftformat --lint .`, and `swift build` before pushing. Never push failing code. If SwiftFormat finds issues, run `swiftformat .` to fix them.
 
+**When Implementing Swift Embedded Components**:
+- Research Swift Embedded examples and patterns thoroughly before implementing
+- Use native Swift hardware abstractions instead of C/C++ bindings
+- Implement proper Swift error handling for all hardware operations
+- Test components on actual ESP32 hardware, not just compilation
+- Document Swift-specific patterns for future component developers
+- Ensure all components work cross-platform (macOS and Linux development)
+
 **When Refactoring**:
 - Complete each architectural change thoroughly before moving to the next
 - Ensure all components work together after each major change
 - Don't leave half-converted code or compatibility layers permanently
 - Fix all compilation errors and test failures before proceeding
 - Document architectural decisions and patterns for future developers
+- Update all documentation to reflect Swift Embedded patterns
 
 ### Getting Help
 
@@ -431,6 +488,6 @@ When encountering issues:
 
 ---
 
-**Last Updated**: January 2025  
+**Last Updated**: July 2025 - Swift Embedded Migration  
 **For**: AI Development Assistance  
-**Scope**: ESPHome Swift v0.1.0+
+**Scope**: ESPHome Swift v0.2.0+ (Swift Embedded Architecture)

@@ -9,7 +9,7 @@ esphome_swift:
 esp32:
   board: esp32-c6-devkitc-1
   framework:
-    type: esp-idf
+    type: swift-embedded
 
 # Enable logging with security considerations
 logger:
@@ -131,7 +131,7 @@ binary_sensor:
 # Status indicators
 light:
   # Lock status LED (red/green)
-  - platform: binary
+  - platform: monochromatic
     pin:
       number: GPIO2
     name: "Lock Status LED"
@@ -139,7 +139,7 @@ light:
     # Red when locked, green when unlocked
     
   # Security alert LED
-  - platform: binary
+  - platform: monochromatic
     pin:
       number: GPIO9
     name: "Security Alert LED"
@@ -147,7 +147,7 @@ light:
     # Flashes on security events
     
   # Network connectivity indicator
-  - platform: binary
+  - platform: monochromatic
     pin:
       number: GPIO10
     name: "Network LED"

@@ -373,6 +373,41 @@ public struct PinConfig: Codable {
         self.mode = mode
         self.inverted = inverted
     }
+    
+    public init(from decoder: Decoder) throws {
+        // Try to decode as structured object first
+        if let container = try? decoder.container(keyedBy: CodingKeys.self) {
+            self.number = try container.decode(PinNumber.self, forKey: .number)
+            self.mode = try container.decodeIfPresent(PinMode.self, forKey: .mode)
+            self.inverted = try container.decodeIfPresent(Bool.self, forKey: .inverted)
+        } else {
+            // Fall back to simple value (just the pin number)
+            let singleContainer = try decoder.singleValueContainer()
+            self.number = try singleContainer.decode(PinNumber.self)
+            self.mode = nil
+            self.inverted = nil
+        }
+    }
+    
+    public func encode(to encoder: Encoder) throws {
+        // If mode and inverted are nil, encode as simple value
+        if mode == nil && inverted == nil {
+            var container = encoder.singleValueContainer()
+            try container.encode(number)
+        } else {
+            // Encode as structured object
+            var container = encoder.container(keyedBy: CodingKeys.self)
+            try container.encode(number, forKey: .number)
+            try container.encodeIfPresent(mode, forKey: .mode)
+            try container.encodeIfPresent(inverted, forKey: .inverted)
+        }
+    }
+    
+    enum CodingKeys: String, CodingKey {
+        case number
+        case mode
+        case inverted
+    }
 }
 
 /// Pin number (can be integer or GPIO string)

@@ -17,8 +17,7 @@ esphome_swift:
 esp32:
   board: esp32-c6-devkitc-1
   framework:
-    type: esp-idf
-    version: recommended
+    type: swift-embedded
 
 # WiFi configuration for network connectivity
 wifi:
@@ -81,13 +80,13 @@ switch:
     icon: "mdi:power-socket-eu"
     restore_mode: RESTORE_DEFAULT_OFF
 
-# Status LED (RGB not yet implemented)
-light:
-  - platform: binary
-    pin:
-      number: GPIO7
-    id: status_light
-    name: "Status Light"
+# Status LED (binary platform not yet supported in Swift Embedded)
+# light:
+#   - platform: binary
+#     pin:
+#       number: GPIO7
+#     id: status_light
+#     name: "Status Light"
 # RGB light example (not yet implemented):
   # - platform: rgb
   #   id: rgb_light

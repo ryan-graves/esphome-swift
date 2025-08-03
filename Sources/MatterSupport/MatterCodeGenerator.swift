@@ -1,19 +1,54 @@
 import Foundation
 import ESPHomeSwiftCore
-import ComponentLibrary
 
-/// Matter code generation utilities for ESP-Matter SDK integration
+/// Swift Embedded Matter component code
+public struct SwiftEmbeddedMatterCode {
+    /// Swift source code for the Matter component
+    public let swiftCode: String
+    
+    /// C bridge code for ESP-IDF integration
+    public let cBridgeCode: String
+    
+    /// CMakeLists.txt configuration
+    public let cmakeConfiguration: String
+    
+    public init(swiftCode: String, cBridgeCode: String, cmakeConfiguration: String) {
+        self.swiftCode = swiftCode
+        self.cBridgeCode = cBridgeCode
+        self.cmakeConfiguration = cmakeConfiguration
+    }
+}
+
+/// Swift Embedded code generation context
+public struct SwiftEmbeddedContext {
+    /// Target board information
+    public let board: String
+    
+    /// Project name
+    public let projectName: String
+    
+    /// ESP-IDF component dependencies
+    public let dependencies: [String]
+    
+    public init(board: String, projectName: String, dependencies: [String] = []) {
+        self.board = board
+        self.projectName = projectName
+        self.dependencies = dependencies
+    }
+}
+
+/// Matter code generation utilities for Swift Embedded architecture
 public struct MatterCodeGenerator {
     
-    /// Generates Matter initialization code for ESP-IDF projects
+    /// Generates Matter initialization code for Swift Embedded projects
     /// - Parameters:
     ///   - config: Matter configuration
-    ///   - context: Code generation context
-    /// - Returns: ComponentCode with Matter setup and initialization
+    ///   - context: Swift Embedded generation context
+    /// - Returns: SwiftEmbeddedMatterCode with Matter setup and initialization
     public static func generateMatterCode(
         config: MatterConfig,
-        context: CodeGenerationContext
-    ) throws -> ComponentCode {
+        context: SwiftEmbeddedContext
+    ) throws -> SwiftEmbeddedMatterCode {
         
         let headerIncludes = generateHeaderIncludes()
         let globalDeclarations = try generateGlobalDeclarations(config: config)
@@ -21,12 +56,28 @@ public struct MatterCodeGenerator {
         let loopCode = generateLoopCode(config: config)
         let classDefinitions = try generateMatterCallbacks(config: config)
         
-        return ComponentCode(
+        // Generate Swift Embedded code
+        let swiftCode = generateSwiftEmbeddedCode(
+            config: config,
+            context: context
+        )
+        
+        // Generate C bridge code for ESP-IDF integration
+        let cBridgeCode = generateCBridgeCode(
             headerIncludes: headerIncludes,
             globalDeclarations: globalDeclarations,
             setupCode: setupCode,
             loopCode: loopCode,
-            classDefinitions: classDefinitions
+            callbacks: classDefinitions
+        )
+        
+        // Generate CMake configuration
+        let cmakeConfig = generateCMakeConfiguration(context: context)
+        
+        return SwiftEmbeddedMatterCode(
+            swiftCode: swiftCode,
+            cBridgeCode: cBridgeCode,
+            cmakeConfiguration: cmakeConfig
         )
     }
     
@@ -75,7 +126,7 @@ public struct MatterCodeGenerator {
     /// Generates Matter setup code for the main setup() function
     private static func generateSetupCode(
         config: MatterConfig,
-        context: CodeGenerationContext
+        context: SwiftEmbeddedContext
     ) throws -> [String] {
         var setupCode: [String] = []
         
@@ -299,6 +350,92 @@ public struct MatterCodeGenerator {
         """)
         
         return callbacks
+    }
+    
+    /// Generates Swift Embedded code for Matter integration
+    private static func generateSwiftEmbeddedCode(
+        config: MatterConfig,
+        context: SwiftEmbeddedContext
+    ) -> String {
+        return """
+        import SwiftEmbeddedCore
+        import ESP32Hardware
+        
+        /// Matter-enabled Swift Embedded component
+        public struct MatterDevice {
+            private let matterManager: MatterManager
+            
+            public init() {
+                self.matterManager = MatterManager()
+            }
+            
+            public func setup() throws {
+                try matterManager.initialize(config: config)
+                print("Matter device setup completed")
+            }
+            
+            public func loop() {
+                // Matter event processing handled by ESP-IDF
+                // Component-specific updates can be added here
+            }
+        }
+        
+        /// Matter device manager for Swift Embedded
+        public struct MatterManager {
+            public init() {}
+            
+            public func initialize(config: MatterConfig) throws {
+                // Matter initialization will be handled by C bridge
+                // This provides Swift interface for device management
+            }
+        }
+        """
+    }
+    
+    /// Generates C bridge code for ESP-IDF integration
+    private static func generateCBridgeCode(
+        headerIncludes: [String],
+        globalDeclarations: [String],
+        setupCode: [String],
+        loopCode: [String],
+        callbacks: [String]
+    ) -> String {
+        var cCode = ""
+        
+        // Header includes
+        cCode += headerIncludes.joined(separator: "\\n") + "\\n\\n"
+        
+        // Global declarations
+        cCode += globalDeclarations.joined(separator: "\\n") + "\\n\\n"
+        
+        // Callback functions
+        cCode += callbacks.joined(separator: "\\n\\n") + "\\n\\n"
+        
+        // Setup function
+        cCode += """
+        void matter_setup() {
+        \(setupCode.map { "    " + $0 }.joined(separator: "\\n"))
+        }
+        
+        void matter_loop() {
+        \(loopCode.map { "    " + $0 }.joined(separator: "\\n"))
+        }
+        """
+        
+        return cCode
+    }
+    
+    /// Generates CMake configuration for Matter support
+    private static func generateCMakeConfiguration(context: SwiftEmbeddedContext) -> String {
+        return """
+        # Matter SDK component configuration
+        set(COMPONENT_REQUIRES esp_matter nvs_flash app_update esp_http_client)
+        set(COMPONENT_PRIV_REQUIRES esp_matter_console esp_matter_ota)
+        
+        # Enable Matter in project configuration
+        set(CONFIG_ENABLE_MATTER 1)
+        set(CONFIG_MATTER_DEVICE_TYPE_GENERIC_SWITCH 1)
+        """
     }
 }
 
