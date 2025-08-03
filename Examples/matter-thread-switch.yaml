@@ -9,7 +9,7 @@ esphome_swift:
 esp32:
   board: esp32-c6-devkitc-1  # ESP32-C6 supports Thread
   framework:
-    type: esp-idf
+    type: swift-embedded
 
 # Enable logging
 logger:
@@ -87,14 +87,14 @@ binary_sensor:
 
 # Status indicators
 light:
-  - platform: binary
+  - platform: monochromatic
     pin:
       number: GPIO2
     name: "Power LED"
     id: power_led
     # Shows switch state
     
-  - platform: binary
+  - platform: monochromatic
     pin:
       number: GPIO10
     name: "Thread LED"

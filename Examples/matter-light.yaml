@@ -9,7 +9,7 @@ esphome_swift:
 esp32:
   board: esp32-c6-devkitc-1
   framework:
-    type: esp-idf
+    type: swift-embedded
 
 # Enable logging
 logger:

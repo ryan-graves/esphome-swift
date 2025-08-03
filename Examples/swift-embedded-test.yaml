@@ -2,8 +2,8 @@
 # ESPHome Swift uses pure Swift Embedded for ESP32 firmware generation
 
 esphome_swift:
-  name: "Swift Embedded Test"
-  version: "1.0.0"
+  name: "swift_embedded_test"
+  friendly_name: "Swift Embedded Test"
 
 esp32:
   board: esp32-c6-devkitc-1
@@ -21,7 +21,8 @@ api:
 
 # Enable OTA updates
 ota:
-  password: "ota_password"
+  - platform: esphome_swift
+    password: "ota_password"
 
 # Example components that are supported in Swift Embedded mode
 sensor:
@@ -40,17 +41,6 @@ sensor:
     pin: GPIO0
     name: "Battery Voltage"
     id: battery_voltage
-    attenuation: db11
-    voltage_divider:
-      r1: 10000
-      r2: 10000
-    filters:
-      - moving_average:
-          window_size: 10
-      - calibrate_linear:
-          datapoints:
-            - 0.5 -> 0.0
-            - 3.3 -> 6.6
     update_interval: 60s
 
 switch:
